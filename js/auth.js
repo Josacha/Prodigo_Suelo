@@ -1,3 +1,5 @@
+console.log("auth.js cargado");
+
 import { auth } from "./firebase.js";
 import {
   signInWithEmailAndPassword,
@@ -49,3 +51,4 @@ onAuthStateChanged(auth, async (user) => {
     window.location.href = "planta.html";
   }
 });
+
