@@ -1,5 +1,4 @@
 import { auth } from "./firebase.js";
-
 import {
   signInWithEmailAndPassword,
   onAuthStateChanged
@@ -13,7 +12,9 @@ import {
 import { db } from "./firebase.js";
 
 // LOGIN
-document.getElementById("btnLogin")?.addEventListener("click", () => {
+document.getElementById("loginForm")?.addEventListener("submit", (e) => {
+  e.preventDefault(); // 🔴 IMPORTANTE
+
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
@@ -40,11 +41,6 @@ onAuthStateChanged(auth, async (user) => {
 
   const { rol } = snap.data();
 
-  if (!rol) {
-    alert("Rol no definido");
-    return;
-  }
-
   if (rol === "vendedor") {
     window.location.href = "vendedor.html";
   }
@@ -53,4 +49,3 @@ onAuthStateChanged(auth, async (user) => {
     window.location.href = "planta.html";
   }
 });
-
