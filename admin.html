@@ -1,4 +1,75 @@
-<script type="module">
-  import { protegerPagina } from "./js/guard.js";
-  protegerPagina("Admin");
-</script>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Administrador</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+
+<body style="display:none;">
+
+  <h1>Panel Administrador</h1>
+
+  <button id="btnLogout">Cerrar sesión</button>
+
+  <hr>
+
+  <!-- 📦 INVENTARIO DE PRODUCTOS -->
+  <section>
+    <h2>Inventario de Productos</h2>
+
+    <input type="text" id="codigo" placeholder="Código del producto">
+    <input type="text" id="nombre" placeholder="Nombre del producto">
+    <input type="number" id="precio" placeholder="Precio">
+    <input type="number" id="stock" placeholder="Cantidad disponible">
+
+    <button id="btnGuardarProducto">Guardar producto</button>
+
+    <table border="1">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Producto</th>
+          <th>Precio</th>
+          <th>Stock</th>
+        </tr>
+      </thead>
+      <tbody id="tablaProductos"></tbody>
+    </table>
+  </section>
+
+  <hr>
+
+  <!-- 🎯 OFERTAS -->
+  <section>
+    <h2>Crear oferta</h2>
+
+    <input type="text" id="productoOferta" placeholder="Código del producto">
+    <input type="number" id="descuento" placeholder="Descuento (%)">
+
+    <button id="btnCrearOferta">Crear oferta</button>
+
+    <ul id="listaOfertas"></ul>
+  </section>
+
+  <hr>
+
+  <!-- 🧪 FUTURO -->
+  <section>
+    <h2>Inventario de Materia Prima</h2>
+    <p>(Se implementará más adelante)</p>
+  </section>
+
+  <!-- 🔒 PROTECCIÓN -->
+  <script type="module">
+    import { protegerPagina } from "./js/guard.js";
+    protegerPagina("Administrador");
+  </script>
+
+  <!-- 🧠 JS ADMIN -->
+  <script type="module" src="js/admin.js"></script>
+
+</body>
+</html>
