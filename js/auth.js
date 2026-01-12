@@ -1,28 +1,29 @@
-import { signInWithEmailAndPassword }
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { auth } from "./firebase.js";
+import { getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { db } from "./firebase.js";
 
-import { doc, getDoc }
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
 
-import { auth, db } from "./firebase.js";
+  const ref = doc(db, "usuarios", user.uid);
+  const snap = await getDoc(ref);
 
-document.getElementById("loginForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+  if (!snap.exists()) {
+    alert("Usuario sin rol asignado. Contacte al administrador.");
+    return;
+  }
 
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+  const data = snap.data();
 
-  try {
-    const cred = await signInWithEmailAndPassword(auth, email, password);
+  if (!data.rol) {
+    alert("El usuario no tiene rol definido");
+    return;
+  }
 
-    const userDoc = await getDoc(doc(db, "users", cred.user.uid));
-    const rol = userDoc.data().rol;
-
-    if (rol === "vendedor") location.href = "vendedor.html";
-    if (rol === "planta") location.href = "planta.html";
-    if (rol === "admin") location.href = "admin.html";
-
-  } catch (error) {
-    alert("Error de login: " + error.message);
+  // Redirección por rol
+  if (data.rol === "vendedor") {
+    window.location.href = "dashboard.html";
+  } else if (data.rol === "planta") {
+    window.location.href = "planta.html";
   }
 });
