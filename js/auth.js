@@ -68,8 +68,9 @@ onAuthStateChanged(auth, async (user) => {
     window.location.href = "planta.html";
   }
 
-  if (rol === "admin" && !path.includes("admin.html")) {
+  if (rol === "administrador" && !path.includes("admin.html")) {
     window.location.href = "admin.html";
   }
 });
+
 
