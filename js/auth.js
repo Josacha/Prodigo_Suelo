@@ -62,15 +62,16 @@ onAuthStateChanged(auth, async (user) => {
   console.log("Rol:", rol);
 
   // REDIRECCIÓN POR ROL
-  if (rol === "vendedor" && !path.includes("vendedor.html")) {
-    window.location.href = "vendedor.html";
-  }
+  if (rol === "vendedor" && !location.pathname.includes("vendedor.html")) {
+  window.location.href = "/vendedor.html";
+}
 
-  if (rol === "planta" && !path.includes("planta.html")) {
-    window.location.href = "planta.html";
-  }
+if (rol === "planta" && !location.pathname.includes("planta.html")) {
+  window.location.href = "/planta.html";
+}
 
-  if (rol === "admin" && !path.includes("admin.html")) {
-    window.location.href = "admin.html";
-  }
+if (rol === "admin" && !location.pathname.includes("admin.html")) {
+  window.location.href = "/admin.html";
+}
 });
+
