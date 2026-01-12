@@ -1,6 +1,7 @@
 console.log("auth.js cargado");
 
 import { auth } from "./firebase.js";
+
 import {
   signInWithEmailAndPassword,
   onAuthStateChanged
@@ -14,24 +15,31 @@ import {
 import { db } from "./firebase.js";
 
 // LOGIN
-document.getElementById("loginForm")?.addEventListener("submit", (e) => {
-  e.preventDefault(); // 🔴 IMPORTANTE
+const form = document.getElementById("loginForm");
+
+if (!form) {
+  console.error("No se encontró loginForm");
+}
+
+form?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  console.log("Submit ejecutado");
 
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
+  console.log("Intentando login:", email);
+
   signInWithEmailAndPassword(auth, email, password)
+    .then(() => console.log("Login correcto"))
     .catch(err => alert(err.message));
 });
 
-// PROTECCIÓN + ROLES
+// ROLES
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    if (!location.pathname.includes("login")) {
-      window.location.href = "login.html";
-    }
-    return;
-  }
+  console.log("Auth state:", user);
+
+  if (!user) return;
 
   const ref = doc(db, "usuarios", user.uid);
   const snap = await getDoc(ref);
@@ -51,4 +59,3 @@ onAuthStateChanged(auth, async (user) => {
     window.location.href = "planta.html";
   }
 });
-
