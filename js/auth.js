@@ -1,4 +1,3 @@
-// js/auth.js
 import { auth, db } from "./firebase.js";
 
 import {
@@ -11,41 +10,46 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// LOGIN
+// =====================
+// LOGIN (SOLO index.html)
+// =====================
 const form = document.getElementById("loginForm");
 
 if (form) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    console.log("Intentando login:", email);
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
       console.log("Login correcto");
     } catch (err) {
-      alert("Error: " + err.message);
+      alert(err.message);
     }
   });
 }
 
-// PROTECCIÓN + ROLES
+// =====================
+// AUTH STATE + ROLES
+// =====================
 onAuthStateChanged(auth, async (user) => {
   console.log("Auth state:", user);
 
   const path = location.pathname;
-  const isLogin =
-    path.endsWith("/") ||
-    path.endsWith("/index.html");
 
+  // NO LOGUEADO → LOGIN
   if (!user) {
-    if (!isLogin) {
+    if (!path.endsWith("index.html") && path !== "/") {
       window.location.href = "index.html";
     }
     return;
   }
 
+  // LOGUEADO → BUSCAR ROL
   const ref = doc(db, "usuarios", user.uid);
   const snap = await getDoc(ref);
 
@@ -55,12 +59,18 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   const { rol } = snap.data();
+  console.log("Rol:", rol);
 
-  if (rol === "vendedor" && !path.includes("vendedor")) {
+  // REDIRECCIÓN POR ROL
+  if (rol === "vendedor" && !path.includes("vendedor.html")) {
     window.location.href = "vendedor.html";
   }
 
-  if (rol === "planta" && !path.includes("planta")) {
+  if (rol === "planta" && !path.includes("planta.html")) {
     window.location.href = "planta.html";
+  }
+
+  if (rol === "admin" && !path.includes("admin.html")) {
+    window.location.href = "admin.html";
   }
 });
