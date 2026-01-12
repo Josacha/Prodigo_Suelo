@@ -46,10 +46,11 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   if (rol === "vendedor") {
-    window.location.href = "dashboard.html";
+    window.location.href = "vendedor.html";
   }
 
   if (rol === "planta") {
     window.location.href = "planta.html";
   }
 });
+
