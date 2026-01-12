@@ -51,11 +51,19 @@ onAuthStateChanged(auth, async (user) => {
 
   const { rol } = snap.data();
 
-  if (rol === "vendedor") {
-    window.location.href = "vendedor.html";
-  }
+  // ✅ SOLO REDIRIGIR SI ESTÁS EN index.html
+  if (
+    location.pathname.endsWith("index.html") ||
+    location.pathname.endsWith("/")
+  ) {
+    if (rol === "vendedor") {
+      window.location.href = "vendedor.html";
+    }
 
-  if (rol === "planta") {
-    window.location.href = "planta.html";
+    if (rol === "planta") {
+      window.location.href = "planta.html";
+    }
   }
 });
+
+
