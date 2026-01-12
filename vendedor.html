@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Panel Vendedor</title>
-  <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
 
@@ -15,10 +14,10 @@
 
   <h2>Crear pedido</h2>
 
-  <input type="text" id="cliente" placeholder="Nombre del cliente">
-  <input type="text" id="producto" placeholder="Producto (ej: Café 500g)">
+  <input type="text" id="cliente" placeholder="Cliente">
+  <input type="text" id="producto" placeholder="Producto">
   <input type="number" id="cantidad" placeholder="Cantidad">
-  <button id="btnCrearPedido">Guardar pedido</button>
+  <button id="btnCrearPedido">Guardar</button>
 
   <hr>
 
@@ -37,6 +36,7 @@
     <tbody id="tablaPedidos"></tbody>
   </table>
 
+  <script type="module" src="js/auth.js"></script>
   <script type="module" src="js/vendedor.js"></script>
 </body>
 </html>
