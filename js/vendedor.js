@@ -1,5 +1,4 @@
-import { auth } from "./firebase.js";
-import { db } from "./firebase.js";
+import { auth, db } from "./firebase.js";
 
 import {
   onAuthStateChanged,
@@ -15,23 +14,13 @@ import {
   Timestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🔒 PROTEGER LA PÁGINA
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    window.location.href = "index.html";
-  } else {
-    cargarPedidos(user.uid);
-  }
+// CERRAR SESIÓN
+document.getElementById("btnLogout").addEventListener("click", async () => {
+  await signOut(auth);
+  window.location.href = "index.html";
 });
 
-// 🚪 CERRAR SESIÓN
-document.getElementById("btnLogout").addEventListener("click", () => {
-  signOut(auth).then(() => {
-    window.location.href = "index.html";
-  });
-});
-
-// 🛒 CREAR PEDIDO
+// CREAR PEDIDO
 document.getElementById("btnCrearPedido").addEventListener("click", async () => {
   const cliente = document.getElementById("cliente").value.trim();
   const producto = document.getElementById("producto").value.trim();
@@ -56,11 +45,13 @@ document.getElementById("btnCrearPedido").addEventListener("click", async () => 
   document.getElementById("cantidad").value = "";
 });
 
-// 📋 CARGAR SOLO MIS PEDIDOS
-function cargarPedidos(uid) {
+// CARGAR PEDIDOS
+onAuthStateChanged(auth, (user) => {
+  if (!user) return;
+
   const q = query(
     collection(db, "pedidos"),
-    where("creadoPor", "==", uid)
+    where("creadoPor", "==", user.uid)
   );
 
   onSnapshot(q, (snapshot) => {
@@ -69,8 +60,7 @@ function cargarPedidos(uid) {
 
     snapshot.forEach((doc) => {
       const p = doc.data();
-
-      const fila = `
+      tabla.innerHTML += `
         <tr>
           <td>${p.cliente}</td>
           <td>${p.producto}</td>
@@ -79,10 +69,6 @@ function cargarPedidos(uid) {
           <td>${p.fecha.toDate().toLocaleString()}</td>
         </tr>
       `;
-
-      tabla.innerHTML += fila;
     });
   });
-}
-
-
+});
