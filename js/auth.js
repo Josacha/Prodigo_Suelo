@@ -22,13 +22,11 @@ if (form) {
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
 
-    console.log("Intentando login:", email);
-
     try {
       await signInWithEmailAndPassword(auth, email, password);
       console.log("Login correcto");
     } catch (err) {
-      alert(err.message);
+      alert("Credenciales incorrectas");
     }
   });
 }
@@ -41,37 +39,36 @@ onAuthStateChanged(auth, async (user) => {
 
   const path = location.pathname;
 
-  // NO LOGUEADO → LOGIN
+  // NO LOGUEADO
   if (!user) {
-    if (!path.endsWith("index.html") && path !== "/") {
+    if (!path.endsWith("index.html")) {
       window.location.href = "index.html";
     }
     return;
   }
 
-  // LOGUEADO → BUSCAR ROL
+  // BUSCAR ROL
   const ref = doc(db, "usuarios", user.uid);
   const snap = await getDoc(ref);
 
   if (!snap.exists()) {
-    alert("Usuario sin rol");
+    alert("Usuario sin rol asignado");
     return;
   }
 
   const { rol } = snap.data();
   console.log("Rol:", rol);
 
-  // REDIRECCIÓN POR ROL
-  if (rol === "vendedor" && !location.pathname.includes("vendedor.html")) {
-  window.location.href = "/vendedor.html";
-}
+  // REDIRECCIÓN
+  if (rol === "vendedor" && !path.includes("vendedor.html")) {
+    window.location.href = "vendedor.html";
+  }
 
-if (rol === "planta" && !location.pathname.includes("planta.html")) {
-  window.location.href = "/planta.html";
-}
+  if (rol === "planta" && !path.includes("planta.html")) {
+    window.location.href = "planta.html";
+  }
 
-if (rol === "admin" && !location.pathname.includes("admin.html")) {
-  window.location.href = "/admin.html";
-}
+  if (rol === "admin" && !path.includes("admin.html")) {
+    window.location.href = "admin.html";
+  }
 });
-
