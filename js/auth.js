@@ -60,7 +60,7 @@ onAuthStateChanged(auth, async (user) => {
   console.log("Rol:", rol);
 
   // REDIRECCIÓN
-  if (rol === "vendedor" && !path.includes("vendedor.html")) {
+  if (rol === "Vendedor" && !path.includes("vendedor.html")) {
     window.location.href = "vendedor.html";
   }
 
@@ -72,3 +72,4 @@ onAuthStateChanged(auth, async (user) => {
     window.location.href = "admin.html";
   }
 });
+
