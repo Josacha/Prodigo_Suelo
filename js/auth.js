@@ -1,5 +1,4 @@
 import { auth, db } from "./firebase.js";
-
 import {
   signInWithEmailAndPassword,
   onAuthStateChanged
@@ -10,67 +9,28 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// =====================
-// LOGIN (SOLO index.html)
-// =====================
-const form = document.getElementById("loginForm");
+// LOGIN
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-if (form) {
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  const email = email.value;
+  const password = password.value;
 
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
+  await signInWithEmailAndPassword(auth, email, password);
+});
 
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      console.log("Login correcto");
-    } catch (err) {
-      alert("Credenciales incorrectas");
-    }
-  });
-}
-
-// =====================
-// AUTH STATE + ROLES
-// =====================
+// REDIRECCIÓN DESPUÉS DE LOGIN
 onAuthStateChanged(auth, async (user) => {
-  console.log("Auth state:", user);
+  if (!user) return;
 
-  const path = location.pathname;
-
-  // NO LOGUEADO
-  if (!user) {
-    if (!path.endsWith("index.html")) {
-      window.location.href = "index.html";
-    }
-    return;
-  }
-
-  // BUSCAR ROL
   const ref = doc(db, "usuarios", user.uid);
   const snap = await getDoc(ref);
 
-  if (!snap.exists()) {
-    alert("Usuario sin rol asignado");
-    return;
-  }
+  if (!snap.exists()) return;
 
-  const { rol } = snap.data();
-  console.log("Rol:", rol);
+  const rol = snap.data().rol;
 
-  // REDIRECCIÓN
-  if (rol === "Vendedor" && !path.includes("vendedor.html")) {
-    window.location.href = "vendedor.html";
-  }
-
-  if (rol === "planta" && !path.includes("planta.html")) {
-    window.location.href = "planta.html";
-  }
-
-  if (rol === "administrador" && !path.includes("admin.html")) {
-    window.location.href = "admin.html";
-  }
+  if (rol === "administrador") location.href = "admin.html";
+  if (rol === "Vendedor") location.href = "vendedor.html";
+  if (rol === "Planta") location.href = "planta.html";
 });
-
-
