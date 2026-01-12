@@ -18,7 +18,7 @@ import {
 // 🔒 PROTEGER LA PÁGINA
 onAuthStateChanged(auth, (user) => {
   if (!user) {
-    window.location.href = "/index.html";
+    window.location.href = "index.html";
   } else {
     cargarPedidos(user.uid);
   }
@@ -27,7 +27,7 @@ onAuthStateChanged(auth, (user) => {
 // 🚪 CERRAR SESIÓN
 document.getElementById("btnLogout").addEventListener("click", () => {
   signOut(auth).then(() => {
-    window.location.href = "/index.html";
+    window.location.href = "index.html";
   });
 });
 
@@ -84,4 +84,5 @@ function cargarPedidos(uid) {
     });
   });
 }
+
 
