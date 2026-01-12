@@ -1,4 +1,48 @@
-<script type="module">
-  import { protegerPagina } from "./js/guard.js";
-  protegerPagina("Planta");
-</script>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel Planta</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+
+<body style="display:none;">
+
+  <h1>Panel de Planta</h1>
+
+  <button id="btnLogout">Cerrar sesión</button>
+
+  <hr>
+
+  <!-- 📋 PEDIDOS -->
+  <section>
+    <h2>Pedidos de Venta</h2>
+
+    <table border="1">
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+
+      <tbody id="tablaPedidosPlanta"></tbody>
+    </table>
+  </section>
+
+  <!-- 🔒 PROTECCIÓN -->
+  <script type="module">
+    import { protegerPagina } from "./js/guard.js";
+    protegerPagina("Planta");
+  </script>
+
+  <!-- 🧠 JS PLANTA -->
+  <script type="module" src="js/planta.js"></script>
+
+</body>
+</html>
