@@ -34,8 +34,13 @@ if (form) {
 onAuthStateChanged(auth, async (user) => {
   console.log("Auth state:", user);
 
+  const path = location.pathname;
+  const isLogin =
+    path.endsWith("/") ||
+    path.endsWith("/index.html");
+
   if (!user) {
-    if (!location.pathname.endsWith("index.html")) {
+    if (!isLogin) {
       window.location.href = "index.html";
     }
     return;
@@ -51,11 +56,11 @@ onAuthStateChanged(auth, async (user) => {
 
   const { rol } = snap.data();
 
-  if (rol === "vendedor" && !location.pathname.includes("vendedor")) {
+  if (rol === "vendedor" && !path.includes("vendedor")) {
     window.location.href = "vendedor.html";
   }
 
-  if (rol === "planta" && !location.pathname.includes("planta")) {
+  if (rol === "planta" && !path.includes("planta")) {
     window.location.href = "planta.html";
   }
 });
