@@ -1,146 +1,141 @@
-import { auth, db } from "./firebase.js";
+import { auth, db } from "./base.js";
+
+import {
+  collection,
+  getDocs,
+  addDoc,
+  doc,
+  getDoc,
+  updateDoc,
+  query,
+  where,
+  Timestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import {
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-import {
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  getDoc,
-  updateDoc,
-  Timestamp,
-  query,
-  where,
-  onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// =====================
-// AUTENTICACIÓN
-// =====================
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    window.location.href = "index.html";
-    return;
-  }
+// 🔹 ESPERAR A QUE CARGUE EL DOM
+document.addEventListener("DOMContentLoaded", () => {
 
-  console.log("Vendedor autenticado:", user.uid);
+  const productoSelect = document.getElementById("productoSelect");
+  const cantidadInput = document.getElementById("cantidadInput");
+  const venderBtn = document.getElementById("venderBtn");
+  const ventasBody = document.getElementById("ventasBody");
+  const logoutBtn = document.getElementById("logoutBtn");
 
-  cargarProductos();
-  cargarVentas(user.uid);
-});
-
-// =====================
-// LOGOUT
-// =====================
-document.getElementById("btnLogout")?.addEventListener("click", async () => {
-  await signOut(auth);
-  window.location.href = "index.html";
-});
-
-// =====================
-// CARGAR PRODUCTOS
-// =====================
-async function cargarProductos() {
-  const select = document.getElementById("productoSelect");
-  if (!select) {
-    console.error("Select producto no encontrado");
-    return;
-  }
-
-  select.innerHTML = "";
-
-  const snap = await getDocs(collection(db, "productos"));
-
-  snap.forEach(d => {
-    const p = d.data();
-
-    if (p.activo && p.stock > 0) {
-      const option = document.createElement("option");
-      option.value = d.id;
-      option.textContent = `${p.nombre} - ₡${p.precio} (${p.stock} disponibles)`;
-      select.appendChild(option);
+  // 🔐 PROTEGER VENDEDOR
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.href = "index.html";
+      return;
     }
-  });
-}
 
-// =====================
-// VENDER PRODUCTO
-// =====================
-document.getElementById("btnVender")?.addEventListener("click", async () => {
-  console.log("Botón vender presionado");
-  const productoId = document.getElementById("productoSelect").value;
-  const cantidad = Number(document.getElementById("cantidad").value);
-
-  if (!productoId || cantidad <= 0) {
-    alert("Seleccione producto y cantidad válida");
-    return;
-  }
-
-  const ref = doc(db, "productos", productoId);
-  const snap = await getDoc(ref);
-
-  if (!snap.exists()) {
-    alert("Producto no encontrado");
-    return;
-  }
-
-  const producto = snap.data();
-
-  if (producto.stock < cantidad) {
-    alert("Stock insuficiente");
-    return;
-  }
-
-  // REGISTRAR VENTA
-  await addDoc(collection(db, "ventas"), {
-    productoId,
-    nombre: producto.nombre,
-    cantidad,
-    total: cantidad * producto.precio,
-    vendedor: auth.currentUser.uid,
-    fecha: Timestamp.now()
+    console.log("Vendedor autenticado:", user.uid);
+    await cargarProductos();
+    await cargarVentas(user.uid);
   });
 
-  // ACTUALIZAR STOCK
-  await updateDoc(ref, {
-    stock: producto.stock - cantidad
+  // 🔴 CERRAR SESIÓN
+  logoutBtn.addEventListener("click", async () => {
+    await signOut(auth);
+    window.location.href = "index.html";
   });
 
-  alert("Venta registrada");
+  // 🟢 BOTÓN VENDER
+  venderBtn.addEventListener("click", registrarVenta);
 
-  document.getElementById("cantidad").value = "";
-  cargarProductos();
-});
+  // ===============================
+  async function cargarProductos() {
+    productoSelect.innerHTML = "";
 
-// =====================
-// CARGAR MIS VENTAS
-// =====================
-function cargarVentas(uid) {
-  const tabla = document.getElementById("tablaVentas");
-  if (!tabla) return;
+    const q = query(collection(db, "productos"), where("activo", "==", true));
+    const snapshot = await getDocs(q);
 
-  const q = query(
-    collection(db, "ventas"),
-    where("vendedor", "==", uid)
-  );
-
-  onSnapshot(q, (snap) => {
-    tabla.innerHTML = "";
-
-    snap.forEach(d => {
-      const v = d.data();
-      tabla.innerHTML += `
-        <tr>
-          <td>${v.nombre}</td>
-          <td>${v.cantidad}</td>
-          <td>₡${v.total}</td>
-        </tr>
-      `;
+    snapshot.forEach(docSnap => {
+      const p = docSnap.data();
+      const option = document.createElement("option");
+      option.value = docSnap.id;
+      option.textContent = `${p.nombre} - ₡${p.precio} (Stock: ${p.stock})`;
+      productoSelect.appendChild(option);
     });
-  });
-}
 
+    console.log("Productos encontrados:", snapshot.size);
+  }
+
+  // ===============================
+  async function registrarVenta() {
+    const productoId = productoSelect.value;
+    const cantidad = Number(cantidadInput.value);
+
+    if (!productoId || cantidad <= 0) {
+      alert("Datos inválidos");
+      return;
+    }
+
+    const productoRef = doc(db, "productos", productoId);
+    const productoSnap = await getDoc(productoRef);
+
+    if (!productoSnap.exists()) {
+      alert("Producto no existe");
+      return;
+    }
+
+    const producto = productoSnap.data();
+
+    if (producto.stock < cantidad) {
+      alert("Stock insuficiente");
+      return;
+    }
+
+    const total = producto.precio * cantidad;
+
+    // GUARDAR VENTA
+    await addDoc(collection(db, "ventas"), {
+      productoId,
+      productoNombre: producto.nombre,
+      cantidad,
+      total,
+      vendedorId: auth.currentUser.uid,
+      fecha: Timestamp.now()
+    });
+
+    // ACTUALIZAR STOCK
+    await updateDoc(productoRef, {
+      stock: producto.stock - cantidad
+    });
+
+    alert("Venta registrada correctamente");
+
+    cantidadInput.value = "";
+    await cargarProductos();
+    await cargarVentas(auth.currentUser.uid);
+  }
+
+  // ===============================
+  async function cargarVentas(vendedorId) {
+    ventasBody.innerHTML = "";
+
+    const q = query(
+      collection(db, "ventas"),
+      where("vendedorId", "==", vendedorId)
+    );
+
+    const snapshot = await getDocs(q);
+
+    snapshot.forEach(docSnap => {
+      const v = docSnap.data();
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${v.productoNombre}</td>
+        <td>${v.cantidad}</td>
+        <td>₡${v.total}</td>
+      `;
+      ventasBody.appendChild(tr);
+    });
+  }
+
+});
