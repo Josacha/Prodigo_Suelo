@@ -1,7 +1,3 @@
-console.log("vendedor.js cargado");
-console.log("Productos encontrados:", snap.size);
-
-
 import { auth, db } from "./firebase.js";
 
 import {
@@ -20,13 +16,16 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 🔒 PROTEGER VENDEDOR
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = "index.html";
-  } else {
-    cargarProductos();
-    cargarPedidos(user.uid);
+    return;
   }
+
+  console.log("Vendedor autenticado:", user.uid);
+
+  await cargarProductos();
+  cargarVentas(user.uid);
 });
 
 // 🚪 LOGOUT
@@ -38,23 +37,23 @@ if (btnLogout) {
   });
 }
 
-// 🛒 CREAR PEDIDO
+// 🛒 CREAR VENTA
 const btnCrearPedido = document.getElementById("btnCrearPedido");
 if (btnCrearPedido) {
   btnCrearPedido.addEventListener("click", async () => {
 
     const cliente = document.getElementById("cliente")?.value.trim();
-    const producto = document.getElementById("producto")?.value;
+    const productoId = document.getElementById("producto")?.value;
     const cantidad = Number(document.getElementById("cantidad")?.value);
 
-    if (!cliente || !producto || !cantidad) {
-      alert("Complete todos los campos");
+    if (!cliente || !productoId || cantidad <= 0) {
+      alert("Complete todos los campos correctamente");
       return;
     }
 
     await addDoc(collection(db, "ventas"), {
       cliente,
-      productoId: producto,
+      productoId,
       cantidad,
       vendedor: auth.currentUser.uid,
       fecha: Timestamp.now()
@@ -65,27 +64,34 @@ if (btnCrearPedido) {
   });
 }
 
-// 📦 PRODUCTOS DISPONIBLES
+// 📦 CARGAR PRODUCTOS DEL INVENTARIO
 async function cargarProductos() {
   const select = document.getElementById("producto");
-  if (!select) return;
+  if (!select) {
+    console.warn("Select producto no encontrado");
+    return;
+  }
+
+  select.innerHTML = `<option value="">Seleccione producto</option>`;
 
   const snap = await getDocs(collection(db, "productos"));
-  select.innerHTML = "";
+  console.log("Productos encontrados:", snap.size);
 
   snap.forEach(doc => {
     const p = doc.data();
-    if (p.stock > 0 && p.activo) {
+
+    if (p.activo === true && p.stock > 0) {
       select.innerHTML += `
         <option value="${doc.id}">
-          ${p.nombre} (${p.stock} disponibles)
-        </option>`;
+          ${p.nombre} - ₡${p.precio} (${p.stock})
+        </option>
+      `;
     }
   });
 }
 
-// 📋 MIS PEDIDOS
-function cargarPedidos(uid) {
+// 📋 CARGAR MIS VENTAS
+function cargarVentas(uid) {
   const tabla = document.getElementById("tablaPedidos");
   if (!tabla) return;
 
@@ -96,17 +102,17 @@ function cargarPedidos(uid) {
 
   onSnapshot(q, (snap) => {
     tabla.innerHTML = "";
-    snap.forEach(d => {
-      const p = d.data();
+
+    snap.forEach(doc => {
+      const v = doc.data();
       tabla.innerHTML += `
         <tr>
-          <td>${p.cliente}</td>
-          <td>${p.productoId}</td>
-          <td>${p.cantidad}</td>
-          <td>${new Date(p.fecha.seconds * 1000).toLocaleString()}</td>
-        </tr>`;
+          <td>${v.cliente}</td>
+          <td>${v.productoId}</td>
+          <td>${v.cantidad}</td>
+          <td>${v.fecha.toDate().toLocaleString()}</td>
+        </tr>
+      `;
     });
   });
 }
-
-
