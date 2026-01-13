@@ -1,29 +1,51 @@
-import { auth } from "./firebase.js";
-
+import { auth, db } from "./firebase.js";
 import {
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// 🔒 PROTEGER ADMIN
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    window.location.href = "index.html";
-  }
+import {
+  collection,
+  addDoc,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// 🔒 PROTECCIÓN
+onAuthStateChanged(auth, user => {
+  if (!user) location.href = "index.html";
 });
 
-// 🚪 CERRAR SESIÓN
-const btnLogout = document.getElementById("btnLogout");
+// 🚪 LOGOUT
+document.getElementById("btnLogout").onclick = async () => {
+  await signOut(auth);
+  location.href = "index.html";
+};
 
-if (btnLogout) {
-  btnLogout.addEventListener("click", async () => {
-    try {
-      await signOut(auth);
-      window.location.href = "index.html";
-    } catch (err) {
-      console.error("Error al cerrar sesión:", err);
-    }
+// ➕ AGREGAR PRODUCTO
+document.getElementById("btnAgregar").onclick = async () => {
+  await addDoc(collection(db, "productos"), {
+    codigo: codigo.value,
+    nombre: nombre.value,
+    precio: Number(precio.value),
+    stock: Number(stock.value),
+    activo: true
   });
-}
+};
 
+// 📋 LISTAR INVENTARIO
+onSnapshot(collection(db, "productos"), snap => {
+  const tabla = document.getElementById("tablaProductos");
+  tabla.innerHTML = "";
 
+  snap.forEach(doc => {
+    const p = doc.data();
+    tabla.innerHTML += `
+      <tr>
+        <td>${p.codigo}</td>
+        <td>${p.nombre}</td>
+        <td>₡${p.precio}</td>
+        <td>${p.stock}</td>
+      </tr>
+    `;
+  });
+});
