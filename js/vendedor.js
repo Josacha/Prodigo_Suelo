@@ -1,3 +1,6 @@
+console.log("vendedor.js cargado");
+
+
 import { auth, db } from "./firebase.js";
 
 import {
@@ -104,3 +107,4 @@ function cargarPedidos(uid) {
     });
   });
 }
+
