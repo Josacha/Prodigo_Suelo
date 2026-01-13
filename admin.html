@@ -10,37 +10,33 @@
 
 <body>
 
-  <h1>Panel Administrador</h1>
+ 
+<h1>Inventario - Admin</h1>
 
-  <button id="btnLogout">Cerrar sesión</button>
+<button id="btnLogout">Cerrar sesión</button>
 
-  <hr>
+<h2>Agregar producto</h2>
+<input id="codigo" placeholder="Código">
+<input id="nombre" placeholder="Nombre">
+<input id="precio" type="number" placeholder="Precio">
+<input id="stock" type="number" placeholder="Stock">
+<button id="btnAgregar">Guardar</button>
 
-  <!-- 📦 INVENTARIO DE PRODUCTOS -->
-  <section>
-    <h2>Inventario de Productos</h2>
+<h2>Productos</h2>
+<table border="1">
+  <thead>
+    <tr>
+      <th>Código</th>
+      <th>Nombre</th>
+      <th>Precio</th>
+      <th>Stock</th>
+    </tr>
+  </thead>
+  <tbody id="tablaProductos"></tbody>
+</table>
 
-    <input type="text" id="codigo" placeholder="Código del producto">
-    <input type="text" id="nombre" placeholder="Nombre del producto">
-    <input type="number" id="precio" placeholder="Precio">
-    <input type="number" id="stock" placeholder="Cantidad disponible">
 
-    <button id="btnGuardarProducto">Guardar producto</button>
 
-    <table border="1">
-      <thead>
-        <tr>
-          <th>Código</th>
-          <th>Producto</th>
-          <th>Precio</th>
-          <th>Stock</th>
-        </tr>
-      </thead>
-      <tbody id="tablaProductos"></tbody>
-    </table>
-  </section>
-
-  <hr>
 
   <!-- 🎯 OFERTAS -->
   <section>
@@ -56,20 +52,11 @@
 
   <hr>
 
-  <!-- 🧪 FUTURO -->
-  <section>
-    <h2>Inventario de Materia Prima</h2>
-    <p>(Se implementará más adelante)</p>
-  </section>
-
-  <!-- 🔒 PROTECCIÓN -->
-
-
-  <!-- 🧠 JS ADMIN -->
-  <script type="module" src="js/admin.js"></script>
+ <script type="module" src="js/admin.js"></script>
 
 </body>
 </html>
+
 
 
 
