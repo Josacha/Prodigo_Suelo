@@ -1,74 +1,70 @@
 import { auth, db } from "./firebase.js";
-
 import {
-  onAuthStateChanged,
-  signOut
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 import {
   collection,
+  getDocs,
   addDoc,
-  query,
-  where,
-  onSnapshot,
+  doc,
+  updateDoc,
   Timestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// CERRAR SESIÓN
-document.getElementById("btnLogout").addEventListener("click", async () => {
-  await signOut(auth);
-  window.location.href = "index.html";
+let productos = [];
+
+// 🔒 PROTECCIÓN
+onAuthStateChanged(auth, user => {
+  if (!user) location.href = "index.html";
+  cargarProductos();
 });
 
-// CREAR PEDIDO
-document.getElementById("btnCrearPedido").addEventListener("click", async () => {
-  const cliente = document.getElementById("cliente").value.trim();
-  const producto = document.getElementById("producto").value.trim();
-  const cantidad = document.getElementById("cantidad").value;
+// 📦 CARGAR PRODUCTOS
+async function cargarProductos() {
+  const snap = await getDocs(collection(db, "productos"));
+  const select = document.getElementById("productoSelect");
+  select.innerHTML = "";
 
-  if (!cliente || !producto || !cantidad) {
-    alert("Complete todos los campos");
+  productos = [];
+
+  snap.forEach(d => {
+    const p = d.data();
+    if (p.activo && p.stock > 0) {
+      productos.push({ id: d.id, ...p });
+      select.innerHTML += `<option value="${d.id}">${p.nombre}</option>`;
+    }
+  });
+}
+
+// 🧾 VENDER
+document.getElementById("btnVender").onclick = async () => {
+  const prodId = productoSelect.value;
+  const cant = Number(cantidad.value);
+
+  const p = productos.find(x => x.id === prodId);
+
+  if (!p || cant > p.stock) {
+    alert("Stock insuficiente");
     return;
   }
 
-  await addDoc(collection(db, "pedidos"), {
-    cliente,
-    producto,
-    cantidad: Number(cantidad),
-    estado: "pendiente",
-    creadoPor: auth.currentUser.uid,
+  // REGISTRAR VENTA
+  await addDoc(collection(db, "ventas"), {
+    productoId: prodId,
+    productoNombre: p.nombre,
+    cantidad: cant,
+    precioUnitario: p.precio,
+    total: cant * p.precio,
+    vendedorUid: auth.currentUser.uid,
     fecha: Timestamp.now()
   });
 
-  document.getElementById("cliente").value = "";
-  document.getElementById("producto").value = "";
-  document.getElementById("cantidad").value = "";
-});
-
-// CARGAR PEDIDOS
-onAuthStateChanged(auth, (user) => {
-  if (!user) return;
-
-  const q = query(
-    collection(db, "pedidos"),
-    where("creadoPor", "==", user.uid)
-  );
-
-  onSnapshot(q, (snapshot) => {
-    const tabla = document.getElementById("tablaPedidos");
-    tabla.innerHTML = "";
-
-    snapshot.forEach((doc) => {
-      const p = doc.data();
-      tabla.innerHTML += `
-        <tr>
-          <td>${p.cliente}</td>
-          <td>${p.producto}</td>
-          <td>${p.cantidad}</td>
-          <td>${p.estado}</td>
-          <td>${p.fecha.toDate().toLocaleString()}</td>
-        </tr>
-      `;
-    });
+  // DESCONTAR STOCK
+  await updateDoc(doc(db, "productos", prodId), {
+    stock: p.stock - cant
   });
-});
+
+  alert("Venta registrada");
+  cargarProductos();
+};
