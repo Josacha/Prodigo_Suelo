@@ -1,4 +1,5 @@
 import { auth, db } from "./firebase.js";
+
 import {
   signInWithEmailAndPassword,
   onAuthStateChanged
@@ -10,51 +11,63 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // =====================
-// LOGIN
+// LOGIN (SOLO SI EXISTE)
 // =====================
 const form = document.getElementById("loginForm");
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
+if (form) {
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  const emailInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
 
-  const email = emailInput.value.trim();
-  const password = passwordInput.value.trim();
+    if (!emailInput || !passwordInput) return;
 
-  if (!email || !password) {
-    alert("Complete todos los campos");
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+}
+
+// =====================
+// AUTH STATE + ROLES
+// =====================
+onAuthStateChanged(auth, async (user) => {
+
+  const path = location.pathname;
+
+  // NO LOGUEADO → LOGIN
+  if (!user) {
+    if (!path.endsWith("index.html") && path !== "/" && !path.endsWith("/")) {
+      window.location.href = "index.html";
+    }
     return;
   }
 
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    console.log("Login correcto");
-  } catch (err) {
-    alert("Correo o contraseña incorrectos");
-    console.error(err);
-  }
-});
-
-// =====================
-// REDIRECCIÓN POR ROL
-// =====================
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return;
-
+  // LOGUEADO → BUSCAR ROL
   const ref = doc(db, "usuarios", user.uid);
   const snap = await getDoc(ref);
 
-  if (!snap.exists()) {
-    alert("Usuario sin rol asignado");
-    return;
-  }
+  if (!snap.exists()) return;
 
   const rol = snap.data().rol;
 
-  if (rol === "administrador") location.href = "admin.html";
-  if (rol === "Vendedor") location.href = "vendedor.html";
-  if (rol === "Planta") location.href = "planta.html";
-});
+  // REDIRECCIÓN POR ROL
+  if (rol === "Vendedor" && !path.includes("vendedor.html")) {
+    window.location.href = "vendedor.html";
+  }
 
+  if (rol === "Planta" && !path.includes("planta.html")) {
+    window.location.href = "planta.html";
+  }
+
+  if (rol === "administrador" && !path.includes("admin.html")) {
+    window.location.href = "admin.html";
+  }
+});
