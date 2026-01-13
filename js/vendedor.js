@@ -1,4 +1,5 @@
 console.log("vendedor.js cargado");
+console.log("Productos encontrados:", snap.size);
 
 
 import { auth, db } from "./firebase.js";
@@ -107,4 +108,5 @@ function cargarPedidos(uid) {
     });
   });
 }
+
 
