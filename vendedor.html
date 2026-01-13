@@ -2,37 +2,22 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel Vendedor</title>
-  <link rel="icon" href="data:,">
+  <title>Panel del Vendedor</title>
 </head>
 <body>
 
-<h1>Panel del Vendedor</h1>
+  <h1>Panel del Vendedor</h1>
 
-<button id="btnLogout">Cerrar sesión</button>
+  <button id="logoutBtn">Cerrar sesión</button>
 
-<h2>Registrar venta</h2>
+  <h2>Registrar venta</h2>
 
-<select id="producto"></select>
-<input id="cantidad" type="number" placeholder="Cantidad">
-<button id="btnVender" type="button">Vender</button>
+  <select id="productoSelect"></select>
 
-<h2>Mis ventas</h2>
+  <input type="number" id="cantidadInput" placeholder="Cantidad" min="1">
 
-<table border="1">
-  <thead>
-    <tr>
-      <th>Producto</th>
-      <th>Cantidad</th>
-      <th>Total</th>
-    </tr>
-  </thead>
-  <tbody id="tablaVentas"></tbody>
-</table>
+  <button id="venderBtn">Vender</button>
 
-<!-- SOLO ESTE SCRIPT -->
-<script type="module" src="js/vendedor.js"></script>
+  <h2>Mis ventas</h2>
 
-</body>
-</html>
-
+  <table border="1">
