@@ -71,6 +71,7 @@ async function cargarProductos() {
 // VENDER PRODUCTO
 // =====================
 document.getElementById("btnVender")?.addEventListener("click", async () => {
+  console.log("Botón vender presionado");
   const productoId = document.getElementById("productoSelect").value;
   const cantidad = Number(document.getElementById("cantidad").value);
 
@@ -142,3 +143,4 @@ function cargarVentas(uid) {
     });
   });
 }
+
