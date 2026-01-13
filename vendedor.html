@@ -8,47 +8,33 @@
 
   <h1>Panel del Vendedor</h1>
 
-  <button id="btnLogout">Cerrar sesión</button>
+ <h1>Ventas</h1>
 
-  <hr>
+<button id="btnLogout">Cerrar sesión</button>
 
-  <h2>Crear pedido</h2>
+<select id="productoSelect"></select>
+<input id="cantidad" type="number" placeholder="Cantidad">
+<button id="btnVender">Vender</button>
 
-  <input type="text" id="cliente" placeholder="Cliente">
-  <input type="text" id="producto" placeholder="Producto">
-  <input type="number" id="cantidad" placeholder="Cantidad">
-  <button id="btnCrearPedido">Guardar</button>
+<table border="1">
+  <thead>
+    <tr>
+      <th>Producto</th>
+      <th>Cantidad</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+  <tbody id="tablaVentas"></tbody>
+</table>
 
-  <hr>
+<script type="module" src="js/vendedor.js"></script>
 
-  <h2>Mis pedidos</h2>
-
-  <table border="1">
-    <thead>
-      <tr>
-        <th>Cliente</th>
-        <th>Producto</th>
-        <th>Cantidad</th>
-        <th>Estado</th>
-        <th>Fecha</th>
-      </tr>
-    </thead>
-    <tbody id="tablaPedidos"></tbody>
-  </table>
-
- <script type="module">
-  import { protegerPagina } from "./js/guard.js";
-  protegerPagina("Vendedor");
-</script>
-<script type="module" src="./js/vendedor.js"></script>
-
-
-<script type="module" src="js/vendedor.js"></sc
 
   <script type="module" src="js/auth.js"></script>
-  <script type="module" src="js/vendedor.js"></script>
+ 
 </body>
 </html>
+
 
 
 
