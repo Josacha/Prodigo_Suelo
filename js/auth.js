@@ -53,7 +53,8 @@ onAuthStateChanged(auth, async (user) => {
 
   const rol = snap.data().rol;
 
-  if (rol === "Administrador") location.href = "admin.html";
+  if (rol === "administrador") location.href = "admin.html";
   if (rol === "Vendedor") location.href = "vendedor.html";
   if (rol === "Planta") location.href = "planta.html";
 });
+
