@@ -3,18 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <title>Panel Vendedor</title>
+  <link rel="icon" href="data:,">
 </head>
 <body>
 
-  <h1>Panel del Vendedor</h1>
-
- <h1>Ventas</h1>
+<h1>Panel del Vendedor</h1>
 
 <button id="btnLogout">Cerrar sesión</button>
 
-<select id="productoSelect"></select>
+<h2>Registrar venta</h2>
+
+<select id="producto"></select>
 <input id="cantidad" type="number" placeholder="Cantidad">
 <button id="btnVender">Vender</button>
+
+<h2>Mis ventas</h2>
 
 <table border="1">
   <thead>
@@ -27,15 +30,8 @@
   <tbody id="tablaVentas"></tbody>
 </table>
 
+<!-- SOLO ESTE SCRIPT -->
 <script type="module" src="js/vendedor.js"></script>
 
-
-  <script type="module" src="js/auth.js"></script>
- 
 </body>
 </html>
-
-
-
-
-
