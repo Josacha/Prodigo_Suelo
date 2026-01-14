@@ -166,9 +166,7 @@ async function cargarPedidos(){
 
         <label>Estado:</label>
         <select id="estado-${pedidoId}">
-          <option value="entrante" ${venta.estado==='entrante'?'selected':''}>Entrante</option>
-          <option value="en proceso" ${venta.estado==='en proceso'?'selected':''}>En Proceso</option>
-          <option value="listo" ${venta.estado==='listo'?'selected':''}>Listo</option>
+          
           <option value="atrasado" ${venta.estado==='atrasado'?'selected':''}>Atrasado</option>
           <option value="entregado" ${venta.estado==='entregado'?'selected':''}>Entregado</option>
         </select>
@@ -199,4 +197,5 @@ window.actualizarEstadoVendedor = async (pedidoId)=>{
     alert("Solo puede marcar como ENTREGADO un pedido que esté LISTO");
   }
 };
+
 
