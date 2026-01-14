@@ -6,6 +6,9 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 
 let carrito = [];
 
+// =====================
+// ELEMENTOS HTML
+// =====================
 const productoSelect = document.getElementById("productoSelect");
 const cantidadInput = document.getElementById("cantidadInput");
 const carritoBody = document.getElementById("carritoBody");
@@ -13,21 +16,33 @@ const totalPedido = document.getElementById("totalPedido");
 const clienteSelect = document.getElementById("clienteSelect");
 const pedidosContainer = document.getElementById("pedidosContainer");
 
-// PROTECCIÓN
+const clienteNombre = document.getElementById("clienteNombre");
+const clienteTelefono = document.getElementById("clienteTelefono");
+const vendedorSelect = document.getElementById("vendedorSelect");
+const btnAgregarCliente = document.getElementById("btnAgregarCliente");
+
+// =====================
+// PROTECCIÓN DE RUTA
+// =====================
 onAuthStateChanged(auth, async user => {
   if(!user) location.href = "index.html";
-  await cargarProductos();
+  await cargarVendedores();
   await cargarClientes();
+  await cargarProductos();
   cargarPedidos();
 });
 
+// =====================
 // LOGOUT
+// =====================
 document.getElementById("logoutBtn").onclick = async () => {
   await signOut(auth);
   location.href = "index.html";
 };
 
+// =====================
 // CARGAR PRODUCTOS
+// =====================
 async function cargarProductos() {
   productoSelect.innerHTML = "";
   const snap = await getDocs(collection(db, "productos"));
@@ -36,23 +51,25 @@ async function cargarProductos() {
     if(p.activo){
       const opt = document.createElement("option");
       opt.value = d.id;
-      opt.textContent = `${p.nombre} - ${p.peso}  - ₡${p.precio} (Stock: ${p.stock})`;
+      opt.textContent = `${p.nombre} - ₡${p.precio} (Stock: ${p.stock})`;
       opt.dataset.precio = p.precio;
       opt.dataset.stock = p.stock;
       opt.dataset.nombre = p.nombre;
-      opt.dataset.peso = p.peso; // esto es clave
-
+      opt.dataset.peso = p.peso || 0;
       productoSelect.appendChild(opt);
     }
   });
 }
 
-// CARGAR CLIENTES DEL VENDEDOR
+// =====================
+// CARGAR CLIENTES
+// =====================
 async function cargarClientes() {
   clienteSelect.innerHTML = "<option value=''>Seleccione cliente</option>";
   const snap = await getDocs(collection(db, "clientes"));
   snap.forEach(docSnap => {
     const c = docSnap.data();
+    // Solo clientes del vendedor logueado
     if(c.vendedorId === auth.currentUser.uid){
       const opt = document.createElement("option");
       opt.value = docSnap.id;
@@ -62,31 +79,68 @@ async function cargarClientes() {
   });
 }
 
-// AGREGAR AL CARRITO
+// =====================
+// CARGAR VENDEDORES
+// =====================
+async function cargarVendedores() {
+  const snap = await getDocs(collection(db, "usuarios"));
+  vendedorSelect.innerHTML = "<option value=''>Seleccione vendedor</option>";
+  snap.forEach(docSnap => {
+    const u = docSnap.data();
+    vendedorSelect.innerHTML += `<option value="${docSnap.id}">${u.nombre}</option>`;
+  });
+}
+
+// =====================
+// AGREGAR CLIENTE
+// =====================
+btnAgregarCliente.onclick = async () => {
+  if(!clienteNombre.value || !vendedorSelect.value) return alert("Complete los campos");
+
+  await addDoc(collection(db, "clientes"), {
+    nombre: clienteNombre.value,
+    telefono: clienteTelefono.value || null,
+    vendedorId: vendedorSelect.value
+  });
+
+  clienteNombre.value = "";
+  clienteTelefono.value = "";
+  vendedorSelect.value = "";
+  cargarClientes();
+};
+
+// =====================
+// AGREGAR PRODUCTO AL CARRITO
+// =====================
 document.getElementById("agregarLineaBtn").onclick = () => {
   const opt = productoSelect.selectedOptions[0];
   const cantidad = Number(cantidadInput.value);
-  if(!opt || cantidad <=0 || cantidad>Number(opt.dataset.stock)) return alert("Cantidad inválida o stock insuficiente");
-  const subtotal = cantidad*Number(opt.dataset.precio);
+  if(!opt || cantidad <= 0 || cantidad > Number(opt.dataset.stock)) 
+    return alert("Cantidad inválida o stock insuficiente");
 
- carrito.push({
-  productoId: opt.value,
-  nombre: opt.dataset.nombre,
-  precio: Number(opt.dataset.precio),
-  cantidad,
-  peso: Number(opt.dataset.peso), // importante para estadísticas
-  subtotal
-});
-  cantidadInput.value="";
+  const subtotal = cantidad * Number(opt.dataset.precio);
+
+  carrito.push({
+    productoId: opt.value,
+    nombre: opt.dataset.nombre,
+    precio: Number(opt.dataset.precio),
+    cantidad,
+    peso: Number(opt.dataset.peso),
+    subtotal
+  });
+
+  cantidadInput.value = "";
   renderCarrito();
 };
 
+// =====================
 // RENDER CARRITO
+// =====================
 function renderCarrito() {
-  carritoBody.innerHTML="";
-  let total=0;
-  carrito.forEach((l,i)=>{
-    total+=l.subtotal;
+  carritoBody.innerHTML = "";
+  let total = 0;
+  carrito.forEach((l,i) => {
+    total += l.subtotal;
     carritoBody.innerHTML += `
       <tr>
         <td>${l.nombre}</td>
@@ -100,28 +154,30 @@ function renderCarrito() {
       </tr>
     `;
   });
-  totalPedido.textContent=total;
+  totalPedido.textContent = total;
 }
 
-window.eliminarLinea = (i)=>{
+window.eliminarLinea = (i) => {
   carrito.splice(i,1);
   renderCarrito();
 };
 
+// =====================
 // CONFIRMAR PEDIDO
+// =====================
 document.getElementById("confirmarVentaBtn").onclick = async () => {
   const clienteId = clienteSelect.value;
   if(!clienteId) return alert("Seleccione un cliente");
-  if(carrito.length===0) return alert("Carrito vacío");
+  if(carrito.length === 0) return alert("Carrito vacío");
 
   const clienteDoc = await getDoc(doc(db,"clientes",clienteId));
   const clienteData = clienteDoc.data();
 
-  const total = carrito.reduce((s,l)=>s+l.subtotal,0);
+  const total = carrito.reduce((s,l) => s + l.subtotal, 0);
 
   await addDoc(collection(db,"ventas"),{
     vendedorId: auth.currentUser.uid,
-    cliente:{id:clienteId, nombre:clienteData.nombre, telefono:clienteData.telefono||null},
+    cliente: {id:clienteId, nombre:clienteData.nombre, telefono:clienteData.telefono || null},
     fecha: new Date(),
     total,
     lineas: carrito
@@ -131,28 +187,32 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
   for(const l of carrito){
     const ref = doc(db,"productos",l.productoId);
     const snap = await getDoc(ref);
-    await updateDoc(ref,{stock: snap.data().stock-l.cantidad});
+    await updateDoc(ref,{stock: snap.data().stock - l.cantidad});
   }
 
-  carrito=[];
+  carrito = [];
   renderCarrito();
-  clienteSelect.value="";
+  clienteSelect.value = "";
   alert("Pedido registrado");
   cargarPedidos();
 };
 
-// CARGAR PEDIDOS REGISTRADOS
-function cargarPedidos(){
-  pedidosContainer.innerHTML="";
-  onSnapshot(collection(db,"ventas"),snap=>{
-    pedidosContainer.innerHTML="";
-    snap.forEach(docSnap=>{
+// =====================
+// CARGAR PEDIDOS
+// =====================
+function cargarPedidos() {
+  pedidosContainer.innerHTML = "";
+  onSnapshot(collection(db,"ventas"), snap => {
+    pedidosContainer.innerHTML = "";
+    snap.forEach(docSnap => {
       const venta = docSnap.data();
-      if(venta.vendedorId!==auth.currentUser.uid) return;
+      if(venta.vendedorId !== auth.currentUser.uid) return;
 
       const card = document.createElement("div");
-      card.className="card";
-      const lineasHTML = venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
+      card.className = "card";
+
+      const lineasHTML = venta.lineas.map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
+
       card.innerHTML = `
         <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
         <p><strong>Teléfono:</strong> ${venta.cliente.telefono || "-"}</p>
@@ -162,14 +222,17 @@ function cargarPedidos(){
           <i class="fa fa-trash"></i> Eliminar pedido
         </button>
       `;
+
       pedidosContainer.appendChild(card);
     });
   });
 }
 
-window.eliminarPedido = async (id)=>{
-  if(confirm("Eliminar pedido?")) await deleteDoc(doc(db,"ventas",id));
+// =====================
+// ELIMINAR PEDIDO
+// =====================
+window.eliminarPedido = async (id) => {
+  if(confirm("Eliminar pedido?")){
+    await deleteDoc(doc(db,"ventas",id));
+  }
 };
-
-
-
