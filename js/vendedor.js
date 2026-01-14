@@ -1,3 +1,6 @@
+// =====================
+// IMPORTS
+// =====================
 import { auth, db } from "./firebase.js";
 
 import {
@@ -30,12 +33,15 @@ const totalPedido = document.getElementById("totalPedido");
 const clienteNombreInput = document.getElementById("clienteNombre");
 const clienteTelefonoInput = document.getElementById("clienteTelefono");
 
+const pedidosBody = document.getElementById("pedidosBody");
+
 // =====================
 // PROTECCIÓN
 // =====================
 onAuthStateChanged(auth, async user => {
   if (!user) location.href = "index.html";
   await cargarProductos();
+  await cargarPedidos(); // Carga la tabla de pedidos
 });
 
 // =====================
@@ -68,17 +74,14 @@ async function cargarProductos() {
 }
 
 // =====================
-// AGREGAR LÍNEA
+// AGREGAR LÍNEA AL CARRITO
 // =====================
 document.getElementById("agregarLineaBtn").onclick = () => {
-
   const opt = productoSelect.selectedOptions[0];
   const cantidad = Number(cantidadInput.value);
 
   if (!opt || cantidad <= 0) return alert("Datos inválidos");
-
-  if (cantidad > opt.dataset.stock)
-    return alert("Stock insuficiente");
+  if (cantidad > opt.dataset.stock) return alert("Stock insuficiente");
 
   const subtotal = cantidad * opt.dataset.precio;
 
@@ -119,7 +122,6 @@ function renderCarrito() {
 // CONFIRMAR PEDIDO
 // =====================
 document.getElementById("confirmarVentaBtn").onclick = async () => {
-
   const clienteNombre = clienteNombreInput.value.trim();
   const clienteTelefono = clienteTelefonoInput.value.trim();
 
@@ -155,4 +157,32 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
   clienteTelefonoInput.value = "";
 
   alert("Pedido registrado");
+
+  // Recargar tabla de pedidos
+  await cargarPedidos();
 };
+
+// =====================
+// CARGAR PEDIDOS REALIZADOS
+// =====================
+async function cargarPedidos() {
+  pedidosBody.innerHTML = "";
+
+  const q = query(collection(db, "ventas"), where("vendedorId", "==", auth.currentUser.uid));
+  const snap = await getDocs(q);
+
+  snap.forEach(docSnap => {
+    const venta = docSnap.data();
+    const fecha = venta.fecha.toDate().toLocaleString();
+    const lineas = venta.lineas.map(l => `${l.nombre} x${l.cantidad}`).join(", ");
+
+    pedidosBody.innerHTML += `
+      <tr>
+        <td>${venta.cliente.nombre}</td>
+        <td>${fecha}</td>
+        <td>₡${venta.total}</td>
+        <td>${lineas}</td>
+      </tr>
+    `;
+  });
+}
