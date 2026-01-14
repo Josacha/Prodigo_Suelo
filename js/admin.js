@@ -192,7 +192,7 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
   snap.forEach(docSnap => {
     const v = docSnap.data();
     v.lineas.forEach(l => {
-      totalGramos += l.peso * l.cantidad;
+      totalGramos += (l.peso * l.cantidad)/1000;
     });
     totalDinero += v.total;
   });
@@ -203,3 +203,4 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
     <p><strong>Total en dinero:</strong> ₡${totalDinero}</p>
   `;
 };
+
