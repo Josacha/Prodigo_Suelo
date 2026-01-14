@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel Administrador</title>
+  <title>Panel Administrador – App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link rel="stylesheet" href="styles.css">
@@ -10,12 +10,10 @@
 </head>
 
 <body>
-
 <h1>Panel Administrador</h1>
-
 <button id="btnLogout">Cerrar sesión</button>
 
-<!-- ====================== AGREGAR PRODUCTO ====================== -->
+<!-- AGREGAR / EDITAR PRODUCTO -->
 <section>
   <h2>Agregar / Editar producto</h2>
   <input id="codigo" placeholder="Código">
@@ -27,26 +25,13 @@
   <button id="btnAgregar">Guardar</button>
 </section>
 
-<!-- ====================== LISTA DE PRODUCTOS ====================== -->
+<!-- LISTA DE PRODUCTOS -->
 <section>
   <h2>Productos</h2>
-  <table border="1">
-    <thead>
-      <tr>
-        <th>Código</th>
-        <th>Nombre</th>
-        <th>Variedad</th>
-        <th>Peso (g)</th>
-        <th>Precio</th>
-        <th>Precio c/IVA</th>
-        <th>Acción</th>
-      </tr>
-    </thead>
-    <tbody id="tablaProductos"></tbody>
-  </table>
+  <div id="productosContainer" class="cards-container"></div>
 </section>
 
-<!-- ====================== AGREGAR CLIENTE ====================== -->
+<!-- AGREGAR CLIENTE -->
 <section>
   <h2>Agregar Cliente</h2>
   <input id="clienteNombre" placeholder="Nombre del cliente">
@@ -55,21 +40,12 @@
   <button id="btnAgregarCliente">Guardar Cliente</button>
 </section>
 
-<!-- ====================== LISTA DE CLIENTES ====================== -->
+<!-- LISTA DE CLIENTES -->
 <section>
   <h2>Clientes</h2>
-  <table border="1">
-    <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>Teléfono</th>
-        <th>Vendedor</th>
-      </tr>
-    </thead>
-    <tbody id="tablaClientes"></tbody>
-  </table>
+  <div id="clientesContainer" class="cards-container"></div>
 </section>
 
-<script type="module" src="js/admin.js"></script>
+<script type="module" src="admin.js"></script>
 </body>
 </html>
