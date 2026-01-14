@@ -5,43 +5,36 @@
   <title>Planta – Pródigo Suelo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
   <style>
-    .cards-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
+    body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
+    h1 { text-align: center; margin-bottom: 20px; }
+    #logoutBtn {
+      position: absolute; top: 20px; right: 20px;
+      background-color: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;
     }
+    #logoutBtn:hover { background-color: #a71d2a; }
+    .cards-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
     .card {
-      border-radius: 10px;
-      padding: 15px;
-      width: 300px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      transition: transform 0.2s;
-      position: relative;
+      width: 300px; border-radius: 15px; padding: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: relative; color: white;
+      display: flex; flex-direction: column; gap: 10px; transition: transform 0.2s, box-shadow 0.2s;
     }
-    .card:hover {
-      transform: scale(1.02);
-    }
-    .estado-entrante { background-color: #fff3cd; }   /* amarillo */
-    .estado-en-proceso { background-color: #cce5ff; } /* azul claro */
-    .estado-listo { background-color: #d4edda; }      /* verde claro */
-    .estado-atrasado { background-color: #f8d7da; }   /* rojo claro */
-    .notificacion {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      background-color: #ffc107;
-      padding: 5px 10px;
-      border-radius: 5px;
-      font-weight: bold;
-      animation: flash 1s infinite;
-    }
-    @keyframes flash {
-      0%, 50%, 100% { opacity: 1; }
-      25%, 75% { opacity: 0; }
-    }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
+    /* Gradientes */
+    .estado-entrante { background: linear-gradient(135deg, #fbc531, #f39c12); }
+    .estado-en-proceso { background: linear-gradient(135deg, #3498db, #2980b9); }
+    .estado-listo { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+    .estado-atrasado { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+    .notificacion { position: absolute; top: 10px; right: 10px; background: #ffd700; color: black; padding: 5px 10px; border-radius: 8px; font-weight: bold; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.1);opacity:0.8} }
+    .card input, .card select, .card button { padding: 7px; border-radius: 5px; border: none; width: 100%; font-size: 14px; }
+    .card select { cursor: pointer; }
+    .card button { background-color: rgba(0,0,0,0.2); color: white; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+    .card button:hover { background-color: rgba(0,0,0,0.4); }
+    .card ul { list-style: none; padding-left: 0; margin: 0; }
+    .card ul li { font-size: 14px; }
+    .estado-icon { font-size: 20px; margin-right: 5px; }
   </style>
 </head>
 <body>
@@ -50,13 +43,10 @@
 <button id="logoutBtn">Cerrar sesión</button>
 
 <section>
-  <h2>Pedidos</h2>
   <div id="pedidosContainer" class="cards-container"></div>
 </section>
 
-<!-- Audio de alerta -->
 <audio id="alertSound" src="audio/alerta.mp3" preload="auto"></audio>
-
 <script type="module" src="js/planta.js"></script>
 </body>
 </html>
