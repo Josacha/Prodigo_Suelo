@@ -1,34 +1,24 @@
 import { auth, db } from "./firebase.js";
-import { 
-  onAuthStateChanged, 
-  signOut 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  doc, 
-  getDoc, 
-  updateDoc, 
-  deleteDoc, 
-  onSnapshot 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🔒 Protección
-onAuthStateChanged(auth, async (user) => {
+// 🔒 PROTECCIÓN
+onAuthStateChanged(auth, (user) => {
   if (!user) location.href = "index.html";
   cargarVendedores();
   cargarClientes();
-  listarProductos();
+  cargarEstadisticasDefault();
 });
 
-// 🚪 Logout
+// 🚪 LOGOUT
 document.getElementById("btnLogout").addEventListener("click", async () => {
   await signOut(auth);
   location.href = "index.html";
 });
 
+// =======================
 // PRODUCTOS
+// =======================
 const codigo = document.getElementById("codigo");
 const nombre = document.getElementById("nombre");
 const variedad = document.getElementById("variedad");
@@ -39,7 +29,7 @@ const productosContainer = document.getElementById("productosContainer");
 
 let editId = null;
 
-// Calcular precio con IVA
+// Calcular IVA
 precio.addEventListener("input", () => {
   precioIVA.value = (Number(precio.value) * 1.01).toFixed(2);
 });
@@ -69,39 +59,32 @@ document.getElementById("btnAgregar").addEventListener("click", async () => {
 });
 
 // Listar productos
-function listarProductos() {
-  onSnapshot(collection(db, "productos"), (snap) => {
-    productosContainer.innerHTML = "";
-    snap.forEach(docSnap => {
-      const p = docSnap.data();
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <p><strong>Código:</strong> ${p.codigo}</p>
-        <p><strong>Nombre:</strong> ${p.nombre}</p>
-        <p><strong>Variedad:</strong> ${p.variedad || "-"}</p>
-        <p><strong>Peso:</strong> ${p.peso} g</p>
-        <p><strong>Precio:</strong> ₡${p.precio}</p>
-        <p><strong>Precio c/IVA:</strong> ₡${p.precioIVA}</p>
-        <div class="acciones">
-          <button class="btn-editar" onclick="editarProducto('${docSnap.id}')">
-            <i class="fa fa-edit"></i>
-          </button>
-          <button class="btn-eliminar" onclick="eliminarProducto('${docSnap.id}')">
-            <i class="fa fa-trash"></i>
-          </button>
-        </div>
-      `;
-      productosContainer.appendChild(card);
-    });
+onSnapshot(collection(db, "productos"), (snap) => {
+  productosContainer.innerHTML = "";
+  snap.forEach(docSnap => {
+    const p = docSnap.data();
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <p><strong>Código:</strong> ${p.codigo}</p>
+      <p><strong>Nombre:</strong> ${p.nombre}</p>
+      <p><strong>Variedad:</strong> ${p.variedad || "-"}</p>
+      <p><strong>Peso:</strong> ${p.peso} g</p>
+      <p><strong>Precio:</strong> ₡${p.precio}</p>
+      <p><strong>Precio c/IVA:</strong> ₡${p.precioIVA}</p>
+      <div class="acciones">
+        <button class="btn-editar" onclick="editarProducto('${docSnap.id}')"><i class="fa fa-edit"></i></button>
+        <button class="btn-eliminar" onclick="eliminarProducto('${docSnap.id}')"><i class="fa fa-trash"></i></button>
+      </div>
+    `;
+    productosContainer.appendChild(card);
   });
-}
+});
 
-// Editar producto
 window.editarProducto = async (id) => {
-  const docSnap = await getDoc(doc(db, "productos", id));
-  if (!docSnap.exists()) return alert("Producto no encontrado");
-  const p = docSnap.data();
+  const pDoc = await getDocs(collection(db, "productos"));
+  const pSnap = doc(db, "productos", id);
+  const p = (await pSnap.get()).data();
 
   codigo.value = p.codigo;
   nombre.value = p.nombre;
@@ -113,20 +96,18 @@ window.editarProducto = async (id) => {
   editId = id;
 };
 
-// Eliminar producto
 window.eliminarProducto = async (id) => {
-  if (confirm("¿Eliminar este producto?")) {
-    await deleteDoc(doc(db, "productos", id));
-  }
+  if(confirm("¿Eliminar este producto?")) await deleteDoc(doc(db, "productos", id));
 };
 
+// =======================
 // CLIENTES
+// =======================
 const clienteNombre = document.getElementById("clienteNombre");
 const clienteTelefono = document.getElementById("clienteTelefono");
 const vendedorSelect = document.getElementById("vendedorSelect");
 const clientesContainer = document.getElementById("clientesContainer");
 
-// Agregar cliente
 document.getElementById("btnAgregarCliente").addEventListener("click", async () => {
   if (!clienteNombre.value || !vendedorSelect.value) return alert("Complete los campos");
 
@@ -137,10 +118,8 @@ document.getElementById("btnAgregarCliente").addEventListener("click", async () 
   });
 
   clienteNombre.value = clienteTelefono.value = "";
-  cargarClientes(); // recargar lista
 });
 
-// Cargar vendedores
 async function cargarVendedores() {
   const snap = await getDocs(collection(db, "usuarios"));
   vendedorSelect.innerHTML = "<option value=''>Seleccione vendedor</option>";
@@ -150,18 +129,20 @@ async function cargarVendedores() {
   });
 }
 
-// Listar clientes
 function cargarClientes() {
   onSnapshot(collection(db, "clientes"), async (snap) => {
     clientesContainer.innerHTML = "";
     snap.forEach(async docSnap => {
       const c = docSnap.data();
+      let vendedorNombre = "N/A";
+
       // Obtener nombre del vendedor
-      let vendedorNombre = "-";
-      try {
-        const vSnap = await getDoc(doc(db, "usuarios", c.vendedorId));
-        if (vSnap.exists()) vendedorNombre = vSnap.data().nombre;
-      } catch (e) {}
+      if (c.vendedorId) {
+        const vSnap = await getDocs(collection(db, "usuarios"));
+        vSnap.forEach(vDoc => {
+          if (vDoc.id === c.vendedorId) vendedorNombre = vDoc.data().nombre;
+        });
+      }
 
       const card = document.createElement("div");
       card.className = "card";
@@ -174,3 +155,67 @@ function cargarClientes() {
     });
   });
 }
+
+// =======================
+// ESTADÍSTICAS
+// =======================
+const fechaInicioEl = document.getElementById("fechaInicio");
+const fechaFinEl = document.getElementById("fechaFin");
+const btnFiltrar = document.getElementById("btnFiltrarEstadisticas");
+
+const totalPedidosEl = document.getElementById("totalPedidos");
+const totalGramosEl = document.getElementById("totalGramos");
+const totalDineroEl = document.getElementById("totalDinero");
+
+async function cargarEstadisticas(fechaInicio = null, fechaFin = null) {
+  const ventasSnap = await getDocs(collection(db, "ventas"));
+
+  let totalPedidos = 0;
+  let totalGramos = 0;
+  let totalDinero = 0;
+
+  ventasSnap.forEach(docSnap => {
+    const v = docSnap.data();
+    const fecha = v.fecha?.toDate ? v.fecha.toDate() : new Date();
+
+    if ((!fechaInicio || fecha >= fechaInicio) && (!fechaFin || fecha <= fechaFin)) {
+      totalPedidos += 1;
+
+      if (v.lineas && Array.isArray(v.lineas)) {
+        v.lineas.forEach(l => {
+          if (l.peso) totalGramos += l.peso * l.cantidad;
+        });
+      }
+
+      totalDinero += v.total || 0;
+    }
+  });
+
+  totalPedidosEl.textContent = totalPedidos;
+  totalGramosEl.textContent = totalGramos.toFixed(0);
+  totalDineroEl.textContent = totalDinero.toFixed(2);
+}
+
+btnFiltrar.addEventListener("click", () => {
+  const inicio = fechaInicioEl.value ? new Date(fechaInicioEl.value) : null;
+  const fin = fechaFinEl.value ? new Date(fechaFinEl.value) : null;
+  if (fin) fin.setHours(23, 59, 59, 999);
+  cargarEstadisticas(inicio, fin);
+});
+
+function cargarEstadisticasDefault() {
+  const hoy = new Date();
+  const hace7Dias = new Date();
+  hace7Dias.setDate(hoy.getDate() - 7);
+  fechaInicioEl.valueAsDate = hace7Dias;
+  fechaFinEl.valueAsDate = hoy;
+  cargarEstadisticas(hace7Dias, hoy);
+}
+
+// Actualizar estadísticas en tiempo real
+onSnapshot(collection(db, "ventas"), () => {
+  const inicio = fechaInicioEl.value ? new Date(fechaInicioEl.value) : null;
+  const fin = fechaFinEl.value ? new Date(fechaFinEl.value) : null;
+  if (fin) fin.setHours(23, 59, 59, 999);
+  cargarEstadisticas(inicio, fin);
+});
