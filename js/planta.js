@@ -5,9 +5,6 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 const pedidosContainer = document.getElementById("pedidosContainer");
 const alertSound = document.getElementById("alertSound");
 
-// =====================
-// Protección y logout
-// =====================
 onAuthStateChanged(auth, async user => {
   if(!user) location.href = "index.html";
   cargarPedidos();
@@ -18,9 +15,16 @@ document.getElementById("logoutBtn").onclick = async () => {
   location.href = "index.html";
 };
 
-// =====================
-// Cargar pedidos en tiempo real
-// =====================
+function getEstadoIcon(estado){
+  switch(estado){
+    case 'entrante': return '🚀';
+    case 'en proceso': return '⚙️';
+    case 'listo': return '✅';
+    case 'atrasado': return '⏰';
+    default: return '';
+  }
+}
+
 function cargarPedidos() {
   const ventasRef = collection(db, "ventas");
 
@@ -31,11 +35,8 @@ function cargarPedidos() {
       const pedido = docSnap.data();
       const pedidoId = docSnap.id;
 
-      // Obtener nombre del vendedor
-      const vendedorDoc = await getDoc(doc(db, "usuarios", pedido.vendedorId));
-      const vendedorNombre = vendedorDoc.exists() ? vendedorDoc.data().nombre : "N/A";
+      if(pedido.estado === "entregado") return;
 
-      // Card del pedido con color por estado
       const card = document.createElement("div");
       card.className = `card estado-${pedido.estado || 'entrante'}`;
       card.id = `pedido-${pedidoId}`;
@@ -43,8 +44,7 @@ function cargarPedidos() {
       const lineasHTML = pedido.lineas.map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
 
       card.innerHTML = `
-        <p><strong>Cliente:</strong> ${pedido.cliente.nombre}</p>
-        <p><strong>Vendedor:</strong> ${vendedorNombre}</p>
+        <p><strong>${getEstadoIcon(pedido.estado)} Cliente:</strong> ${pedido.cliente.nombre}</p>
         <p><strong>Total:</strong> ₡${pedido.total}</p>
         <ul>${lineasHTML}</ul>
 
@@ -58,45 +58,31 @@ function cargarPedidos() {
 
         <input type="text" id="comentario-${pedidoId}" placeholder="Motivo atraso" value="${pedido.comentario || ''}" ${pedido.estado!=='atrasado'?'disabled':''}>
 
-        <button onclick="actualizarEstado('${pedidoId}')">Actualizar</button>
+        <button onclick="actualizarEstadoPlanta('${pedidoId}')">Actualizar</button>
       `;
 
       pedidosContainer.appendChild(card);
 
-      // Alerta pedido nuevo
-      if(pedido.estado==='entrante' && !card.dataset.alertShown){
-        alert(`Nuevo pedido de ${pedido.cliente.nombre}`);
+      // Notificación visual y sonora para LISTO
+      if(pedido.estado==='listo' && !card.dataset.notificado){
+        alert(`Pedido listo: ${pedido.cliente.nombre}`);
         alertSound.play();
-        card.dataset.alertShown = true;
-      }
-
-      // Si pedido listo, notificación visual
-      if(pedido.estado==='listo'){
-        if(!card.querySelector('.notificacion')){
-          const notif = document.createElement('div');
-          notif.className = 'notificacion';
-          notif.textContent = 'Listo para entrega';
-          card.appendChild(notif);
-        }
-      } else {
-        const existingNotif = card.querySelector('.notificacion');
-        if(existingNotif) existingNotif.remove();
+        const notif = document.createElement('div');
+        notif.className = 'notificacion';
+        notif.textContent = 'Listo para entregar';
+        card.appendChild(notif);
+        card.dataset.notificado = true;
       }
     });
   });
 }
 
-// =====================
-// Actualizar estado
-// =====================
-window.actualizarEstado = async (pedidoId) => {
+window.actualizarEstadoPlanta = async (pedidoId) => {
   const estadoSelect = document.getElementById(`estado-${pedidoId}`);
   const comentarioInput = document.getElementById(`comentario-${pedidoId}`);
-
   const nuevoEstado = estadoSelect.value;
   const comentario = comentarioInput.value;
 
-  // Habilitar input solo si es atrasado
   comentarioInput.disabled = nuevoEstado !== 'atrasado';
 
   await updateDoc(doc(db, "ventas", pedidoId), {
