@@ -36,23 +36,12 @@
     .estado-atrasado { background: #c0392b; color: #fff; }       /* rojo */
     .estado-entregado { background: #7f8c8d; color: #fff; }      /* gris */
 
-    .notificacion {
-      position: absolute; top: 10px; right: 10px;
-      background: #ffd700; color: black; padding: 5px 10px; border-radius: 8px;
-      font-weight: bold; animation: pulse 1s infinite;
-    }
-    @keyframes pulse {
-      0%,100%{transform:scale(1);opacity:1}
-      50%{transform:scale(1.1);opacity:0.8}
-    }
-
     .card input, .card select, .card button { padding: 7px; border-radius: 5px; border: none; width: 100%; font-size: 14px; }
     .card select { cursor: pointer; }
     .card button { background-color: rgba(0,0,0,0.2); color: white; font-weight: bold; cursor: pointer; transition: background 0.2s; }
     .card button:hover { background-color: rgba(0,0,0,0.4); }
     .card ul { list-style: none; padding-left: 0; margin: 0; }
     .card ul li { font-size: 14px; }
-    .estado-icon { font-size: 20px; margin-right: 5px; }
   </style>
 </head>
 <body>
