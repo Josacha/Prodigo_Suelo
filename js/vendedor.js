@@ -10,6 +10,7 @@ import {
   doc,
   getDoc,
   updateDoc,
+  deleteDoc,
   query,
   where,
   Timestamp
@@ -41,7 +42,7 @@ const pedidosBody = document.getElementById("pedidosBody");
 onAuthStateChanged(auth, async user => {
   if (!user) location.href = "index.html";
   await cargarProductos();
-  await cargarPedidos(); // Carga la tabla de pedidos
+  await cargarPedidos();
 });
 
 // =====================
@@ -104,19 +105,28 @@ function renderCarrito() {
   carritoBody.innerHTML = "";
   let total = 0;
 
-  carrito.forEach(l => {
+  carrito.forEach((l, index) => {
     total += l.subtotal;
     carritoBody.innerHTML += `
       <tr>
         <td>${l.nombre}</td>
         <td>${l.cantidad}</td>
         <td>₡${l.subtotal}</td>
+        <td><button onclick="eliminarDelCarrito(${index})">Eliminar</button></td>
       </tr>
     `;
   });
 
   totalPedido.textContent = total;
 }
+
+// =====================
+// ELIMINAR PRODUCTO DEL CARRITO
+// =====================
+window.eliminarDelCarrito = (index) => {
+  carrito.splice(index, 1);
+  renderCarrito();
+};
 
 // =====================
 // CONFIRMAR PEDIDO
@@ -131,7 +141,7 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
   const total = carrito.reduce((s, l) => s + l.subtotal, 0);
 
   // GUARDAR VENTA
-  await addDoc(collection(db, "ventas"), {
+  const ventaRef = await addDoc(collection(db, "ventas"), {
     vendedorId: auth.currentUser.uid,
     cliente: {
       nombre: clienteNombre,
@@ -173,6 +183,7 @@ async function cargarPedidos() {
 
   snap.forEach(docSnap => {
     const venta = docSnap.data();
+    const id = docSnap.id;
     const fecha = venta.fecha.toDate().toLocaleString();
     const lineas = venta.lineas.map(l => `${l.nombre} x${l.cantidad}`).join(", ");
 
@@ -182,7 +193,18 @@ async function cargarPedidos() {
         <td>${fecha}</td>
         <td>₡${venta.total}</td>
         <td>${lineas}</td>
+        <td><button onclick="eliminarPedido('${id}')">Eliminar</button></td>
       </tr>
     `;
   });
 }
+
+// =====================
+// ELIMINAR PEDIDO COMPLETO
+// =====================
+window.eliminarPedido = async (id) => {
+  if (confirm("¿Desea eliminar este pedido?")) {
+    await deleteDoc(doc(db, "ventas", id));
+    await cargarPedidos();
+  }
+};
