@@ -2,22 +2,77 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel del Vendedor</title>
+  <title>Panel del Vendedor | Pródigo Suelo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Evita favicon error -->
+  <link rel="icon" href="data:,">
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="css/styles.css">
 </head>
-<body>
 
-  <h1>Panel del Vendedor</h1>
+<body class="panel-body">
 
-  <button id="logoutBtn">Cerrar sesión</button>
+  <!-- HEADER -->
+  <header class="panel-header">
+    <h1>Panel del Vendedor</h1>
+    <button id="logoutBtn" class="btn-danger">Cerrar sesión</button>
+  </header>
 
-  <h2>Registrar venta</h2>
+  <!-- CONTENIDO -->
+  <main class="panel-container">
 
-  <select id="productoSelect"></select>
+    <!-- REGISTRAR VENTA -->
+    <section class="card">
+      <h2>Registrar venta</h2>
 
-  <input type="number" id="cantidadInput" placeholder="Cantidad" min="1">
+      <div class="form-group">
+        <label for="productoSelect">Producto</label>
+        <select id="productoSelect"></select>
+      </div>
 
-  <button id="venderBtn">Vender</button>
+      <div class="form-group">
+        <label for="cantidadInput">Cantidad</label>
+        <input
+          type="number"
+          id="cantidadInput"
+          placeholder="Cantidad"
+          min="1"
+        >
+      </div>
 
-  <h2>Mis ventas</h2>
+      <button id="venderBtn" class="btn-primary">
+        Vender
+      </button>
+    </section>
 
-  <table border="1">
+    <!-- MIS VENTAS -->
+    <section class="card">
+      <h2>Mis ventas</h2>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Cantidad</th>
+              <th>Total</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody id="tablaVentas">
+            <!-- JS inserta filas -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- SCRIPTS -->
+  <script type="module" src="js/vendedor.js"></script>
+  <script type="module" src="js/auth.js"></script>
+
+</body>
+</html>
