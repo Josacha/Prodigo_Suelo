@@ -17,14 +17,12 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-
-// 🔹 ESPERAR A QUE CARGUE EL DOM
 document.addEventListener("DOMContentLoaded", () => {
 
   const productoSelect = document.getElementById("productoSelect");
   const cantidadInput = document.getElementById("cantidadInput");
   const venderBtn = document.getElementById("venderBtn");
-  const ventasBody = document.getElementById("ventasBody");
+  const ventasBody = document.getElementById("tablaVentas"); // ✅ ID CORRECTO
   const logoutBtn = document.getElementById("logoutBtn");
 
   // 🔐 PROTEGER VENDEDOR
@@ -39,17 +37,23 @@ document.addEventListener("DOMContentLoaded", () => {
     await cargarVentas(user.uid);
   });
 
-  // 🔴 CERRAR SESIÓN
-  logoutBtn.addEventListener("click", async () => {
-    await signOut(auth);
-    window.location.href = "index.html";
-  });
+  // 🚪 CERRAR SESIÓN
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      await signOut(auth);
+      window.location.href = "index.html";
+    });
+  }
 
-  // 🟢 BOTÓN VENDER
-  venderBtn.addEventListener("click", registrarVenta);
+  // 🟢 VENDER
+  if (venderBtn) {
+    venderBtn.addEventListener("click", registrarVenta);
+  }
 
   // ===============================
   async function cargarProductos() {
+    if (!productoSelect) return;
+
     productoSelect.innerHTML = "";
 
     const q = query(collection(db, "productos"), where("activo", "==", true));
@@ -57,13 +61,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     snapshot.forEach(docSnap => {
       const p = docSnap.data();
-      const option = document.createElement("option");
-      option.value = docSnap.id;
-      option.textContent = `${p.nombre} - ₡${p.precio} (Stock: ${p.stock})`;
-      productoSelect.appendChild(option);
-    });
 
-    console.log("Productos encontrados:", snapshot.size);
+      if (p.stock > 0) {
+        const option = document.createElement("option");
+        option.value = docSnap.id;
+        option.textContent = `${p.nombre} - ₡${p.precio} (Stock: ${p.stock})`;
+        productoSelect.appendChild(option);
+      }
+    });
   }
 
   // ===============================
@@ -93,7 +98,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const total = producto.precio * cantidad;
 
-    // GUARDAR VENTA
     await addDoc(collection(db, "ventas"), {
       productoId,
       productoNombre: producto.nombre,
@@ -103,7 +107,6 @@ document.addEventListener("DOMContentLoaded", () => {
       fecha: Timestamp.now()
     });
 
-    // ACTUALIZAR STOCK
     await updateDoc(productoRef, {
       stock: producto.stock - cantidad
     });
@@ -117,6 +120,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ===============================
   async function cargarVentas(vendedorId) {
+    if (!ventasBody) {
+      console.warn("tablaVentas no existe en el HTML");
+      return;
+    }
+
     ventasBody.innerHTML = "";
 
     const q = query(
@@ -128,15 +136,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     snapshot.forEach(docSnap => {
       const v = docSnap.data();
+
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${v.productoNombre}</td>
         <td>${v.cantidad}</td>
         <td>₡${v.total}</td>
+        <td>${new Date(v.fecha.seconds * 1000).toLocaleString()}</td>
       `;
       ventasBody.appendChild(tr);
     });
   }
 
 });
-
