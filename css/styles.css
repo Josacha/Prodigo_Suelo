@@ -163,3 +163,17 @@ tbody tr:nth-child(even) {
     font-size: 18px;
   }
 }
+
+.btn-eliminar {
+  background-color: transparent;
+  border: none;
+  color: #e74c3c; /* rojo para eliminar */
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+.btn-eliminar:hover {
+  color: #c0392b;
+}
+
+
