@@ -2,47 +2,25 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel Planta</title>
+  <title>Planta – Pródigo Suelo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 </head>
+<body>
 
-<body style="display:none;">
+<h1>Planta – Pedidos en Producción</h1>
+<button id="logoutBtn">Cerrar sesión</button>
 
-  <h1>Panel de Planta</h1>
+<section>
+  <h2>Pedidos</h2>
+  <div id="pedidosContainer" class="cards-container"></div>
+</section>
 
-  <button id="btnLogout">Cerrar sesión</button>
+<!-- Audio de alerta -->
+<audio id="alertSound" src="audio/alerta.mp3" preload="auto"></audio>
 
-  <hr>
-
-  <!-- 📋 PEDIDOS -->
-  <section>
-    <h2>Pedidos de Venta</h2>
-
-    <table border="1">
-      <thead>
-        <tr>
-          <th>Cliente</th>
-          <th>Producto</th>
-          <th>Cantidad</th>
-          <th>Estado</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-
-      <tbody id="tablaPedidosPlanta"></tbody>
-    </table>
-  </section>
-
-  <!-- 🔒 PROTECCIÓN -->
-  <script type="module">
-    import { protegerPagina } from "./js/guard.js";
-    protegerPagina("Planta");
-  </script>
-
-  <!-- 🧠 JS PLANTA -->
-  <script type="module" src="js/planta.js"></script>
-
+<script type="module" src="js/planta.js"></script>
 </body>
 </html>
