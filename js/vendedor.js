@@ -75,7 +75,6 @@ async function cargarClientes() {
 
   snap.forEach(docSnap => {
     const c = docSnap.data();
-    // Solo clientes del vendedor logueado
     if(!idsAgregados.has(docSnap.id)){
       const opt = document.createElement("option");
       opt.value = docSnap.id;
@@ -102,17 +101,15 @@ async function cargarVendedores() {
 // AGREGAR CLIENTE
 // =====================
 btnAgregarCliente.onclick = async () => {
-  if(!clienteNombre.value || !vendedorSelect.value) return alert("Complete los campos");
+  if(!clienteNombre.value) return alert("Ingrese nombre del cliente");
 
   await addDoc(collection(db, "clientes"), {
     nombre: clienteNombre.value,
-    telefono: clienteTelefono.value || null,
-    vendedorId: vendedorSelect.value
+    telefono: clienteTelefono.value || null
   });
 
   clienteNombre.value = "";
   clienteTelefono.value = "";
-  vendedorSelect.value = "";
 
   cargarClientes();
 };
@@ -181,7 +178,6 @@ function renderCarrito() {
 window.eliminarLinea = (i) => {
   carrito.splice(i,1);
   renderCarrito();
-  // Si se eliminan todos los productos desbloquea cliente y vendedor
   if(carrito.length === 0){
     clienteSelect.disabled = false;
     vendedorSelect.disabled = false;
@@ -217,7 +213,6 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
     await updateDoc(ref,{stock: snap.data().stock - l.cantidad});
   }
 
-  // Limpiar carrito y desbloquear cliente y vendedor
   carrito = [];
   renderCarrito();
   clienteSelect.disabled = false;
@@ -234,13 +229,18 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
 // =====================
 // CARGAR PEDIDOS
 // =====================
-function cargarPedidos() {
+async function cargarPedidos() {
   pedidosContainer.innerHTML = "";
-  onSnapshot(collection(db,"ventas"), snap => {
+  onSnapshot(collection(db,"ventas"), async snap => {
     pedidosContainer.innerHTML = "";
-    snap.forEach(docSnap => {
+
+    for(const docSnap of snap.docs){
       const venta = docSnap.data();
-      if(venta.vendedorId !== auth.currentUser.uid) return;
+      if(venta.vendedorId !== auth.currentUser.uid) continue;
+
+      // Obtener nombre del vendedor
+      const vendedorDoc = await getDoc(doc(db,"usuarios",venta.vendedorId));
+      const vendedorName = vendedorDoc.exists() ? vendedorDoc.data().nombre : "N/A";
 
       const card = document.createElement("div");
       card.className = "card";
@@ -249,6 +249,7 @@ function cargarPedidos() {
 
       card.innerHTML = `
         <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
+        <p><strong>Vendedor:</strong> ${vendedorName}</p>
         <p><strong>Teléfono:</strong> ${venta.cliente.telefono || "-"}</p>
         <p><strong>Total:</strong> ₡${venta.total}</p>
         <ul>${lineasHTML}</ul>
@@ -258,7 +259,7 @@ function cargarPedidos() {
       `;
 
       pedidosContainer.appendChild(card);
-    });
+    }
   });
 }
 
