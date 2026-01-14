@@ -139,14 +139,19 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
 };
 
 // CARGAR PEDIDOS REGISTRADOS
-function cargarPedidos(){
+async function cargarPedidos(){
   pedidosContainer.innerHTML="";
-  onSnapshot(collection(db,"ventas"),snap=>{
+  onSnapshot(collection(db,"ventas"), async snap => {
     pedidosContainer.innerHTML="";
-    snap.forEach(docSnap=>{
+
+    for(const docSnap of snap.docs){
       const venta = docSnap.data();
-      if(venta.vendedorId!==vendedorId) return;
+      if(venta.vendedorId!==vendedorId) continue;
       const pedidoId = docSnap.id;
+
+      // Obtener nombre del vendedor
+      const vendedorDoc = await getDoc(doc(db,"usuarios", venta.vendedorId));
+      const vendedorNombre = vendedorDoc.exists() ? vendedorDoc.data().nombre : "N/A";
 
       const card = document.createElement("div");
       card.className = "card";
@@ -155,6 +160,7 @@ function cargarPedidos(){
 
       card.innerHTML = `
         <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
+        <p><strong>Vendedor:</strong> ${vendedorNombre}</p>
         <p><strong>Total:</strong> ₡${venta.total}</p>
         <ul>${lineasHTML}</ul>
 
@@ -171,7 +177,7 @@ function cargarPedidos(){
       `;
 
       pedidosContainer.appendChild(card);
-    });
+    }
   });
 }
 
@@ -193,3 +199,4 @@ window.actualizarEstadoVendedor = async (pedidoId)=>{
     alert("Solo puede marcar como ENTREGADO un pedido que esté LISTO");
   }
 };
+
