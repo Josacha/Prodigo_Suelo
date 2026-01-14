@@ -16,12 +16,12 @@ const pedidosContainer = document.getElementById("pedidosContainer");
 let vendedorId = null; // Vendedor logueado
 
 // Sonido de notificación
-const sonidoPedidoListo = new Audio("audio/alerta.mp3"); // Pon tu archivo de sonido aquí
+const sonidoPedidoListo = new Audio("audio/alerta.mp3");
 
 // PROTECCIÓN
 onAuthStateChanged(auth, async user => {
   if(!user) location.href = "index.html";
-  vendedorId = user.uid; 
+  vendedorId = user.uid;
   await cargarProductos();
   await cargarClientes();
   cargarPedidos();
@@ -85,7 +85,7 @@ document.getElementById("agregarLineaBtn").onclick = () => {
 
   cantidadInput.value="";
   renderCarrito();
-  clienteSelect.disabled = true; // bloquea cliente después de agregar primera línea
+  clienteSelect.disabled = true;
 };
 
 // RENDER CARRITO
@@ -110,7 +110,7 @@ function renderCarrito() {
 window.eliminarLinea = (i) => {
   carrito.splice(i,1);
   renderCarrito();
-  if(carrito.length===0) clienteSelect.disabled = false; // desbloquea si carrito vacío
+  if(carrito.length===0) clienteSelect.disabled = false;
 };
 
 // CONFIRMAR PEDIDO
@@ -156,20 +156,23 @@ function cargarPedidos(){
 
       const lineasHTML = venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
 
-       const vendedorDoc = await getDoc(doc(db, "usuarios", venta.vendedorId));
-  const vendedorData = vendedorDoc.data();
-  const vendedorNombre = vendedorData ? vendedorData.nombre : "Desconocido";
+      // Obtener nombre del vendedor
+      const vendedorDoc = await getDoc(doc(db, "usuarios", venta.vendedorId));
+      const vendedorData = vendedorDoc.data();
+      const vendedorNombre = vendedorData ? vendedorData.nombre : "Desconocido";
+
       card.innerHTML = `
         <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
-      
-<p><strong>Vendedor:</strong> ${vendedorNombre}</p>
-
+        <p><strong>Vendedor:</strong> ${vendedorNombre}</p>
         <p><strong>Total:</strong> ₡${venta.total}</p>
         <ul>${lineasHTML}</ul>
 
         <label>Estado:</label>
         <select id="estado-${pedidoId}">
-        
+          <option value="entrante" ${venta.estado==='entrante'?'selected':''}>Entrante</option>
+          <option value="en proceso" ${venta.estado==='en proceso'?'selected':''}>En Proceso</option>
+          <option value="listo" ${venta.estado==='listo'?'selected':''}>Listo</option>
+          <option value="atrasado" ${venta.estado==='atrasado'?'selected':''}>Atrasado</option>
           <option value="entregado" ${venta.estado==='entregado'?'selected':''}>Entregado</option>
         </select>
 
@@ -178,25 +181,11 @@ function cargarPedidos(){
       `;
 
       pedidosContainer.appendChild(card);
-
-      // Notificación cuando el pedido está LISTO
-      if(venta.estado === "listo" && !card.dataset.notificado){
-        sonidoPedidoListo.play();
-        card.dataset.notificado = true;
-
-        if("Notification" in window && Notification.permission === "granted"){
-          new Notification(`Pedido LISTO: ${venta.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
-        } else if("Notification" in window && Notification.permission !== "denied"){
-          Notification.requestPermission().then(p => {
-            if(p==="granted") new Notification(`Pedido LISTO: ${venta.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
-          });
-        }
-      }
     });
   });
 }
 
-// Vendedor solo puede cambiar LISTO → ENTREGADO
+// ACTUALIZAR ESTADO VENDEDOR (Listo → Entregado y notificación LISTO)
 window.actualizarEstadoVendedor = async (pedidoId)=>{
   const estadoSelect = document.getElementById(`estado-${pedidoId}`);
   const nuevoEstado = estadoSelect.value;
@@ -204,13 +193,29 @@ window.actualizarEstadoVendedor = async (pedidoId)=>{
   const docSnap = await getDoc(docRef);
   const pedido = docSnap.data();
 
+  // Solo notificar si se pasa a LISTO
+  if(pedido.estado !== 'listo' && nuevoEstado === 'listo'){
+    sonidoPedidoListo.play();
+
+    if("Notification" in window && Notification.permission === "granted"){
+      new Notification(`Pedido LISTO: ${pedido.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
+    } else if("Notification" in window && Notification.permission !== "denied"){
+      Notification.requestPermission().then(p => {
+        if(p==="granted") new Notification(`Pedido LISTO: ${pedido.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
+      });
+    }
+  }
+
+  // Vendedor solo puede cambiar LISTO → ENTREGADO
   if(pedido.estado === 'listo' && nuevoEstado==='entregado'){
     await updateDoc(docRef,{estado:'entregado'});
     alert("Pedido marcado como ENTREGADO");
-  } else if(nuevoEstado !== 'entregado'){
+  } else if(nuevoEstado !== 'entregado' && nuevoEstado !== 'listo'){
     await updateDoc(docRef,{estado:nuevoEstado});
     alert("Estado actualizado");
-  } else {
+  } else if(pedido.estado === 'listo' && nuevoEstado==='listo'){
+    alert("Pedido ya está LISTO");
+  } else if(nuevoEstado==='entregado' && pedido.estado!=='listo'){
     alert("Solo puede marcar como ENTREGADO un pedido que esté LISTO");
   }
 };
@@ -222,6 +227,3 @@ window.eliminarPedido = async (pedidoId)=>{
     alert("Pedido eliminado");
   }
 };
-
-
-
