@@ -10,49 +10,62 @@ import {
   getDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// LOGIN
+// =====================
+// LOGIN (SOLO INDEX)
+// =====================
 const form = document.getElementById("loginForm");
 
 if (form) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
+    const email = document.getElementById("email")?.value.trim();
+    const password = document.getElementById("password")?.value.trim();
+
+    if (!email || !password) return;
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      // 🔑 NO redireccionar aquí
+      // onAuthStateChanged se encarga
     } catch (err) {
-      alert(err.message);
+      alert("Credenciales incorrectas");
     }
   });
 }
 
-// REDIRECCIÓN POR ROL
+// =====================
+// AUTH STATE + REDIRECCIÓN
+// =====================
 onAuthStateChanged(auth, async (user) => {
+
+  const path = location.pathname;
+
+  // 🔓 SI NO ESTÁ LOGUEADO
   if (!user) {
-    window.location.href = "index.html";
+    // Solo redirige si NO está en index
+    if (!path.endsWith("index.html") && !path.endsWith("/")) {
+      location.href = "index.html";
+    }
     return;
   }
 
-  const ref = doc(db, "usuarios", user.uid);
-  const snap = await getDoc(ref);
+  // ⛔ SI YA ESTÁ EN INDEX Y LOGUEADO → REDIRIGIR UNA SOLA VEZ
+  if (path.endsWith("index.html") || path.endsWith("/")) {
 
-  if (!snap.exists()) return;
+    const ref = doc(db, "usuarios", user.uid);
+    const snap = await getDoc(ref);
 
-  const rol = snap.data().rol;
-  const page = location.pathname.split("/").pop();
+    if (!snap.exists()) {
+      alert("Usuario sin rol asignado");
+      return;
+    }
 
-  // 🔐 REDIRECCIÓN POR ROL (SIN LOOP)
-  if (rol === "Vendedor" && page !== "vendedor.html") {
-    window.location.href = "vendedor.html";
+    const rol = snap.data().rol;
+
+    if (rol === "Vendedor") location.href = "vendedor.html";
+    else if (rol === "administrador") location.href = "admin.html";
+    else if (rol === "Planta") location.href = "planta.html";
   }
 
-  if (rol === "administrador" && page !== "admin.html") {
-    window.location.href = "admin.html";
-  }
-
-  if (rol === "Planta" && page !== "planta.html") {
-    window.location.href = "planta.html";
-  }
 });
