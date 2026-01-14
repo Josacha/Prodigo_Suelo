@@ -1,53 +1,32 @@
 import { auth, db } from "./firebase.js";
-import {
-  collection, getDocs, addDoc, doc, getDoc, updateDoc, onSnapshot, deleteDoc
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// =====================
-// VARIABLES
-// =====================
 let carrito = [];
-let pedidoClienteId = null;
-let pedidoVendedorId = null;
 
-// ELEMENTOS HTML
 const productoSelect = document.getElementById("productoSelect");
 const cantidadInput = document.getElementById("cantidadInput");
 const carritoBody = document.getElementById("carritoBody");
 const totalPedido = document.getElementById("totalPedido");
 const clienteSelect = document.getElementById("clienteSelect");
-const vendedorSelect = document.getElementById("vendedorSelect");
 const pedidosContainer = document.getElementById("pedidosContainer");
 
-const clienteNombre = document.getElementById("clienteNombre");
-const clienteTelefono = document.getElementById("clienteTelefono");
-const btnAgregarCliente = document.getElementById("btnAgregarCliente");
-
-// =====================
-// PROTECCIÓN DE RUTA
-// =====================
+// Proteccion
 onAuthStateChanged(auth, async user => {
   if(!user) location.href = "index.html";
-  await cargarVendedores();
-  await cargarClientes();
   await cargarProductos();
+  await cargarClientes();
   cargarPedidos();
 });
 
-// =====================
-// LOGOUT
-// =====================
 document.getElementById("logoutBtn").onclick = async () => {
   await signOut(auth);
   location.href = "index.html";
 };
 
-// =====================
-// CARGAR PRODUCTOS
-// =====================
+// Cargar productos
 async function cargarProductos() {
-  productoSelect.innerHTML = "<option value=''>Seleccione producto</option>";
+  productoSelect.innerHTML = "";
   const snap = await getDocs(collection(db, "productos"));
   snap.forEach(d => {
     const p = d.data();
@@ -58,216 +37,142 @@ async function cargarProductos() {
       opt.dataset.precio = p.precio;
       opt.dataset.stock = p.stock;
       opt.dataset.nombre = p.nombre;
-      opt.dataset.peso = p.peso || 0;
       productoSelect.appendChild(opt);
     }
   });
 }
 
-// =====================
-// CARGAR CLIENTES SIN REPETIDOS
-// =====================
+// Cargar clientes
 async function cargarClientes() {
   clienteSelect.innerHTML = "<option value=''>Seleccione cliente</option>";
   const snap = await getDocs(collection(db, "clientes"));
-
-  const idsAgregados = new Set();
-
   snap.forEach(docSnap => {
     const c = docSnap.data();
-    if(!idsAgregados.has(docSnap.id)){
+    if(c.vendedorId === auth.currentUser.uid){
       const opt = document.createElement("option");
       opt.value = docSnap.id;
       opt.textContent = `${c.nombre} (${c.telefono || "-"})`;
       clienteSelect.appendChild(opt);
-      idsAgregados.add(docSnap.id);
     }
   });
 }
 
-// =====================
-// CARGAR VENDEDORES
-// =====================
-async function cargarVendedores() {
-  vendedorSelect.innerHTML = "<option value=''>Seleccione vendedor</option>";
-  const snap = await getDocs(collection(db, "usuarios"));
-  snap.forEach(docSnap => {
-    const u = docSnap.data();
-    vendedorSelect.innerHTML += `<option value="${docSnap.id}">${u.nombre}</option>`;
-  });
-}
-
-// =====================
-// AGREGAR CLIENTE
-// =====================
-btnAgregarCliente.onclick = async () => {
-  if(!clienteNombre.value) return alert("Ingrese nombre del cliente");
-
-  await addDoc(collection(db, "clientes"), {
-    nombre: clienteNombre.value,
-    telefono: clienteTelefono.value || null
-  });
-
-  clienteNombre.value = "";
-  clienteTelefono.value = "";
-
-  cargarClientes();
-};
-
-// =====================
-// AGREGAR PRODUCTO AL CARRITO
-// =====================
+// Agregar al carrito
 document.getElementById("agregarLineaBtn").onclick = () => {
-  const clienteId = clienteSelect.value;
-  const vendedorId = vendedorSelect.value;
-
-  if(!clienteId || !vendedorId) return alert("Seleccione cliente y vendedor antes de agregar productos");
-
-  // Bloquear cliente y vendedor si ya hay al menos un producto
-  if(carrito.length === 0){
-    pedidoClienteId = clienteId;
-    pedidoVendedorId = vendedorId;
-    clienteSelect.disabled = true;
-    vendedorSelect.disabled = true;
-  }
-
   const opt = productoSelect.selectedOptions[0];
   const cantidad = Number(cantidadInput.value);
-  if(!opt || cantidad <= 0 || cantidad > Number(opt.dataset.stock)) 
-    return alert("Cantidad inválida o stock insuficiente");
-
-  const subtotal = cantidad * Number(opt.dataset.precio);
+  if(!opt || cantidad <=0 || cantidad>Number(opt.dataset.stock)) return alert("Cantidad inválida o stock insuficiente");
+  const subtotal = cantidad*Number(opt.dataset.precio);
 
   carrito.push({
     productoId: opt.value,
     nombre: opt.dataset.nombre,
     precio: Number(opt.dataset.precio),
     cantidad,
-    peso: Number(opt.dataset.peso),
     subtotal
   });
-
-  cantidadInput.value = "";
+  cantidadInput.value="";
   renderCarrito();
+  clienteSelect.disabled = true; // bloquear cliente al agregar línea
 };
 
-// =====================
-// RENDER CARRITO
-// =====================
+// Render carrito
 function renderCarrito() {
-  carritoBody.innerHTML = "";
-  let total = 0;
-  carrito.forEach((l,i) => {
-    total += l.subtotal;
+  carritoBody.innerHTML="";
+  let total=0;
+  carrito.forEach((l,i)=>{
+    total+=l.subtotal;
     carritoBody.innerHTML += `
       <tr>
         <td>${l.nombre}</td>
         <td>${l.cantidad}</td>
         <td>₡${l.subtotal}</td>
         <td>
-          <button class="btn-eliminar" onclick="eliminarLinea(${i})">
-            <i class="fa fa-trash"></i>
-          </button>
+          <button class="btn-eliminar" onclick="eliminarLinea(${i})"><i class="fa fa-trash"></i></button>
         </td>
       </tr>
     `;
   });
-  totalPedido.textContent = total;
+  totalPedido.textContent=total;
 }
+window.eliminarLinea = (i)=>{ carrito.splice(i,1); renderCarrito(); };
 
-window.eliminarLinea = (i) => {
-  carrito.splice(i,1);
-  renderCarrito();
-  if(carrito.length === 0){
-    clienteSelect.disabled = false;
-    vendedorSelect.disabled = false;
-    pedidoClienteId = null;
-    pedidoVendedorId = null;
-  }
-};
-
-// =====================
-// CONFIRMAR PEDIDO
-// =====================
+// Confirmar venta
 document.getElementById("confirmarVentaBtn").onclick = async () => {
-  if(!pedidoClienteId || !pedidoVendedorId) return alert("No hay cliente o vendedor seleccionado");
-  if(carrito.length === 0) return alert("Carrito vacío");
+  const clienteId = clienteSelect.value;
+  if(!clienteId) return alert("Seleccione un cliente");
+  if(carrito.length===0) return alert("Carrito vacío");
 
-  const clienteDoc = await getDoc(doc(db,"clientes",pedidoClienteId));
+  const clienteDoc = await getDoc(doc(db,"clientes",clienteId));
   const clienteData = clienteDoc.data();
-
-  const total = carrito.reduce((s,l) => s + l.subtotal, 0);
+  const total = carrito.reduce((s,l)=>s+l.subtotal,0);
 
   await addDoc(collection(db,"ventas"),{
-    vendedorId: pedidoVendedorId,
-    cliente: {id:pedidoClienteId, nombre:clienteData.nombre, telefono:clienteData.telefono || null},
+    vendedorId: auth.currentUser.uid,
+    cliente:{id:clienteId, nombre:clienteData.nombre, telefono:clienteData.telefono||null},
     fecha: new Date(),
     total,
-    lineas: carrito
+    lineas: carrito,
+    estado: "entrante",
+    comentario: ""
   });
 
-  // Actualizar stock
-  for(const l of carrito){
-    const ref = doc(db,"productos",l.productoId);
-    const snap = await getDoc(ref);
-    await updateDoc(ref,{stock: snap.data().stock - l.cantidad});
-  }
-
-  carrito = [];
-  renderCarrito();
-  clienteSelect.disabled = false;
-  vendedorSelect.disabled = false;
-  clienteSelect.value = "";
-  vendedorSelect.value = "";
-  pedidoClienteId = null;
-  pedidoVendedorId = null;
-
+  carrito=[]; renderCarrito(); clienteSelect.value=""; clienteSelect.disabled=false;
   alert("Pedido registrado");
   cargarPedidos();
 };
 
-// =====================
-// CARGAR PEDIDOS
-// =====================
-async function cargarPedidos() {
-  pedidosContainer.innerHTML = "";
-  onSnapshot(collection(db,"ventas"), async snap => {
-    pedidosContainer.innerHTML = "";
-
-    for(const docSnap of snap.docs){
+// Cargar pedidos
+function cargarPedidos(){
+  pedidosContainer.innerHTML="";
+  onSnapshot(collection(db,"ventas"),snap=>{
+    pedidosContainer.innerHTML="";
+    snap.forEach(async docSnap=>{
       const venta = docSnap.data();
-      if(venta.vendedorId !== auth.currentUser.uid) continue;
-
-      // Obtener nombre del vendedor
-      const vendedorDoc = await getDoc(doc(db,"usuarios",venta.vendedorId));
-      const vendedorName = vendedorDoc.exists() ? vendedorDoc.data().nombre : "N/A";
+      if(venta.vendedorId!==auth.currentUser.uid) return;
+      const pedidoId = docSnap.id;
 
       const card = document.createElement("div");
       card.className = "card";
 
-      const lineasHTML = venta.lineas.map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
+      const lineasHTML = venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
 
       card.innerHTML = `
         <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
-        <p><strong>Vendedor:</strong> ${vendedorName}</p>
-        <p><strong>Teléfono:</strong> ${venta.cliente.telefono || "-"}</p>
         <p><strong>Total:</strong> ₡${venta.total}</p>
         <ul>${lineasHTML}</ul>
-        <button class="btn-eliminar" onclick="eliminarPedido('${docSnap.id}')">
-          <i class="fa fa-trash"></i> Eliminar pedido
-        </button>
-      `;
 
+        <label>Estado:</label>
+        <select id="estado-${pedidoId}">
+          <option value="entrante" ${venta.estado==='entrante'?'selected':''}>Entrante</option>
+          <option value="en proceso" ${venta.estado==='en proceso'?'selected':''}>En Proceso</option>
+          <option value="listo" ${venta.estado==='listo'?'selected':''}>Listo</option>
+          <option value="atrasado" ${venta.estado==='atrasado'?'selected':''}>Atrasado</option>
+          <option value="entregado" ${venta.estado==='entregado'?'selected':''}>Entregado</option>
+        </select>
+
+        <button onclick="actualizarEstadoVendedor('${pedidoId}')">Actualizar</button>
+      `;
       pedidosContainer.appendChild(card);
-    }
+    });
   });
 }
 
-// =====================
-// ELIMINAR PEDIDO
-// =====================
-window.eliminarPedido = async (id) => {
-  if(confirm("Eliminar pedido?")){
-    await deleteDoc(doc(db,"ventas",id));
+// Vendedor solo puede cambiar LISTO → ENTREGADO
+window.actualizarEstadoVendedor = async (pedidoId)=>{
+  const estadoSelect = document.getElementById(`estado-${pedidoId}`);
+  const nuevoEstado = estadoSelect.value;
+  const docRef = doc(db, "ventas", pedidoId);
+  const docSnap = await getDoc(docRef);
+  const pedido = docSnap.data();
+
+  if(pedido.estado === 'listo' && nuevoEstado==='entregado'){
+    await updateDoc(docRef,{estado:'entregado'});
+    alert("Pedido marcado como ENTREGADO");
+  } else if(nuevoEstado !== 'entregado'){
+    await updateDoc(docRef,{estado:nuevoEstado});
+    alert("Estado actualizado");
+  } else {
+    alert("Solo puede marcar como ENTREGADO un pedido que esté LISTO");
   }
 };
