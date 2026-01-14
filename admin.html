@@ -2,69 +2,65 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel Administrador – App</title>
+  <title>Panel Admin – Pródigo Suelo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Estilos -->
+  
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 </head>
-
 <body>
-<h1>Panel Administrador</h1>
-<button id="btnLogout">Cerrar sesión</button>
+  <h1>Panel Administrador</h1>
+  <button id="btnLogout">Cerrar sesión</button>
 
-<!-- AGREGAR / EDITAR PRODUCTO -->
-<section>
-  <h2>Agregar / Editar producto</h2>
-  <input id="codigo" placeholder="Código">
-  <input id="nombre" placeholder="Nombre">
-  <input id="variedad" placeholder="Variedad (opcional)">
-  <input id="peso" type="number" placeholder="Peso en gramos">
-  <input id="precio" type="number" placeholder="Precio base">
-  <input id="precioIVA" type="number" placeholder="Precio con IVA 1%" readonly>
-  <button id="btnAgregar">Guardar</button>
-</section>
+  <!-- AGREGAR / EDITAR PRODUCTO -->
+  <section>
+    <h2>Agregar / Editar Producto</h2>
+    <input id="codigo" placeholder="Código">
+    <input id="nombre" placeholder="Nombre">
+    <input id="variedad" placeholder="Variedad (opcional)">
+    <input id="peso" type="number" placeholder="Peso en gramos">
+    <input id="precio" type="number" placeholder="Precio base">
+    <input id="precioIVA" type="number" placeholder="Precio con IVA 1%" readonly>
+    <button id="btnAgregar">Guardar</button>
+  </section>
 
-<!-- LISTA DE PRODUCTOS -->
-<section>
-  <h2>Productos</h2>
-  <div id="productosContainer" class="cards-container"></div>
-</section>
+  <!-- LISTA DE PRODUCTOS -->
+  <section>
+    <h2>Productos</h2>
+    <div id="productosContainer" class="cards-container"></div>
+  </section>
 
-<!-- AGREGAR CLIENTE -->
-<section>
-  <h2>Agregar Cliente</h2>
-  <input id="clienteNombre" placeholder="Nombre del cliente">
-  <input id="clienteTelefono" placeholder="Teléfono">
-  <select id="vendedorSelect"></select>
-  <button id="btnAgregarCliente">Guardar Cliente</button>
-</section>
+  <!-- AGREGAR CLIENTE -->
+  <section>
+    <h2>Agregar Cliente</h2>
+    <input id="clienteNombre" placeholder="Nombre del cliente">
+    <input id="clienteTelefono" placeholder="Teléfono">
+    <select id="vendedorSelect"></select>
+    <button id="btnAgregarCliente">Guardar Cliente</button>
+  </section>
 
-<!-- LISTA DE CLIENTES -->
-<section>
-  <h2>Clientes</h2>
-  <div id="clientesContainer" class="cards-container"></div>
-</section>
+  <!-- LISTA DE CLIENTES -->
+  <section>
+    <h2>Clientes</h2>
+    <div id="clientesContainer" class="cards-container"></div>
+  </section>
 
-<!-- ESTADÍSTICAS DE VENTAS -->
-<section>
-  <h2>Estadísticas Semanales</h2>
+  <!-- ESTADÍSTICAS POR RANGO DE FECHAS -->
+  <section>
+    <h2>Estadísticas por rango de fechas</h2>
+    <label>Fecha inicio:</label>
+    <input type="date" id="fechaInicio">
+    <label>Fecha fin:</label>
+    <input type="date" id="fechaFin">
+    <button id="btnFiltrarEstadisticas">Filtrar</button>
 
-  <label for="semanaSelect">Seleccione semana:</label>
-  <select id="semanaSelect"></select>
+    <div id="estadisticasContainer">
+      <p><strong>Total pedidos:</strong> 0</p>
+      <p><strong>Total gramos de café vendidos:</strong> 0</p>
+      <p><strong>Total en dinero:</strong> ₡0</p>
+    </div>
+  </section>
 
-  <div id="estadisticas">
-    <p>Total de pedidos: <span id="totalPedidos">0</span></p>
-    <p>Total gramos de café vendidos: <span id="totalGramos">0</span></p>
-    <p>Total en dinero: ₡<span id="totalDinero">0</span></p>
-  </div>
-
-  <div id="pedidosSemana" class="cards-container"></div>
-</section>
-
-
-<script type="module" src="js/admin.js"></script>
+  <script type="module" src="js/admin.js"></script>
 </body>
 </html>
-
