@@ -36,10 +36,12 @@ async function cargarProductos() {
     if(p.activo){
       const opt = document.createElement("option");
       opt.value = d.id;
-      opt.textContent = `${p.nombre} - ₡${p.precio} (Stock: ${p.stock})`;
+      opt.textContent = `${p.nombre} - ${p.peso}  - ₡${p.precio} (Stock: ${p.stock})`;
       opt.dataset.precio = p.precio;
       opt.dataset.stock = p.stock;
       opt.dataset.nombre = p.nombre;
+      opt.dataset.peso = p.peso; // esto es clave
+
       productoSelect.appendChild(opt);
     }
   });
@@ -168,4 +170,5 @@ function cargarPedidos(){
 window.eliminarPedido = async (id)=>{
   if(confirm("Eliminar pedido?")) await deleteDoc(doc(db,"ventas",id));
 };
+
 
