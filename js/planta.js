@@ -21,6 +21,7 @@ function getEstadoIcon(estado){
     case 'en proceso': return '⚙️';
     case 'listo': return '✅';
     case 'atrasado': return '⏰';
+    case 'entregado': return '📦';
     default: return '';
   }
 }
@@ -35,9 +36,7 @@ function cargarPedidos() {
       const pedido = docSnap.data();
       const pedidoId = docSnap.id;
 
-      // No mostrar entregados en planta
-      if(pedido.estado === "entregado") return;
-
+      // Mostrar todos los pedidos, incluso atrasados y listos
       const card = document.createElement("div");
       card.className = `card estado-${pedido.estado || 'entrante'}`;
       card.id = `pedido-${pedidoId}`;
@@ -46,6 +45,7 @@ function cargarPedidos() {
 
       card.innerHTML = `
         <p><strong>${getEstadoIcon(pedido.estado)} Cliente:</strong> ${pedido.cliente.nombre}</p>
+        <p><strong>Vendedor:</strong> ${pedido.vendedorId}</p>
         <p><strong>Total:</strong> ₡${pedido.total}</p>
         <ul>${lineasHTML}</ul>
 
@@ -58,21 +58,26 @@ function cargarPedidos() {
         </select>
 
         <input type="text" id="comentario-${pedidoId}" placeholder="Motivo atraso" value="${pedido.comentario || ''}" ${pedido.estado!=='atrasado'?'disabled':''}>
-
         <button onclick="actualizarEstadoPlanta('${pedidoId}')">Actualizar</button>
       `;
 
       pedidosContainer.appendChild(card);
 
-      // Notificación visual y sonora para LISTO
+      // Generar notificación sonora y alerta para el vendedor si el estado cambia a LISTO
       if(pedido.estado==='listo' && !card.dataset.notificado){
-        alert(`Pedido listo: ${pedido.cliente.nombre}`);
         alertSound.play();
-        const notif = document.createElement('div');
-        notif.className = 'notificacion';
-        notif.textContent = 'Listo para entregar';
-        card.appendChild(notif);
         card.dataset.notificado = true;
+
+        // También se puede usar notificaciones del navegador:
+        if("Notification" in window && Notification.permission === "granted"){
+          new Notification(`Pedido listo: ${pedido.cliente.nombre}`, { body: "El pedido está listo para entregar." });
+        } else if("Notification" in window && Notification.permission !== "denied"){
+          Notification.requestPermission().then(permission => {
+            if(permission === "granted"){
+              new Notification(`Pedido listo: ${pedido.cliente.nombre}`, { body: "El pedido está listo para entregar." });
+            }
+          });
+        }
       }
     });
   });
