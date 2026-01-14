@@ -169,7 +169,7 @@ function cargarPedidos(){
 
         <label>Estado:</label>
         <select id="estado-${pedidoId}">
-        
+        <option value="entregado" ${venta.listo==='entregado'?'selected':''}>Listo</option>
           <option value="entregado" ${venta.estado==='entregado'?'selected':''}>Entregado</option>
         </select>
 
@@ -224,4 +224,5 @@ window.eliminarPedido = async (pedidoId)=>{
     alert("Pedido eliminado");
   }
 };
+
 
