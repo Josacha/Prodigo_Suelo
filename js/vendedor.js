@@ -1,6 +1,6 @@
 import { auth, db } from "./firebase.js";
 import {
-  collection, getDocs, addDoc, doc, getDoc, updateDoc, onSnapshot
+  collection, getDocs, addDoc, doc, getDoc, updateDoc, onSnapshot, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -170,5 +170,6 @@ function cargarPedidos(){
 window.eliminarPedido = async (id)=>{
   if(confirm("Eliminar pedido?")) await deleteDoc(doc(db,"ventas",id));
 };
+
 
 
