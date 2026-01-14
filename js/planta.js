@@ -28,13 +28,14 @@ function getEstadoIcon(estado){
 function cargarPedidos() {
   const ventasRef = collection(db, "ventas");
 
-  onSnapshot(ventasRef, async snapshot => {
+  onSnapshot(ventasRef, snapshot => {
     pedidosContainer.innerHTML = "";
 
     snapshot.forEach(async docSnap => {
       const pedido = docSnap.data();
       const pedidoId = docSnap.id;
 
+      // No mostrar entregados en planta
       if(pedido.estado === "entregado") return;
 
       const card = document.createElement("div");
