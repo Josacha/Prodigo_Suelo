@@ -1,21 +1,45 @@
-import { auth, db } from "./firebase.js";
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// =====================
+// admin.js – Panel Administrador
+// =====================
 
-// 🔒 PROTECCIÓN
-onAuthStateChanged(auth, (user) => {
+import { auth, db } from "./firebase.js";
+import {
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  doc,
+  updateDoc,
+  deleteDoc,
+  getDocs,
+  getDoc,
+  Timestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// =====================
+// PROTECCIÓN
+// =====================
+onAuthStateChanged(auth, async (user) => {
   if (!user) location.href = "index.html";
-  cargarVendedores();
+
+  await cargarVendedores();
   cargarClientes();
 });
 
-// 🚪 LOGOUT
+// =====================
+// LOGOUT
+// =====================
 document.getElementById("btnLogout").addEventListener("click", async () => {
   await signOut(auth);
   location.href = "index.html";
 });
 
+// =====================
 // PRODUCTOS
+// =====================
 const codigo = document.getElementById("codigo");
 const nombre = document.getElementById("nombre");
 const variedad = document.getElementById("variedad");
@@ -24,16 +48,18 @@ const precio = document.getElementById("precio");
 const precioIVA = document.getElementById("precioIVA");
 const productosContainer = document.getElementById("productosContainer");
 
-let editId = null;
+let editProductoId = null;
 
 // CALCULAR IVA 1%
 precio.addEventListener("input", () => {
-  precioIVA.value = (Number(precio.value) * 1.01).toFixed(2);
+  const val = Number(precio.value);
+  if (!isNaN(val)) precioIVA.value = (val * 1.01).toFixed(2);
 });
 
 // AGREGAR / EDITAR PRODUCTO
 document.getElementById("btnAgregar").addEventListener("click", async () => {
-  if (!codigo.value || !nombre.value || !peso.value || !precio.value) return alert("Complete todos los campos");
+  if (!codigo.value || !nombre.value || !peso.value || !precio.value)
+    return alert("Complete todos los campos");
 
   const data = {
     codigo: codigo.value,
@@ -45,19 +71,21 @@ document.getElementById("btnAgregar").addEventListener("click", async () => {
     activo: true
   };
 
-  if (editId) {
-    await updateDoc(doc(db, "productos", editId), data);
-    editId = null;
+  if (editProductoId) {
+    await updateDoc(doc(db, "productos", editProductoId), data);
+    editProductoId = null;
   } else {
     await addDoc(collection(db, "productos"), data);
   }
 
+  // Limpiar inputs
   codigo.value = nombre.value = variedad.value = peso.value = precio.value = precioIVA.value = "";
 });
 
 // LISTAR PRODUCTOS
 onSnapshot(collection(db, "productos"), (snap) => {
   productosContainer.innerHTML = "";
+
   snap.forEach(docSnap => {
     const p = docSnap.data();
     const card = document.createElement("div");
@@ -78,9 +106,10 @@ onSnapshot(collection(db, "productos"), (snap) => {
   });
 });
 
+// EDITAR PRODUCTO
 window.editarProducto = async (id) => {
-  const docSnap = await getDocs(doc(db, "productos", id));
-  const p = (await doc(db, "productos", id).get()).data();
+  const docSnap = await getDoc(doc(db, "productos", id));
+  const p = docSnap.data();
 
   codigo.value = p.codigo;
   nombre.value = p.nombre;
@@ -89,33 +118,51 @@ window.editarProducto = async (id) => {
   precio.value = p.precio;
   precioIVA.value = p.precioIVA;
 
-  editId = id;
+  editProductoId = id;
 };
 
+// ELIMINAR PRODUCTO
 window.eliminarProducto = async (id) => {
-  if(confirm("¿Eliminar este producto?")) await deleteDoc(doc(db, "productos", id));
+  if (confirm("¿Eliminar este producto?")) {
+    await deleteDoc(doc(db, "productos", id));
+  }
 };
 
+// =====================
 // CLIENTES
+// =====================
 const clienteNombre = document.getElementById("clienteNombre");
 const clienteTelefono = document.getElementById("clienteTelefono");
 const vendedorSelect = document.getElementById("vendedorSelect");
 const clientesContainer = document.getElementById("clientesContainer");
 
+let editClienteId = null;
+
 // AGREGAR CLIENTE
 document.getElementById("btnAgregarCliente").addEventListener("click", async () => {
-  if (!clienteNombre.value || !vendedorSelect.value) return alert("Complete los campos");
+  if (!clienteNombre.value || !vendedorSelect.value)
+    return alert("Complete los campos");
 
-  await addDoc(collection(db, "clientes"), {
+  const data = {
     nombre: clienteNombre.value,
     telefono: clienteTelefono.value || null,
-    vendedorId: vendedorSelect.value
-  });
+    vendedorId: vendedorSelect.value,
+    fechaRegistro: Timestamp.now()
+  };
+
+  if (editClienteId) {
+    await updateDoc(doc(db, "clientes", editClienteId), data);
+    editClienteId = null;
+  } else {
+    await addDoc(collection(db, "clientes"), data);
+  }
 
   clienteNombre.value = clienteTelefono.value = "";
 });
 
+// =====================
 // CARGAR VENDEDORES
+// =====================
 async function cargarVendedores() {
   const snap = await getDocs(collection(db, "usuarios"));
   vendedorSelect.innerHTML = "<option value=''>Seleccione vendedor</option>";
@@ -125,20 +172,54 @@ async function cargarVendedores() {
   });
 }
 
+// =====================
 // LISTAR CLIENTES
+// =====================
 function cargarClientes() {
-  onSnapshot(collection(db, "clientes"), async (snap) => {
+  onSnapshot(collection(db, "clientes"), async (clientesSnap) => {
     clientesContainer.innerHTML = "";
-    snap.forEach(async docSnap => {
+
+    // Cargar todos los vendedores para mapear nombres
+    const vendedoresSnap = await getDocs(collection(db, "usuarios"));
+    const vendedoresMap = {};
+    vendedoresSnap.forEach(vSnap => {
+      const v = vSnap.data();
+      vendedoresMap[vSnap.id] = v.nombre;
+    });
+
+    clientesSnap.forEach(docSnap => {
       const c = docSnap.data();
       const card = document.createElement("div");
       card.className = "card";
       card.innerHTML = `
         <p><strong>Nombre:</strong> ${c.nombre}</p>
         <p><strong>Teléfono:</strong> ${c.telefono || "-"}</p>
-        <p><strong>Vendedor:</strong> ${vendedorSelect.options[vendedorSelect.selectedIndex]?.text || ""}</p>
+        <p><strong>Vendedor:</strong> ${vendedoresMap[c.vendedorId] || "Sin vendedor"}</p>
+        <div class="acciones">
+          <button class="btn-editar" onclick="editarCliente('${docSnap.id}')"><i class="fa fa-edit"></i></button>
+          <button class="btn-eliminar" onclick="eliminarCliente('${docSnap.id}')"><i class="fa fa-trash"></i></button>
+        </div>
       `;
       clientesContainer.appendChild(card);
     });
   });
 }
+
+// EDITAR CLIENTE
+window.editarCliente = async (id) => {
+  const docSnap = await getDoc(doc(db, "clientes", id));
+  const c = docSnap.data();
+
+  clienteNombre.value = c.nombre;
+  clienteTelefono.value = c.telefono || "";
+  vendedorSelect.value = c.vendedorId || "";
+
+  editClienteId = id;
+};
+
+// ELIMINAR CLIENTE
+window.eliminarCliente = async (id) => {
+  if (confirm("¿Eliminar este cliente?")) {
+    await deleteDoc(doc(db, "clientes", id));
+  }
+};
