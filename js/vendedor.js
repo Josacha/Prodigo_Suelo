@@ -158,7 +158,13 @@ function cargarPedidos(){
 
       card.innerHTML = `
         <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
-        <p><strong>Vendedor:</strong> ${vendedorId}</p>
+      
+  const vendedorDoc = await getDoc(doc(db, "usuarios", venta.vendedorId));
+const vendedorData = vendedorDoc.data();
+const vendedorNombre = vendedorData ? vendedorData.nombre : "Desconocido";
+
+<p><strong>Vendedor:</strong> ${vendedorNombre}</p>
+
         <p><strong>Total:</strong> ₡${venta.total}</p>
         <ul>${lineasHTML}</ul>
 
@@ -220,3 +226,4 @@ window.eliminarPedido = async (pedidoId)=>{
     alert("Pedido eliminado");
   }
 };
+
