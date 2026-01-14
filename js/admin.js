@@ -1,45 +1,29 @@
-// =====================
-// admin.js – Panel Administrador
-// =====================
-
 import { auth, db } from "./firebase.js";
-import {
-  onAuthStateChanged,
-  signOut
+import { 
+  onAuthStateChanged, 
+  signOut 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import {
-  collection,
-  addDoc,
-  onSnapshot,
-  doc,
-  updateDoc,
-  deleteDoc,
-  getDocs,
-  getDoc,
-  Timestamp
+
+import { 
+  collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, getDocs 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// =====================
-// PROTECCIÓN
-// =====================
+// 🔒 PROTECCIÓN
 onAuthStateChanged(auth, async (user) => {
   if (!user) location.href = "index.html";
-
   await cargarVendedores();
   cargarClientes();
 });
 
-// =====================
-// LOGOUT
-// =====================
+// 🚪 LOGOUT
 document.getElementById("btnLogout").addEventListener("click", async () => {
   await signOut(auth);
   location.href = "index.html";
 });
 
-// =====================
+// ==========================
 // PRODUCTOS
-// =====================
+// ==========================
 const codigo = document.getElementById("codigo");
 const nombre = document.getElementById("nombre");
 const variedad = document.getElementById("variedad");
@@ -48,17 +32,16 @@ const precio = document.getElementById("precio");
 const precioIVA = document.getElementById("precioIVA");
 const productosContainer = document.getElementById("productosContainer");
 
-let editProductoId = null;
+let editId = null;
 
 // CALCULAR IVA 1%
 precio.addEventListener("input", () => {
-  const val = Number(precio.value);
-  if (!isNaN(val)) precioIVA.value = (val * 1.01).toFixed(2);
+  precioIVA.value = (Number(precio.value) * 1.01).toFixed(2);
 });
 
 // AGREGAR / EDITAR PRODUCTO
 document.getElementById("btnAgregar").addEventListener("click", async () => {
-  if (!codigo.value || !nombre.value || !peso.value || !precio.value)
+  if (!codigo.value || !nombre.value || !peso.value || !precio.value) 
     return alert("Complete todos los campos");
 
   const data = {
@@ -71,9 +54,9 @@ document.getElementById("btnAgregar").addEventListener("click", async () => {
     activo: true
   };
 
-  if (editProductoId) {
-    await updateDoc(doc(db, "productos", editProductoId), data);
-    editProductoId = null;
+  if (editId) {
+    await updateDoc(doc(db, "productos", editId), data);
+    editId = null;
   } else {
     await addDoc(collection(db, "productos"), data);
   }
@@ -85,7 +68,6 @@ document.getElementById("btnAgregar").addEventListener("click", async () => {
 // LISTAR PRODUCTOS
 onSnapshot(collection(db, "productos"), (snap) => {
   productosContainer.innerHTML = "";
-
   snap.forEach(docSnap => {
     const p = docSnap.data();
     const card = document.createElement("div");
@@ -106,10 +88,10 @@ onSnapshot(collection(db, "productos"), (snap) => {
   });
 });
 
-// EDITAR PRODUCTO
+// FUNCIONES PRODUCTOS
 window.editarProducto = async (id) => {
-  const docSnap = await getDoc(doc(db, "productos", id));
-  const p = docSnap.data();
+  const docSnap = await getDocs(doc(db, "productos", id));
+  const p = (await doc(db, "productos", id).get()).data();
 
   codigo.value = p.codigo;
   nombre.value = p.nombre;
@@ -118,19 +100,17 @@ window.editarProducto = async (id) => {
   precio.value = p.precio;
   precioIVA.value = p.precioIVA;
 
-  editProductoId = id;
+  editId = id;
 };
 
-// ELIMINAR PRODUCTO
 window.eliminarProducto = async (id) => {
-  if (confirm("¿Eliminar este producto?")) {
+  if(confirm("¿Eliminar este producto?")) 
     await deleteDoc(doc(db, "productos", id));
-  }
 };
 
-// =====================
+// ==========================
 // CLIENTES
-// =====================
+// ==========================
 const clienteNombre = document.getElementById("clienteNombre");
 const clienteTelefono = document.getElementById("clienteTelefono");
 const vendedorSelect = document.getElementById("vendedorSelect");
@@ -138,16 +118,14 @@ const clientesContainer = document.getElementById("clientesContainer");
 
 let editClienteId = null;
 
-// AGREGAR CLIENTE
+// AGREGAR / EDITAR CLIENTE
 document.getElementById("btnAgregarCliente").addEventListener("click", async () => {
-  if (!clienteNombre.value || !vendedorSelect.value)
-    return alert("Complete los campos");
+  if (!clienteNombre.value || !vendedorSelect.value) return alert("Complete los campos");
 
   const data = {
     nombre: clienteNombre.value,
     telefono: clienteTelefono.value || null,
-    vendedorId: vendedorSelect.value,
-    fechaRegistro: Timestamp.now()
+    vendedorId: vendedorSelect.value
   };
 
   if (editClienteId) {
@@ -160,9 +138,7 @@ document.getElementById("btnAgregarCliente").addEventListener("click", async () 
   clienteNombre.value = clienteTelefono.value = "";
 });
 
-// =====================
-// CARGAR VENDEDORES
-// =====================
+// CARGAR VENDEDORES EN SELECT
 async function cargarVendedores() {
   const snap = await getDocs(collection(db, "usuarios"));
   vendedorSelect.innerHTML = "<option value=''>Seleccione vendedor</option>";
@@ -172,14 +148,12 @@ async function cargarVendedores() {
   });
 }
 
-// =====================
 // LISTAR CLIENTES
-// =====================
 function cargarClientes() {
   onSnapshot(collection(db, "clientes"), async (clientesSnap) => {
     clientesContainer.innerHTML = "";
 
-    // Cargar todos los vendedores para mapear nombres
+    // Obtener todos los vendedores para mostrar nombre correcto
     const vendedoresSnap = await getDocs(collection(db, "usuarios"));
     const vendedoresMap = {};
     vendedoresSnap.forEach(vSnap => {
@@ -205,21 +179,19 @@ function cargarClientes() {
   });
 }
 
-// EDITAR CLIENTE
+// FUNCIONES CLIENTES
 window.editarCliente = async (id) => {
-  const docSnap = await getDoc(doc(db, "clientes", id));
-  const c = docSnap.data();
+  const cSnap = await getDocs(doc(db, "clientes", id));
+  const c = (await doc(db, "clientes", id).get()).data();
 
   clienteNombre.value = c.nombre;
   clienteTelefono.value = c.telefono || "";
-  vendedorSelect.value = c.vendedorId || "";
+  vendedorSelect.value = c.vendedorId;
 
   editClienteId = id;
 };
 
-// ELIMINAR CLIENTE
 window.eliminarCliente = async (id) => {
-  if (confirm("¿Eliminar este cliente?")) {
+  if(confirm("¿Eliminar este cliente?"))
     await deleteDoc(doc(db, "clientes", id));
-  }
 };
