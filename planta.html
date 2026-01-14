@@ -14,20 +14,38 @@
       background-color: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;
     }
     #logoutBtn:hover { background-color: #a71d2a; }
-    .cards-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+
+    .cards-container {
+      display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;
+    }
+
     .card {
       width: 300px; border-radius: 15px; padding: 15px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: relative; color: white;
-      display: flex; flex-direction: column; gap: 10px; transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: relative;
+      display: flex; flex-direction: column; gap: 10px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      color: white; font-weight: bold;
     }
+
     .card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
-    /* Gradientes y contraste de texto */
-    .estado-entrante { background: linear-gradient(135deg, #fbc531, #f39c12); color: #000; }
-    .estado-en-proceso { background: linear-gradient(135deg, #3498db, #2980b9); color: #fff; }
-    .estado-listo { background: linear-gradient(135deg, #2ecc71, #27ae60); color: #fff; }
-    .estado-atrasado { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; }
-    .notificacion { position: absolute; top: 10px; right: 10px; background: #ffd700; color: black; padding: 5px 10px; border-radius: 8px; font-weight: bold; animation: pulse 1s infinite; }
-    @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.1);opacity:0.8} }
+
+    /* Colores de estados con buen contraste */
+    .estado-entrante { background: #f1c40f; color: #000; }      /* amarillo */
+    .estado-en-proceso { background: #2980b9; color: #fff; }    /* azul oscuro */
+    .estado-listo { background: #27ae60; color: #fff; }          /* verde */
+    .estado-atrasado { background: #c0392b; color: #fff; }       /* rojo */
+    .estado-entregado { background: #7f8c8d; color: #fff; }      /* gris */
+
+    .notificacion {
+      position: absolute; top: 10px; right: 10px;
+      background: #ffd700; color: black; padding: 5px 10px; border-radius: 8px;
+      font-weight: bold; animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%,100%{transform:scale(1);opacity:1}
+      50%{transform:scale(1.1);opacity:0.8}
+    }
+
     .card input, .card select, .card button { padding: 7px; border-radius: 5px; border: none; width: 100%; font-size: 14px; }
     .card select { cursor: pointer; }
     .card button { background-color: rgba(0,0,0,0.2); color: white; font-weight: bold; cursor: pointer; transition: background 0.2s; }
