@@ -1,11 +1,11 @@
 /* ===============================
-   PRÓDIGO SUELO – SISTEMA INTERNO
-   Paleta y estilo premium
+   PRÓDIGO SUELO – PANEL ADMIN
+   Estilo premium y responsive
    =============================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@400;500&display=swap');
 
-/* 🎨 COLORES BASE */
+/* 🎨 COLORES */
 :root {
   --verde-oscuro: #1f3b36;
   --verde-medio: #2f5d50;
@@ -16,9 +16,10 @@
 
   --blanco: #ffffff;
   --gris: #eaeaea;
+  --rojo: #e74c3c;
 }
 
-/* 🧱 RESET BÁSICO */
+/* 🧱 RESET */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -31,56 +32,45 @@ body {
   background: linear-gradient(135deg, #162b27, var(--verde-oscuro));
   color: var(--blanco);
   min-height: 100vh;
+  padding: 20px;
 }
 
-/* 📦 CONTENEDOR */
-.container {
-  max-width: 900px;
-  margin: 40px auto;
-  background: var(--verde-medio);
-  padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
-}
-
-/* 🔠 TÍTULOS */
+/* 🔠 TITULOS */
 h1 {
   font-family: 'Montserrat', sans-serif;
   font-size: 32px;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   letter-spacing: 1px;
+  text-align: center;
 }
 
 h2 {
   font-family: 'Montserrat', sans-serif;
   font-size: 22px;
-  margin: 25px 0 12px;
+  margin: 20px 0 10px;
   color: var(--naranja);
 }
 
-/* 🧾 FORMULARIOS */
-form {
-  margin-top: 15px;
+/* 📦 SECCIONES / CARDS */
+section {
+  background: var(--verde-medio);
+  padding: 20px;
+  margin-bottom: 25px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
 }
 
-label {
-  font-size: 14px;
-  margin-bottom: 5px;
-  display: block;
-}
-
-input,
-select {
+/* 🧾 INPUTS Y SELECT */
+input, select {
   width: 100%;
   padding: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   border-radius: 8px;
   border: none;
   font-size: 15px;
 }
 
-input:focus,
-select:focus {
+input:focus, select:focus {
   outline: 2px solid var(--naranja);
 }
 
@@ -102,22 +92,6 @@ button:hover {
   transform: translateY(-2px);
 }
 
-/* ICONOS ELIMINAR */
-.btn-eliminar {
-  background-color: transparent;
-  border: none;
-  color: #e74c3c; /* rojo para eliminar */
-  cursor: pointer;
-  font-size: 1.5rem; /* más grande para tocar en móvil */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-eliminar:hover {
-  color: #c0392b;
-}
-
 /* 🚪 LOGOUT */
 #btnLogout {
   background: transparent;
@@ -134,53 +108,59 @@ table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 15px;
-  background: var(--verde-oscuro);
   border-radius: 12px;
   overflow: hidden;
-  display: block; /* para scroll en móvil */
+  display: block; /* scroll en móvil */
+  background: var(--verde-oscuro);
 }
 
 thead {
   background: var(--naranja);
 }
 
-th,
-td {
+th, td {
   padding: 12px;
   text-align: left;
   font-size: 14px;
-  min-width: 100px; /* para evitar celdas demasiado estrechas */
+  min-width: 100px;
 }
 
 tbody tr:nth-child(even) {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* SCROLL HORIZONTAL PARA TABLAS EN MÓVIL */
+/* SCROLL TABLAS MÓVIL */
 table tbody,
 table thead {
   display: block;
 }
 
 table tbody {
-  max-height: 300px; /* altura limitada con scroll */
+  max-height: 300px;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-table thead tr {
+table thead tr, table tbody tr {
   display: table;
   width: 100%;
   table-layout: fixed;
 }
 
-table tbody tr {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
+/* ICONOS ELIMINAR / EDITAR */
+.btn-eliminar, .btn-editar {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: var(--rojo);
 }
 
-/* 🏷️ BADGE */
+.btn-eliminar:hover, .btn-editar:hover {
+  color: var(--naranja);
+}
+
+/* 🏷️ BADGES */
 .badge {
   display: inline-block;
   background: var(--naranja);
@@ -192,9 +172,8 @@ table tbody tr {
 
 /* 📱 RESPONSIVE */
 @media (max-width: 768px) {
-  .container {
-    margin: 20px;
-    padding: 22px;
+  body {
+    padding: 10px;
   }
 
   h1 {
@@ -203,11 +182,9 @@ table tbody tr {
 
   h2 {
     font-size: 18px;
-    margin: 18px 0 10px;
   }
 
-  input,
-  select {
+  input, select {
     padding: 10px;
     font-size: 14px;
   }
@@ -217,19 +194,16 @@ table tbody tr {
     font-size: 14px;
   }
 
-  th,
-  td {
+  th, td {
     padding: 8px;
     font-size: 13px;
   }
 
-  .btn-eliminar {
-    font-size: 1.8rem; /* más grande para tocar en móvil */
+  .btn-eliminar, .btn-editar {
+    font-size: 1.8rem;
   }
 
-  /* Aumenta altura de filas de la tabla para dedos */
-  table tbody tr,
-  table thead tr {
+  table tbody tr, table thead tr {
     height: 50px;
   }
 }
