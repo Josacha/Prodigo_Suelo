@@ -199,8 +199,9 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
 
   estadisticasContainer.innerHTML = `
     <p><strong>Total pedidos:</strong> ${totalPedidos}</p>
-    <p><strong>Total gramos de café vendidos:</strong> ${totalGramos}</p>
+    <p><strong>Total Kilogramos de café vendidos:</strong> ${totalGramos}</p>
     <p><strong>Total en dinero:</strong> ₡${totalDinero}</p>
   `;
 };
+
 
