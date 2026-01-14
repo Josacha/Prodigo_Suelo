@@ -16,19 +16,31 @@
 <!-- AGREGAR CLIENTE -->
 <section>
   <h2>Agregar Cliente</h2>
-  <input type="text" id="clienteNombre" placeholder="Nombre cliente">
-  <input type="text" id="clienteTelefono" placeholder="Teléfono">
-  <select id="vendedorSelect"></select> <!-- Para asignar vendedor -->
+  <input type="text" id="clienteNombre" placeholder="Nombre del cliente">
+  <input type="text" id="clienteTelefono" placeholder="Teléfono del cliente">
+
+  <select id="vendedorSelect">
+    <option value="">Seleccione vendedor</option>
+  </select>
+
   <button id="btnAgregarCliente">Agregar Cliente</button>
 </section>
 
 <!-- AGREGAR AL CARRITO -->
 <section>
   <h2>Agregar al carrito</h2>
-  <select id="productoSelect"></select>
+  
+  <select id="clienteSelect">
+    <option value="">Seleccione cliente</option>
+  </select>
+
+  <select id="productoSelect">
+    <option value="">Seleccione producto</option>
+  </select>
+  
   <input type="number" id="cantidadInput" placeholder="Cantidad">
-  <select id="clienteSelect"></select> <!-- Selección de cliente para el pedido -->
-  <button id="agregarLineaBtn">Agregar</button>
+
+  <button id="agregarLineaBtn">Agregar al carrito</button>
 </section>
 
 <!-- CARRITO -->
