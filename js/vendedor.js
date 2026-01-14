@@ -1,6 +1,6 @@
 import { auth, db } from "./firebase.js";
 import {
-  collection, getDocs, addDoc, doc, getDoc, updateDoc, onSnapshot, 
+  collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -172,6 +172,7 @@ function cargarPedidos(){
         </select>
 
         <button onclick="actualizarEstadoVendedor('${pedidoId}')">Actualizar</button>
+        <button onclick="eliminarPedido('${pedidoId}')" class="btn-eliminar">Eliminar pedido</button>
       `;
 
       pedidosContainer.appendChild(card);
@@ -181,7 +182,6 @@ function cargarPedidos(){
         sonidoPedidoListo.play();
         card.dataset.notificado = true;
 
-        // Notificación de ventana
         if("Notification" in window && Notification.permission === "granted"){
           new Notification(`Pedido LISTO: ${venta.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
         } else if("Notification" in window && Notification.permission !== "denied"){
@@ -210,5 +210,13 @@ window.actualizarEstadoVendedor = async (pedidoId)=>{
     alert("Estado actualizado");
   } else {
     alert("Solo puede marcar como ENTREGADO un pedido que esté LISTO");
+  }
+};
+
+// ELIMINAR PEDIDO
+window.eliminarPedido = async (pedidoId)=>{
+  if(confirm("¿Desea eliminar este pedido?")){
+    await deleteDoc(doc(db,"ventas",pedidoId));
+    alert("Pedido eliminado");
   }
 };
