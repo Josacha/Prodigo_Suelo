@@ -142,24 +142,25 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
 };
 
 // CARGAR PEDIDOS REGISTRADOS
-function cargarPedidos(){
+async function cargarPedidos(){
   pedidosContainer.innerHTML="";
-  onSnapshot(collection(db,"ventas"),snap=>{
+  onSnapshot(collection(db,"ventas"), async snap => {
     pedidosContainer.innerHTML="";
-    snap.forEach(async docSnap=>{
+
+    for(const docSnap of snap.docs){
       const venta = docSnap.data();
-      if(venta.vendedorId!==vendedorId) return;
       const pedidoId = docSnap.id;
+      if(venta.vendedorId !== vendedorId) continue;
 
       const card = document.createElement("div");
-      card.className = "card";
-
-      const lineasHTML = venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
+      card.className = `card estado-${venta.estado || 'entrante'}`;
 
       // Obtener nombre del vendedor
       const vendedorDoc = await getDoc(doc(db, "usuarios", venta.vendedorId));
       const vendedorData = vendedorDoc.data();
       const vendedorNombre = vendedorData ? vendedorData.nombre : "Desconocido";
+
+      const lineasHTML = venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
 
       card.innerHTML = `
         <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
@@ -168,24 +169,38 @@ function cargarPedidos(){
         <ul>${lineasHTML}</ul>
 
         <label>Estado:</label>
-       <select id="estado-${pedidoId}">
-  <option value="entrante" ${venta.estado==='entrante'?'selected':''}>Entrante</option>
-  <option value="en proceso" ${venta.estado==='en proceso'?'selected':''}>En Proceso</option>
-  <option value="listo" ${venta.estado==='listo'?'selected':''}>Listo</option>
-  <option value="atrasado" ${venta.estado==='atrasado'?'selected':''}>Atrasado</option>
-  <option value="entregado" ${venta.estado==='entregado'?'selected':''}>Entregado</option>
-</select>
+        <select id="estado-${pedidoId}">
+          <option value="entrante" ${venta.estado==='entrante'?'selected':''}>Entrante</option>
+          <option value="en proceso" ${venta.estado==='en proceso'?'selected':''}>En Proceso</option>
+          <option value="listo" ${venta.estado==='listo'?'selected':''}>Listo</option>
+          <option value="atrasado" ${venta.estado==='atrasado'?'selected':''}>Atrasado</option>
+          <option value="entregado" ${venta.estado==='entregado'?'selected':''}>Entregado</option>
+        </select>
 
         <button onclick="actualizarEstadoVendedor('${pedidoId}')">Actualizar</button>
         <button onclick="eliminarPedido('${pedidoId}')" class="btn-eliminar">Eliminar pedido</button>
       `;
 
       pedidosContainer.appendChild(card);
-    });
+
+      // Notificación si el pedido está listo
+      if(venta.estado==='listo' && !card.dataset.notificado){
+        sonidoPedidoListo.play();
+        card.dataset.notificado = true;
+
+        if("Notification" in window && Notification.permission === "granted"){
+          new Notification(`Pedido LISTO: ${venta.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
+        } else if("Notification" in window && Notification.permission !== "denied"){
+          Notification.requestPermission().then(p => {
+            if(p==="granted") new Notification(`Pedido LISTO: ${venta.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
+          });
+        }
+      }
+    }
   });
 }
 
-// ACTUALIZAR ESTADO VENDEDOR (Listo → Entregado y notificación LISTO)
+// ACTUALIZAR ESTADO VENDEDOR
 window.actualizarEstadoVendedor = async (pedidoId)=>{
   const estadoSelect = document.getElementById(`estado-${pedidoId}`);
   const nuevoEstado = estadoSelect.value;
@@ -227,7 +242,3 @@ window.eliminarPedido = async (pedidoId)=>{
     alert("Pedido eliminado");
   }
 };
-
-
-
-
