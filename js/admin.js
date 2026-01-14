@@ -1,24 +1,24 @@
 import { auth, db } from "./firebase.js";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  where,
+  Timestamp,
+  doc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🔒 PROTECCIÓN
-onAuthStateChanged(auth, (user) => {
-  if (!user) location.href = "index.html";
-  cargarVendedores();
-  cargarClientes();
-  cargarEstadisticasDefault();
-});
+// =====================
+// VARIABLES
+// =====================
 
-// 🚪 LOGOUT
-document.getElementById("btnLogout").addEventListener("click", async () => {
-  await signOut(auth);
-  location.href = "index.html";
-});
-
-// =======================
-// PRODUCTOS
-// =======================
+// Productos
 const codigo = document.getElementById("codigo");
 const nombre = document.getElementById("nombre");
 const variedad = document.getElementById("variedad");
@@ -26,15 +26,51 @@ const peso = document.getElementById("peso");
 const precio = document.getElementById("precio");
 const precioIVA = document.getElementById("precioIVA");
 const productosContainer = document.getElementById("productosContainer");
-
 let editId = null;
 
-// Calcular IVA
+// Clientes
+const clienteNombre = document.getElementById("clienteNombre");
+const clienteTelefono = document.getElementById("clienteTelefono");
+const vendedorSelect = document.getElementById("vendedorSelect");
+const clientesContainer = document.getElementById("clientesContainer");
+
+// Estadísticas
+const semanaSelect = document.getElementById("semanaSelect");
+const totalPedidos = document.getElementById("totalPedidos");
+const totalGramos = document.getElementById("totalGramos");
+const totalDinero = document.getElementById("totalDinero");
+const pedidosSemana = document.getElementById("pedidosSemana");
+
+let ventasData = [];
+
+// =====================
+// PROTECCIÓN
+// =====================
+onAuthStateChanged(auth, async (user) => {
+  if (!user) location.href = "index.html";
+  await cargarVendedores();
+  cargarClientes();
+  cargarVentas();
+});
+
+// =====================
+// LOGOUT
+// =====================
+document.getElementById("btnLogout").addEventListener("click", async () => {
+  await signOut(auth);
+  location.href = "index.html";
+});
+
+// =====================
+// PRODUCTOS
+// =====================
+
+// Calcular IVA 1%
 precio.addEventListener("input", () => {
   precioIVA.value = (Number(precio.value) * 1.01).toFixed(2);
 });
 
-// Agregar / Editar producto
+// Agregar / Editar Producto
 document.getElementById("btnAgregar").addEventListener("click", async () => {
   if (!codigo.value || !nombre.value || !peso.value || !precio.value) return alert("Complete todos los campos");
 
@@ -58,7 +94,7 @@ document.getElementById("btnAgregar").addEventListener("click", async () => {
   codigo.value = nombre.value = variedad.value = peso.value = precio.value = precioIVA.value = "";
 });
 
-// Listar productos
+// Listar Productos
 onSnapshot(collection(db, "productos"), (snap) => {
   productosContainer.innerHTML = "";
   snap.forEach(docSnap => {
@@ -82,9 +118,8 @@ onSnapshot(collection(db, "productos"), (snap) => {
 });
 
 window.editarProducto = async (id) => {
-  const pDoc = await getDocs(collection(db, "productos"));
-  const pSnap = doc(db, "productos", id);
-  const p = (await pSnap.get()).data();
+  const docSnap = await getDoc(doc(db, "productos", id));
+  const p = docSnap.data();
 
   codigo.value = p.codigo;
   nombre.value = p.nombre;
@@ -100,14 +135,9 @@ window.eliminarProducto = async (id) => {
   if(confirm("¿Eliminar este producto?")) await deleteDoc(doc(db, "productos", id));
 };
 
-// =======================
+// =====================
 // CLIENTES
-// =======================
-const clienteNombre = document.getElementById("clienteNombre");
-const clienteTelefono = document.getElementById("clienteTelefono");
-const vendedorSelect = document.getElementById("vendedorSelect");
-const clientesContainer = document.getElementById("clientesContainer");
-
+// =====================
 document.getElementById("btnAgregarCliente").addEventListener("click", async () => {
   if (!clienteNombre.value || !vendedorSelect.value) return alert("Complete los campos");
 
@@ -120,6 +150,7 @@ document.getElementById("btnAgregarCliente").addEventListener("click", async () 
   clienteNombre.value = clienteTelefono.value = "";
 });
 
+// Cargar Vendedores
 async function cargarVendedores() {
   const snap = await getDocs(collection(db, "usuarios"));
   vendedorSelect.innerHTML = "<option value=''>Seleccione vendedor</option>";
@@ -129,23 +160,15 @@ async function cargarVendedores() {
   });
 }
 
+// Listar Clientes
 function cargarClientes() {
   onSnapshot(collection(db, "clientes"), async (snap) => {
     clientesContainer.innerHTML = "";
-    snap.forEach(async docSnap => {
+    snap.forEach(docSnap => {
       const c = docSnap.data();
-      let vendedorNombre = "N/A";
-
-      // Obtener nombre del vendedor
-      if (c.vendedorId) {
-        const vSnap = await getDocs(collection(db, "usuarios"));
-        vSnap.forEach(vDoc => {
-          if (vDoc.id === c.vendedorId) vendedorNombre = vDoc.data().nombre;
-        });
-      }
-
       const card = document.createElement("div");
       card.className = "card";
+      const vendedorNombre = vendedorSelect.querySelector(`option[value="${c.vendedorId}"]`)?.textContent || "Desconocido";
       card.innerHTML = `
         <p><strong>Nombre:</strong> ${c.nombre}</p>
         <p><strong>Teléfono:</strong> ${c.telefono || "-"}</p>
@@ -156,66 +179,92 @@ function cargarClientes() {
   });
 }
 
-// =======================
-// ESTADÍSTICAS
-// =======================
-const fechaInicioEl = document.getElementById("fechaInicio");
-const fechaFinEl = document.getElementById("fechaFin");
-const btnFiltrar = document.getElementById("btnFiltrarEstadisticas");
+// =====================
+// ESTADÍSTICAS SEMANALES
+// =====================
+async function cargarVentas() {
+  const snap = await getDocs(collection(db, "ventas"));
+  ventasData = [];
 
-const totalPedidosEl = document.getElementById("totalPedidos");
-const totalGramosEl = document.getElementById("totalGramos");
-const totalDineroEl = document.getElementById("totalDinero");
-
-async function cargarEstadisticas(fechaInicio = null, fechaFin = null) {
-  const ventasSnap = await getDocs(collection(db, "ventas"));
-
-  let totalPedidos = 0;
-  let totalGramos = 0;
-  let totalDinero = 0;
-
-  ventasSnap.forEach(docSnap => {
+  snap.forEach(docSnap => {
     const v = docSnap.data();
-    const fecha = v.fecha?.toDate ? v.fecha.toDate() : new Date();
+    v.id = docSnap.id;
+    v.fecha = v.fecha.toDate ? v.fecha.toDate() : new Date(v.fecha.seconds*1000);
+    ventasData.push(v);
+  });
 
-    if ((!fechaInicio || fecha >= fechaInicio) && (!fechaFin || fecha <= fechaFin)) {
-      totalPedidos += 1;
+  cargarSemanas();
+  filtrarSemana();
+}
 
-      if (v.lineas && Array.isArray(v.lineas)) {
-        v.lineas.forEach(l => {
-          if (l.peso) totalGramos += l.peso * l.cantidad;
-        });
-      }
+// Obtener número de semana
+function getWeekNumber(date) {
+  const d = new Date(date.getTime());
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() + 4 - (d.getDay()||7));
+  const yearStart = new Date(d.getFullYear(),0,1);
+  const weekNo = Math.ceil((((d - yearStart)/86400000)+1)/7);
+  return { week: weekNo, year: d.getFullYear() };
+}
 
-      totalDinero += v.total || 0;
+// Cargar semanas al select
+function cargarSemanas() {
+  const semanas = {};
+  ventasData.forEach(v=>{
+    const w = getWeekNumber(v.fecha);
+    const key = `${w.year}-W${w.week}`;
+    if(!semanas[key]) semanas[key] = true;
+  });
+
+  semanaSelect.innerHTML = "";
+  Object.keys(semanas).sort().reverse().forEach(key=>{
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = key;
+    semanaSelect.appendChild(opt);
+  });
+}
+
+// Filtrar semana y mostrar totales
+semanaSelect.addEventListener("change", filtrarSemana);
+
+function filtrarSemana() {
+  const selected = semanaSelect.value;
+  if(!selected) return;
+
+  let totalP = 0;
+  let totalG = 0;
+  let totalD = 0;
+
+  pedidosSemana.innerHTML = "";
+
+  ventasData.forEach(v=>{
+    const w = getWeekNumber(v.fecha);
+    const key = `${w.year}-W${w.week}`;
+    if(key === selected){
+      totalP += 1;
+      v.lineas.forEach(l=>{
+        totalG += l.peso || 0; 
+      });
+      totalD += v.total;
+
+      const card = document.createElement("div");
+      card.className = "card";
+      const lineasHTML = v.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
+      card.innerHTML = `
+        <p><strong>Cliente:</strong> ${v.cliente.nombre}</p>
+        <p><strong>Fecha:</strong> ${v.fecha.toLocaleDateString()}</p>
+        <ul>${lineasHTML}</ul>
+        <p><strong>Total:</strong> ₡${v.total}</p>
+      `;
+      pedidosSemana.appendChild(card);
     }
   });
 
-  totalPedidosEl.textContent = totalPedidos;
-  totalGramosEl.textContent = totalGramos.toFixed(0);
-  totalDineroEl.textContent = totalDinero.toFixed(2);
+  totalPedidos.textContent = totalP;
+  totalGramos.textContent = totalG;
+  totalDinero.textContent = totalD;
 }
 
-btnFiltrar.addEventListener("click", () => {
-  const inicio = fechaInicioEl.value ? new Date(fechaInicioEl.value) : null;
-  const fin = fechaFinEl.value ? new Date(fechaFinEl.value) : null;
-  if (fin) fin.setHours(23, 59, 59, 999);
-  cargarEstadisticas(inicio, fin);
-});
-
-function cargarEstadisticasDefault() {
-  const hoy = new Date();
-  const hace7Dias = new Date();
-  hace7Dias.setDate(hoy.getDate() - 7);
-  fechaInicioEl.valueAsDate = hace7Dias;
-  fechaFinEl.valueAsDate = hoy;
-  cargarEstadisticas(hace7Dias, hoy);
-}
-
-// Actualizar estadísticas en tiempo real
-onSnapshot(collection(db, "ventas"), () => {
-  const inicio = fechaInicioEl.value ? new Date(fechaInicioEl.value) : null;
-  const fin = fechaFinEl.value ? new Date(fechaFinEl.value) : null;
-  if (fin) fin.setHours(23, 59, 59, 999);
-  cargarEstadisticas(inicio, fin);
-});
+// Inicializar
+cargarVentas();
