@@ -67,13 +67,14 @@ document.getElementById("agregarLineaBtn").onclick = () => {
   if(!opt || cantidad <=0 || cantidad>Number(opt.dataset.stock)) return alert("Cantidad inválida o stock insuficiente");
   const subtotal = cantidad*Number(opt.dataset.precio);
 
-  carrito.push({
-    productoId: opt.value,
-    nombre: opt.dataset.nombre,
-    precio: Number(opt.dataset.precio),
-    cantidad,
-    subtotal
-  });
+ carrito.push({
+  productoId: opt.value,
+  nombre: opt.dataset.nombre,
+  precio: Number(opt.dataset.precio),
+  cantidad,
+  peso: Number(opt.dataset.peso), // importante para estadísticas
+  subtotal
+});
   cantidadInput.value="";
   renderCarrito();
 };
@@ -167,3 +168,4 @@ function cargarPedidos(){
 window.eliminarPedido = async (id)=>{
   if(confirm("Eliminar pedido?")) await deleteDoc(doc(db,"ventas",id));
 };
+
