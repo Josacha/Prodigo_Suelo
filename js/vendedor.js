@@ -1,4 +1,4 @@
-import { auth, db } from "./base.js";
+import { auth, db } from "./firebase.js";
 
 import {
   collection,
@@ -139,3 +139,4 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 });
+
