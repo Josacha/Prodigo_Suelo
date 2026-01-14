@@ -1,5 +1,5 @@
 import { auth, db } from "./firebase.js";
-import { collection, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, onSnapshot, updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const pedidosContainer = document.getElementById("pedidosContainer");
@@ -36,14 +36,17 @@ function cargarPedidos() {
       const pedido = docSnap.data();
       const pedidoId = docSnap.id;
 
+      // Traer el nombre del vendedor
+      const vendedorDoc = await getDoc(doc(db, "usuarios", pedido.vendedorId));
+      const vendedorData = vendedorDoc.data();
+      const vendedorNombre = vendedorData ? vendedorData.nombre : "Desconocido";
+
       const card = document.createElement("div");
       card.className = `card estado-${pedido.estado || 'entrante'}`;
       card.id = `pedido-${pedidoId}`;
 
       const lineasHTML = pedido.lineas.map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
-const vendedorDoc = await getDoc(doc(db, "usuarios", venta.vendedorId));
-  const vendedorData = vendedorDoc.data();
-  const vendedorNombre = vendedorData ? vendedorData.nombre : "Desconocido";
+
       card.innerHTML = `
         <p><strong>${getEstadoIcon(pedido.estado)} Cliente:</strong> ${pedido.cliente.nombre}</p>
         <p><strong>Vendedor:</strong> ${vendedorNombre}</p>
@@ -68,6 +71,14 @@ const vendedorDoc = await getDoc(doc(db, "usuarios", venta.vendedorId));
       if(pedido.estado==='listo' && !card.dataset.notificado){
         alertSound.play();
         card.dataset.notificado = true;
+        // Notificación en ventana
+        if("Notification" in window && Notification.permission === "granted"){
+          new Notification(`Pedido LISTO: ${pedido.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
+        } else if("Notification" in window && Notification.permission !== "denied"){
+          Notification.requestPermission().then(p => {
+            if(p==="granted") new Notification(`Pedido LISTO: ${pedido.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
+          });
+        }
       }
     });
   });
@@ -86,4 +97,3 @@ window.actualizarEstadoPlanta = async (pedidoId) => {
     comentario: nuevoEstado==='atrasado' ? comentario : ''
   });
 };
-
