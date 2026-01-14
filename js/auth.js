@@ -30,15 +30,29 @@ if (form) {
 
 // REDIRECCIÓN POR ROL
 onAuthStateChanged(auth, async (user) => {
-  if (!user) return;
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
 
   const ref = doc(db, "usuarios", user.uid);
   const snap = await getDoc(ref);
+
   if (!snap.exists()) return;
 
   const rol = snap.data().rol;
+  const page = location.pathname.split("/").pop();
 
-  if (rol === "Vendedor") location.href = "vendedor.html";
-  if (rol === "Planta") location.href = "planta.html";
-  if (rol === "administrador") location.href = "admin.html";
+  // 🔐 REDIRECCIÓN POR ROL (SIN LOOP)
+  if (rol === "Vendedor" && page !== "vendedor.html") {
+    window.location.href = "vendedor.html";
+  }
+
+  if (rol === "administrador" && page !== "admin.html") {
+    window.location.href = "admin.html";
+  }
+
+  if (rol === "Planta" && page !== "planta.html") {
+    window.location.href = "planta.html";
+  }
 });
