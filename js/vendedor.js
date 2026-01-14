@@ -4,21 +4,24 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+// =====================
+// VARIABLES
+// =====================
 let carrito = [];
+let pedidoClienteId = null;
+let pedidoVendedorId = null;
 
-// =====================
 // ELEMENTOS HTML
-// =====================
 const productoSelect = document.getElementById("productoSelect");
 const cantidadInput = document.getElementById("cantidadInput");
 const carritoBody = document.getElementById("carritoBody");
 const totalPedido = document.getElementById("totalPedido");
 const clienteSelect = document.getElementById("clienteSelect");
+const vendedorSelect = document.getElementById("vendedorSelect");
 const pedidosContainer = document.getElementById("pedidosContainer");
 
 const clienteNombre = document.getElementById("clienteNombre");
 const clienteTelefono = document.getElementById("clienteTelefono");
-const vendedorSelect = document.getElementById("vendedorSelect");
 const btnAgregarCliente = document.getElementById("btnAgregarCliente");
 
 // =====================
@@ -44,7 +47,7 @@ document.getElementById("logoutBtn").onclick = async () => {
 // CARGAR PRODUCTOS
 // =====================
 async function cargarProductos() {
-  productoSelect.innerHTML = "";
+  productoSelect.innerHTML = "<option value=''>Seleccione producto</option>";
   const snap = await getDocs(collection(db, "productos"));
   snap.forEach(d => {
     const p = d.data();
@@ -62,19 +65,23 @@ async function cargarProductos() {
 }
 
 // =====================
-// CARGAR CLIENTES
+// CARGAR CLIENTES SIN REPETIDOS
 // =====================
 async function cargarClientes() {
   clienteSelect.innerHTML = "<option value=''>Seleccione cliente</option>";
   const snap = await getDocs(collection(db, "clientes"));
+
+  const idsAgregados = new Set();
+
   snap.forEach(docSnap => {
     const c = docSnap.data();
     // Solo clientes del vendedor logueado
-    if(c.vendedorId === auth.currentUser.uid){
+    if(!idsAgregados.has(docSnap.id)){
       const opt = document.createElement("option");
       opt.value = docSnap.id;
       opt.textContent = `${c.nombre} (${c.telefono || "-"})`;
       clienteSelect.appendChild(opt);
+      idsAgregados.add(docSnap.id);
     }
   });
 }
@@ -83,8 +90,8 @@ async function cargarClientes() {
 // CARGAR VENDEDORES
 // =====================
 async function cargarVendedores() {
-  const snap = await getDocs(collection(db, "usuarios"));
   vendedorSelect.innerHTML = "<option value=''>Seleccione vendedor</option>";
+  const snap = await getDocs(collection(db, "usuarios"));
   snap.forEach(docSnap => {
     const u = docSnap.data();
     vendedorSelect.innerHTML += `<option value="${docSnap.id}">${u.nombre}</option>`;
@@ -106,6 +113,7 @@ btnAgregarCliente.onclick = async () => {
   clienteNombre.value = "";
   clienteTelefono.value = "";
   vendedorSelect.value = "";
+
   cargarClientes();
 };
 
@@ -113,6 +121,19 @@ btnAgregarCliente.onclick = async () => {
 // AGREGAR PRODUCTO AL CARRITO
 // =====================
 document.getElementById("agregarLineaBtn").onclick = () => {
+  const clienteId = clienteSelect.value;
+  const vendedorId = vendedorSelect.value;
+
+  if(!clienteId || !vendedorId) return alert("Seleccione cliente y vendedor antes de agregar productos");
+
+  // Bloquear cliente y vendedor si ya hay al menos un producto
+  if(carrito.length === 0){
+    pedidoClienteId = clienteId;
+    pedidoVendedorId = vendedorId;
+    clienteSelect.disabled = true;
+    vendedorSelect.disabled = true;
+  }
+
   const opt = productoSelect.selectedOptions[0];
   const cantidad = Number(cantidadInput.value);
   if(!opt || cantidad <= 0 || cantidad > Number(opt.dataset.stock)) 
@@ -160,24 +181,30 @@ function renderCarrito() {
 window.eliminarLinea = (i) => {
   carrito.splice(i,1);
   renderCarrito();
+  // Si se eliminan todos los productos desbloquea cliente y vendedor
+  if(carrito.length === 0){
+    clienteSelect.disabled = false;
+    vendedorSelect.disabled = false;
+    pedidoClienteId = null;
+    pedidoVendedorId = null;
+  }
 };
 
 // =====================
 // CONFIRMAR PEDIDO
 // =====================
 document.getElementById("confirmarVentaBtn").onclick = async () => {
-  const clienteId = clienteSelect.value;
-  if(!clienteId) return alert("Seleccione un cliente");
+  if(!pedidoClienteId || !pedidoVendedorId) return alert("No hay cliente o vendedor seleccionado");
   if(carrito.length === 0) return alert("Carrito vacío");
 
-  const clienteDoc = await getDoc(doc(db,"clientes",clienteId));
+  const clienteDoc = await getDoc(doc(db,"clientes",pedidoClienteId));
   const clienteData = clienteDoc.data();
 
   const total = carrito.reduce((s,l) => s + l.subtotal, 0);
 
   await addDoc(collection(db,"ventas"),{
-    vendedorId: auth.currentUser.uid,
-    cliente: {id:clienteId, nombre:clienteData.nombre, telefono:clienteData.telefono || null},
+    vendedorId: pedidoVendedorId,
+    cliente: {id:pedidoClienteId, nombre:clienteData.nombre, telefono:clienteData.telefono || null},
     fecha: new Date(),
     total,
     lineas: carrito
@@ -190,9 +217,16 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
     await updateDoc(ref,{stock: snap.data().stock - l.cantidad});
   }
 
+  // Limpiar carrito y desbloquear cliente y vendedor
   carrito = [];
   renderCarrito();
+  clienteSelect.disabled = false;
+  vendedorSelect.disabled = false;
   clienteSelect.value = "";
+  vendedorSelect.value = "";
+  pedidoClienteId = null;
+  pedidoVendedorId = null;
+
   alert("Pedido registrado");
   cargarPedidos();
 };
