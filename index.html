@@ -2,20 +2,59 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Login - Pródigo Suelo</title>
+  <title>Panel Administrador | Pródigo Suelo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" href="data:,">
+
+  <!-- ESTILOS -->
+  <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
 
-  <h2>Ingreso al sistema</h2>
+  <div class="container">
 
-  <form id="loginForm">
-    <input type="email" id="email" placeholder="Correo" required><br><br>
-    <input type="password" id="password" placeholder="Contraseña" required><br><br>
-    <button type="submit">Entrar</button>
-  </form>
+    <!-- HEADER -->
+    <h1>Panel Administrador</h1>
+    <span class="badge">Inventario & Ofertas</span>
 
-  <script type="module" src="js/auth.js"></script>
-</body>
-</html>
+    <button id="btnLogout">Cerrar sesión</button>
+
+    <!-- ===================== -->
+    <!-- 📦 INVENTARIO -->
+    <!-- ===================== -->
+    <h2>Agregar producto al inventario</h2>
+
+    <form id="formProducto">
+      <label for="codigo">Código</label>
+      <input id="codigo" placeholder="Ej: PS-29">
+
+      <label for="nombre">Nombre del producto</label>
+      <input id="nombre" placeholder="Ej: Café 1 Kg">
+
+      <label for="precio">Precio (₡)</label>
+      <input id="precio" type="number" placeholder="Ej: 6200">
+
+      <label for="stock">Stock disponible</label>
+      <input id="stock" type="number" placeholder="Ej: 200">
+
+      <button type="button" id="btnAgregar">Guardar producto</button>
+    </form>
+
+    <!-- ===================== -->
+    <!-- 📊 LISTADO -->
+    <!-- ===================== -->
+    <h2>Productos registrados</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Precio</th>
+          <th>Stock</th>
+        </tr>
+      </thead>
+      <tbody id="tablaProductos"></tbody>
+    </table>
+
+    <!-- ===================== -
