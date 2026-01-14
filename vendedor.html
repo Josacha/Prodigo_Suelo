@@ -2,85 +2,50 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel del Vendedor</title>
+  <title>Vendedor – Pródigo Suelo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
-
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 </head>
-
 <body>
 
-<header class="panel-header">
-  <h1>Ventas</h1>
-  <button id="logoutBtn">Cerrar sesión</button>
-</header>
+<h1>Vendedor – Pródigo Suelo</h1>
+<button id="logoutBtn">Cerrar sesión</button>
 
-<main class="panel-container">
-
-  <!-- CLIENTE -->
-  <!-- Seleccionar cliente -->
+<!-- AGREGAR AL CARRITO -->
 <section>
-  <h2>Cliente</h2>
-  <select id="clienteSelect">
-    <option value="">Seleccione cliente</option>
-  </select>
+  <h2>Agregar al carrito</h2>
+  <select id="productoSelect"></select>
+  <input type="number" id="cantidadInput" placeholder="Cantidad">
+  <select id="clienteSelect"></select>
+  <button id="agregarLineaBtn">Agregar</button>
 </section>
-  <!-- AGREGAR PRODUCTO -->
-  <section class="card">
-    <h2>Agregar producto</h2>
 
-    <select id="productoSelect"></select>
-
-    <input type="number" id="cantidadInput" min="1" placeholder="Cantidad">
-
-    <button id="agregarLineaBtn">Agregar</button>
-  </section>
-
-  <!-- CARRITO -->
-  <section class="card">
-    <h2>Pedido</h2>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Cant.</th>
-          <th>Subtotal</th>
-        </tr>
-      </thead>
-      <tbody id="carritoBody"></tbody>
-    </table>
-
-    <h3>Total: ₡<span id="totalPedido">0</span></h3>
-
-    <button id="confirmarVentaBtn">Confirmar pedido</button>
-  </section>
-
-  <!-- PEDIDOS REALIZADOS -->
-<section class="card">
-  <h2>Pedidos realizados</h2>
+<!-- CARRITO -->
+<section>
+  <h2>Carrito</h2>
   <table>
     <thead>
       <tr>
-        <th>Cliente</th>
-        <th>Fecha</th>
-        <th>Total</th>
-        <th>Productos</th>
+        <th>Producto</th>
+        <th>Cantidad</th>
+        <th>Subtotal</th>
+        <th>Acción</th>
       </tr>
     </thead>
-    <tbody id="pedidosBody"></tbody>
+    <tbody id="carritoBody"></tbody>
   </table>
+  <p>Total: ₡<span id="totalPedido">0</span></p>
+  <button id="confirmarVentaBtn">Confirmar pedido</button>
 </section>
 
-
-</main>
+<!-- PEDIDOS REGISTRADOS -->
+<section>
+  <h2>Pedidos Registrados</h2>
+  <div id="pedidosContainer" class="cards-container"></div>
+</section>
 
 <script type="module" src="js/vendedor.js"></script>
-<script type="module" src="js/auth.js"></script>
-
 </body>
 </html>
-
-
-
