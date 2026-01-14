@@ -1,11 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@400;500&display=swap');
-
 /* ===============================
    PRÓDIGO SUELO – PANEL ADMIN
-   Estilo premium, cards + tablas
+   Estilo premium y responsive con cards
    =============================== */
 
-/* 🎨 COLORES BASE */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@400;500&display=swap');
+
+/* 🎨 COLORES */
 :root {
   --verde-oscuro: #1f3b36;
   --verde-medio: #2f5d50;
@@ -103,6 +103,59 @@ button:hover {
   background: var(--naranja);
 }
 
+/* =======================
+   CARDS PARA PRODUCTOS Y CLIENTES
+======================= */
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 15px;
+}
+
+.card {
+  background: var(--verde-oscuro);
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+}
+
+.card p {
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* ICONOS ELIMINAR / EDITAR */
+.btn-eliminar, .btn-editar {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.3rem;
+  color: var(--rojo);
+  transition: color 0.2s ease;
+}
+
+.btn-eliminar:hover, .btn-editar:hover {
+  color: var(--naranja);
+}
+
+/* ESTADÍSTICAS */
+section p span {
+  color: var(--naranja);
+  font-weight: 700;
+}
+
 /* 🏷️ BADGES */
 .badge {
   display: inline-block;
@@ -113,92 +166,39 @@ button:hover {
   font-weight: 600;
 }
 
-/* 📊 TABLAS */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 15px;
-  border-radius: 12px;
-  overflow: hidden;
-  display: block; /* scroll en móvil */
-  background: var(--verde-oscuro);
-}
-
-thead {
-  background: var(--naranja);
-}
-
-th, td {
-  padding: 12px;
-  text-align: left;
-  font-size: 14px;
-  min-width: 100px;
-}
-
-tbody tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-/* SCROLL TABLAS MÓVIL */
-table tbody,
-table thead {
-  display: block;
-}
-
-table tbody {
-  max-height: 300px;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-table thead tr, table tbody tr {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
-}
-
-/* 🃏 CARDS (para productos y clientes) */
-.cards-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.card {
-  background: var(--verde-oscuro);
-  padding: 12px;
-  border-radius: 10px;
-  width: calc(50% - 10px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.card p { margin: 2px 0; font-size: 14px; }
-
-/* BOTONES CARD */
-.card .acciones { margin-top: 8px; display: flex; gap: 10px; }
-.btn-editar, .btn-eliminar {
-  flex: 1;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 1.5rem;
-  color: var(--naranja);
-}
-.btn-editar:hover { color: var(--blanco); }
-.btn-eliminar:hover { color: var(--rojo); }
-
 /* 📱 RESPONSIVE */
 @media (max-width: 768px) {
-  body { padding: 10px; }
-  h1 { font-size: 26px; }
-  h2 { font-size: 18px; }
-  input, select { padding: 10px; font-size: 14px; }
-  button { padding: 10px 14px; font-size: 14px; }
-  th, td { padding: 8px; font-size: 13px; }
-  .btn-eliminar, .btn-editar { font-size: 1.8rem; }
-  table tbody tr, table thead tr { height: 50px; }
-  .card { width: 100%; }
+  body {
+    padding: 10px;
+  }
+
+  h1 {
+    font-size: 26px;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  input, select {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  button {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  .btn-eliminar, .btn-editar {
+    font-size: 1.5rem;
+  }
+
+  .cards-container {
+    grid-template-columns: 1fr;
+  }
+
+  section p {
+    font-size: 13px;
+  }
 }
