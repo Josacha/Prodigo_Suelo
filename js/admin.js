@@ -1,24 +1,22 @@
 import { auth, db } from "./firebase.js";
 import {
   collection,
-  addDoc,
   getDocs,
+  addDoc,
+  doc,
   getDoc,
   updateDoc,
   deleteDoc,
   onSnapshot,
   query,
   where,
-  Timestamp,
-  doc
+  Timestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // =====================
 // VARIABLES
 // =====================
-
-// Productos
 const codigo = document.getElementById("codigo");
 const nombre = document.getElementById("nombre");
 const variedad = document.getElementById("variedad");
@@ -26,31 +24,27 @@ const peso = document.getElementById("peso");
 const precio = document.getElementById("precio");
 const precioIVA = document.getElementById("precioIVA");
 const productosContainer = document.getElementById("productosContainer");
-let editId = null;
 
-// Clientes
 const clienteNombre = document.getElementById("clienteNombre");
 const clienteTelefono = document.getElementById("clienteTelefono");
 const vendedorSelect = document.getElementById("vendedorSelect");
 const clientesContainer = document.getElementById("clientesContainer");
 
-// Estadísticas
-const semanaSelect = document.getElementById("semanaSelect");
-const totalPedidos = document.getElementById("totalPedidos");
-const totalGramos = document.getElementById("totalGramos");
-const totalDinero = document.getElementById("totalDinero");
-const pedidosSemana = document.getElementById("pedidosSemana");
+const estadisticasContainer = document.getElementById("estadisticasContainer");
+const fechaInicioInput = document.getElementById("fechaInicio");
+const fechaFinInput = document.getElementById("fechaFin");
 
-let ventasData = [];
+let editId = null;
 
 // =====================
 // PROTECCIÓN
 // =====================
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, (user) => {
   if (!user) location.href = "index.html";
-  await cargarVendedores();
+  cargarVendedores();
   cargarClientes();
-  cargarVentas();
+  listarProductos();
+  listarEstadisticas(); // estadísticas iniciales (sin filtro)
 });
 
 // =====================
@@ -62,15 +56,15 @@ document.getElementById("btnLogout").addEventListener("click", async () => {
 });
 
 // =====================
-// PRODUCTOS
+// CALCULAR IVA 1%
 // =====================
-
-// Calcular IVA 1%
 precio.addEventListener("input", () => {
   precioIVA.value = (Number(precio.value) * 1.01).toFixed(2);
 });
 
-// Agregar / Editar Producto
+// =====================
+// AGREGAR / EDITAR PRODUCTO
+// =====================
 document.getElementById("btnAgregar").addEventListener("click", async () => {
   if (!codigo.value || !nombre.value || !peso.value || !precio.value) return alert("Complete todos los campos");
 
@@ -94,28 +88,32 @@ document.getElementById("btnAgregar").addEventListener("click", async () => {
   codigo.value = nombre.value = variedad.value = peso.value = precio.value = precioIVA.value = "";
 });
 
-// Listar Productos
-onSnapshot(collection(db, "productos"), (snap) => {
-  productosContainer.innerHTML = "";
-  snap.forEach(docSnap => {
-    const p = docSnap.data();
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `
-      <p><strong>Código:</strong> ${p.codigo}</p>
-      <p><strong>Nombre:</strong> ${p.nombre}</p>
-      <p><strong>Variedad:</strong> ${p.variedad || "-"}</p>
-      <p><strong>Peso:</strong> ${p.peso} g</p>
-      <p><strong>Precio:</strong> ₡${p.precio}</p>
-      <p><strong>Precio c/IVA:</strong> ₡${p.precioIVA}</p>
-      <div class="acciones">
-        <button class="btn-editar" onclick="editarProducto('${docSnap.id}')"><i class="fa fa-edit"></i></button>
-        <button class="btn-eliminar" onclick="eliminarProducto('${docSnap.id}')"><i class="fa fa-trash"></i></button>
-      </div>
-    `;
-    productosContainer.appendChild(card);
+// =====================
+// LISTAR PRODUCTOS
+// =====================
+function listarProductos() {
+  onSnapshot(collection(db, "productos"), (snap) => {
+    productosContainer.innerHTML = "";
+    snap.forEach(docSnap => {
+      const p = docSnap.data();
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <p><strong>Código:</strong> ${p.codigo}</p>
+        <p><strong>Nombre:</strong> ${p.nombre}</p>
+        <p><strong>Variedad:</strong> ${p.variedad || "-"}</p>
+        <p><strong>Peso:</strong> ${p.peso} g</p>
+        <p><strong>Precio:</strong> ₡${p.precio}</p>
+        <p><strong>Precio c/IVA:</strong> ₡${p.precioIVA}</p>
+        <div class="acciones">
+          <button class="btn-editar" onclick="editarProducto('${docSnap.id}')"><i class="fa fa-edit"></i></button>
+          <button class="btn-eliminar" onclick="eliminarProducto('${docSnap.id}')"><i class="fa fa-trash"></i></button>
+        </div>
+      `;
+      productosContainer.appendChild(card);
+    });
   });
-});
+}
 
 window.editarProducto = async (id) => {
   const docSnap = await getDoc(doc(db, "productos", id));
@@ -132,7 +130,7 @@ window.editarProducto = async (id) => {
 };
 
 window.eliminarProducto = async (id) => {
-  if(confirm("¿Eliminar este producto?")) await deleteDoc(doc(db, "productos", id));
+  if (confirm("¿Eliminar este producto?")) await deleteDoc(doc(db, "productos", id));
 };
 
 // =====================
@@ -150,7 +148,6 @@ document.getElementById("btnAgregarCliente").addEventListener("click", async () 
   clienteNombre.value = clienteTelefono.value = "";
 });
 
-// Cargar Vendedores
 async function cargarVendedores() {
   const snap = await getDocs(collection(db, "usuarios"));
   vendedorSelect.innerHTML = "<option value=''>Seleccione vendedor</option>";
@@ -160,15 +157,17 @@ async function cargarVendedores() {
   });
 }
 
-// Listar Clientes
 function cargarClientes() {
   onSnapshot(collection(db, "clientes"), async (snap) => {
     clientesContainer.innerHTML = "";
-    snap.forEach(docSnap => {
+    snap.forEach(async docSnap => {
       const c = docSnap.data();
+      // buscar nombre del vendedor
+      const vendedorDoc = await getDoc(doc(db, "usuarios", c.vendedorId));
+      const vendedorNombre = vendedorDoc.exists() ? vendedorDoc.data().nombre : "Desconocido";
+
       const card = document.createElement("div");
       card.className = "card";
-      const vendedorNombre = vendedorSelect.querySelector(`option[value="${c.vendedorId}"]`)?.textContent || "Desconocido";
       card.innerHTML = `
         <p><strong>Nombre:</strong> ${c.nombre}</p>
         <p><strong>Teléfono:</strong> ${c.telefono || "-"}</p>
@@ -180,91 +179,49 @@ function cargarClientes() {
 }
 
 // =====================
-// ESTADÍSTICAS SEMANALES
+// ESTADÍSTICAS
 // =====================
-async function cargarVentas() {
-  const snap = await getDocs(collection(db, "ventas"));
-  ventasData = [];
+async function listarEstadisticas(fechaInicio = null, fechaFin = null) {
+  const ventasCol = collection(db, "ventas");
+  let q = collection(db, "ventas");
+
+  // Filtrar por rango de fechas
+  if (fechaInicio && fechaFin) {
+    const start = Timestamp.fromDate(new Date(fechaInicio));
+    const end = Timestamp.fromDate(new Date(fechaFin + "T23:59:59")); // incluir día completo
+    q = query(ventasCol, where("fecha", ">=", start), where("fecha", "<=", end));
+  }
+
+  const snap = await getDocs(q);
+
+  let totalPedidos = 0;
+  let totalGramos = 0;
+  let totalDinero = 0;
 
   snap.forEach(docSnap => {
     const v = docSnap.data();
-    v.id = docSnap.id;
-    v.fecha = v.fecha.toDate ? v.fecha.toDate() : new Date(v.fecha.seconds*1000);
-    ventasData.push(v);
+    totalPedidos++;
+    v.lineas.forEach(l => {
+      totalGramos += l.peso * l.cantidad;
+    });
+    totalDinero += v.total;
   });
 
-  cargarSemanas();
-  filtrarSemana();
+  // Renderizar
+  if (!estadisticasContainer) return;
+  estadisticasContainer.innerHTML = `
+    <p><strong>Total pedidos:</strong> ${totalPedidos}</p>
+    <p><strong>Total gramos:</strong> ${totalGramos} g</p>
+    <p><strong>Total dinero:</strong> ₡${totalDinero}</p>
+  `;
 }
 
-// Obtener número de semana
-function getWeekNumber(date) {
-  const d = new Date(date.getTime());
-  d.setHours(0,0,0,0);
-  d.setDate(d.getDate() + 4 - (d.getDay()||7));
-  const yearStart = new Date(d.getFullYear(),0,1);
-  const weekNo = Math.ceil((((d - yearStart)/86400000)+1)/7);
-  return { week: weekNo, year: d.getFullYear() };
-}
-
-// Cargar semanas al select
-function cargarSemanas() {
-  const semanas = {};
-  ventasData.forEach(v=>{
-    const w = getWeekNumber(v.fecha);
-    const key = `${w.year}-W${w.week}`;
-    if(!semanas[key]) semanas[key] = true;
-  });
-
-  semanaSelect.innerHTML = "";
-  Object.keys(semanas).sort().reverse().forEach(key=>{
-    const opt = document.createElement("option");
-    opt.value = key;
-    opt.textContent = key;
-    semanaSelect.appendChild(opt);
-  });
-}
-
-// Filtrar semana y mostrar totales
-semanaSelect.addEventListener("change", filtrarSemana);
-
-function filtrarSemana() {
-  const selected = semanaSelect.value;
-  if(!selected) return;
-
-  let totalP = 0;
-  let totalG = 0;
-  let totalD = 0;
-
-  pedidosSemana.innerHTML = "";
-
-  ventasData.forEach(v=>{
-    const w = getWeekNumber(v.fecha);
-    const key = `${w.year}-W${w.week}`;
-    if(key === selected){
-      totalP += 1;
-      v.lineas.forEach(l=>{
-        totalG += l.peso || 0; 
-      });
-      totalD += v.total;
-
-      const card = document.createElement("div");
-      card.className = "card";
-      const lineasHTML = v.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
-      card.innerHTML = `
-        <p><strong>Cliente:</strong> ${v.cliente.nombre}</p>
-        <p><strong>Fecha:</strong> ${v.fecha.toLocaleDateString()}</p>
-        <ul>${lineasHTML}</ul>
-        <p><strong>Total:</strong> ₡${v.total}</p>
-      `;
-      pedidosSemana.appendChild(card);
-    }
-  });
-
-  totalPedidos.textContent = totalP;
-  totalGramos.textContent = totalG;
-  totalDinero.textContent = totalD;
-}
-
-// Inicializar
-cargarVentas();
+// =====================
+// FILTRAR ESTADÍSTICAS
+// =====================
+document.getElementById("btnFiltrarEstadisticas")?.addEventListener("click", () => {
+  const inicio = fechaInicioInput.value;
+  const fin = fechaFinInput.value;
+  if (!inicio || !fin) return alert("Seleccione ambas fechas");
+  listarEstadisticas(inicio, fin);
+});
