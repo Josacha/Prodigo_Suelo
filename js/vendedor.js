@@ -155,10 +155,13 @@ function cargarPedidos(){
       card.className = "card";
 
       const lineasHTML = venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
-
+        // Obtener nombre del vendedor
+  const vendedorDoc = await getDoc(doc(db, "usuarios", venta.vendedorId));
+  const vendedorData = vendedorDoc.data();
+  const vendedorNombre = vendedorData ? vendedorData.nombre : "Desconocido
       card.innerHTML = `
         <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
-        <p><strong>Vendedor:</strong> ${vendedorId}</p>
+        <p><strong>Vendedor:</strong> ${vendedorNombre}</p>
         <p><strong>Total:</strong> ₡${venta.total}</p>
         <ul>${lineasHTML}</ul>
 
@@ -177,22 +180,18 @@ function cargarPedidos(){
 
       pedidosContainer.appendChild(card);
 
-      // Notificación cuando el pedido está LISTO
-      if(venta.estado === "listo" && !card.dataset.notificado){
-        sonidoPedidoListo.play();
-        card.dataset.notificado = true;
+       // Solo notificar si se pasa a LISTO
+  if(pedido.estado !== 'listo' && nuevoEstado === 'listo'){
+    sonidoPedidoListo.play();
 
-        if("Notification" in window && Notification.permission === "granted"){
-          new Notification(`Pedido LISTO: ${venta.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
-        } else if("Notification" in window && Notification.permission !== "denied"){
-          Notification.requestPermission().then(p => {
-            if(p==="granted") new Notification(`Pedido LISTO: ${venta.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
-          });
-        }
-      }
-    });
-  });
-}
+    if("Notification" in window && Notification.permission === "granted"){
+      new Notification(`Pedido LISTO: ${pedido.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
+    } else if("Notification" in window && Notification.permission !== "denied"){
+      Notification.requestPermission().then(p => {
+        if(p==="granted") new Notification(`Pedido LISTO: ${pedido.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
+      });
+    }
+  }
 
 // Vendedor solo puede cambiar LISTO → ENTREGADO
 window.actualizarEstadoVendedor = async (pedidoId)=>{
@@ -220,3 +219,4 @@ window.eliminarPedido = async (pedidoId)=>{
     alert("Pedido eliminado");
   }
 };
+
