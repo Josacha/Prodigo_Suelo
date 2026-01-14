@@ -13,31 +13,31 @@
 <h1>Vendedor – Pródigo Suelo</h1>
 <button id="logoutBtn">Cerrar sesión</button>
 
-<!-- AGREGAR CLIENTE -->
+<!-- AGREGAR CLIENTE NUEVO -->
 <section>
-  <h2>Agregar Cliente</h2>
+  <h2>Agregar Cliente Nuevo</h2>
   <input type="text" id="clienteNombre" placeholder="Nombre del cliente">
   <input type="text" id="clienteTelefono" placeholder="Teléfono del cliente">
-
-  <select id="vendedorSelect">
-    <option value="">Seleccione vendedor</option>
-  </select>
-
   <button id="btnAgregarCliente">Agregar Cliente</button>
 </section>
 
 <!-- AGREGAR AL CARRITO -->
 <section>
-  <h2>Agregar al carrito</h2>
-  
+  <h2>Agregar al Carrito</h2>
+
+  <!-- Selección de cliente y vendedor -->
   <select id="clienteSelect">
     <option value="">Seleccione cliente</option>
   </select>
 
+  <select id="vendedorSelect">
+    <option value="">Seleccione vendedor</option>
+  </select>
+
+  <!-- Selección de producto y cantidad -->
   <select id="productoSelect">
     <option value="">Seleccione producto</option>
   </select>
-  
   <input type="number" id="cantidadInput" placeholder="Cantidad">
 
   <button id="agregarLineaBtn">Agregar al carrito</button>
