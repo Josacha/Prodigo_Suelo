@@ -202,3 +202,69 @@ section p span {
     font-size: 13px;
   }
 }
+
+
+<style>
+.cards-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+.card {
+  border-radius: 10px;
+  padding: 15px;
+  width: 300px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+  position: relative;
+}
+.card:hover {
+  transform: scale(1.02);
+}
+
+/* Colores de fondo por estado */
+.estado-entrante { background-color: #fff3cd; color: #856404; }       /* amarillo fondo, texto marrón oscuro */
+.estado-en-proceso { background-color: #cce5ff; color: #004085; }    /* azul claro, texto azul oscuro */
+.estado-listo { background-color: #d4edda; color: #155724; }         /* verde claro, texto verde oscuro */
+.estado-atrasado { background-color: #f8d7da; color: #721c24; }      /* rojo claro, texto rojo oscuro */
+
+/* Notificación “Listo” */
+.notificacion {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: #ffc107;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-weight: bold;
+  animation: flash 1s infinite;
+}
+
+/* Animación de flash */
+@keyframes flash {
+  0%, 50%, 100% { opacity: 1; }
+  25%, 75% { opacity: 0; }
+}
+
+/* Inputs y selects dentro de la card */
+.card input, .card select, .card button {
+  margin-top: 5px;
+  margin-bottom: 5px;
+  width: 100%;
+  padding: 5px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+/* Botón actualizar */
+.card button {
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  border: none;
+}
+.card button:hover {
+  background-color: #0056b3;
+}
+</style>
+
