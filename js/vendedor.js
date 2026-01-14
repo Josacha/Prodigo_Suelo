@@ -37,7 +37,7 @@ const clienteTelefonoInput = document.getElementById("clienteTelefono");
 const pedidosBody = document.getElementById("pedidosBody");
 
 // =====================
-// PROTECCIÓN
+// PROTECCIÓN DE PÁGINA
 // =====================
 onAuthStateChanged(auth, async user => {
   if (!user) location.href = "index.html";
@@ -112,7 +112,11 @@ function renderCarrito() {
         <td>${l.nombre}</td>
         <td>${l.cantidad}</td>
         <td>₡${l.subtotal}</td>
-        <td><button onclick="eliminarDelCarrito(${index})">Eliminar</button></td>
+        <td>
+          <button class="btn-eliminar" onclick="eliminarDelCarrito(${index})">
+            <i class="fa fa-trash"></i>
+          </button>
+        </td>
       </tr>
     `;
   });
@@ -193,7 +197,11 @@ async function cargarPedidos() {
         <td>${fecha}</td>
         <td>₡${venta.total}</td>
         <td>${lineas}</td>
-        <td><button onclick="eliminarPedido('${id}')">Eliminar</button></td>
+        <td>
+          <button class="btn-eliminar" onclick="eliminarPedido('${id}')">
+            <i class="fa fa-trash"></i>
+          </button>
+        </td>
       </tr>
     `;
   });
