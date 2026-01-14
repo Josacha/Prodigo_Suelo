@@ -5,6 +5,7 @@
   <title>Panel Administrador – App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- Estilos -->
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 </head>
@@ -46,8 +47,21 @@
   <div id="clientesContainer" class="cards-container"></div>
 </section>
 
+<!-- ESTADÍSTICAS -->
+<section>
+  <h2>Estadísticas de Ventas</h2>
+
+  <label for="fechaInicio">Semana desde:</label>
+  <input type="date" id="fechaInicio">
+  <label for="fechaFin">Hasta:</label>
+  <input type="date" id="fechaFin">
+  <button id="btnFiltrarEstadisticas">Filtrar</button>
+
+  <p><strong>Total de pedidos:</strong> <span id="totalPedidos">0</span></p>
+  <p><strong>Total de café vendido (gramos):</strong> <span id="totalGramos">0</span> g</p>
+  <p><strong>Total en dinero:</strong> ₡<span id="totalDinero">0</span></p>
+</section>
+
 <script type="module" src="js/admin.js"></script>
 </body>
 </html>
-
-
