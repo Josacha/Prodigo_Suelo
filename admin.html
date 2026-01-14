@@ -6,58 +6,70 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 </head>
 
 <body>
 
- 
-<h1>Inventario - Admin</h1>
+<h1>Panel Administrador</h1>
 
 <button id="btnLogout">Cerrar sesión</button>
 
-<h2>Agregar producto</h2>
-<input id="codigo" placeholder="Código">
-<input id="nombre" placeholder="Nombre">
-<input id="precio" type="number" placeholder="Precio">
-<input id="stock" type="number" placeholder="Stock">
-<button id="btnAgregar">Guardar</button>
+<!-- ====================== AGREGAR PRODUCTO ====================== -->
+<section>
+  <h2>Agregar / Editar producto</h2>
+  <input id="codigo" placeholder="Código">
+  <input id="nombre" placeholder="Nombre">
+  <input id="variedad" placeholder="Variedad (opcional)">
+  <input id="peso" type="number" placeholder="Peso en gramos">
+  <input id="precio" type="number" placeholder="Precio base">
+  <input id="precioIVA" type="number" placeholder="Precio con IVA 1%" readonly>
+  <button id="btnAgregar">Guardar</button>
+</section>
 
-<h2>Productos</h2>
-<table border="1">
-  <thead>
-    <tr>
-      <th>Código</th>
-      <th>Nombre</th>
-      <th>Precio</th>
-      <th>Stock</th>
-    </tr>
-  </thead>
-  <tbody id="tablaProductos"></tbody>
-</table>
+<!-- ====================== LISTA DE PRODUCTOS ====================== -->
+<section>
+  <h2>Productos</h2>
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Nombre</th>
+        <th>Variedad</th>
+        <th>Peso (g)</th>
+        <th>Precio</th>
+        <th>Precio c/IVA</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody id="tablaProductos"></tbody>
+  </table>
+</section>
 
+<!-- ====================== AGREGAR CLIENTE ====================== -->
+<section>
+  <h2>Agregar Cliente</h2>
+  <input id="clienteNombre" placeholder="Nombre del cliente">
+  <input id="clienteTelefono" placeholder="Teléfono">
+  <select id="vendedorSelect"></select>
+  <button id="btnAgregarCliente">Guardar Cliente</button>
+</section>
 
+<!-- ====================== LISTA DE CLIENTES ====================== -->
+<section>
+  <h2>Clientes</h2>
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Teléfono</th>
+        <th>Vendedor</th>
+      </tr>
+    </thead>
+    <tbody id="tablaClientes"></tbody>
+  </table>
+</section>
 
-
-  <!-- 🎯 OFERTAS -->
-  <section>
-    <h2>Crear oferta</h2>
-
-    <input type="text" id="productoOferta" placeholder="Código del producto">
-    <input type="number" id="descuento" placeholder="Descuento (%)">
-
-    <button id="btnCrearOferta">Crear oferta</button>
-
-    <ul id="listaOfertas"></ul>
-  </section>
-
-  <hr>
-
- <script type="module" src="js/admin.js"></script>
-
+<script type="module" src="js/admin.js"></script>
 </body>
 </html>
-
-
-
-
-
