@@ -1,12 +1,12 @@
 import { auth, db } from "./firebase.js";
-import { collection, onSnapshot, updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const pedidosContainer = document.getElementById("pedidosContainer");
-const alertSound = document.getElementById("alertSound");
+const alertSound = new Audio("audio/alerta.mp3"); // sonido al marcar listo
 
 onAuthStateChanged(auth, async user => {
-  if(!user) location.href = "index.html";
+  if (!user) location.href = "index.html";
   cargarPedidos();
 });
 
@@ -36,7 +36,6 @@ function cargarPedidos() {
       const pedido = docSnap.data();
       const pedidoId = docSnap.id;
 
-      // Mostrar todos los pedidos, incluso atrasados y listos
       const card = document.createElement("div");
       card.className = `card estado-${pedido.estado || 'entrante'}`;
       card.id = `pedido-${pedidoId}`;
@@ -63,21 +62,10 @@ function cargarPedidos() {
 
       pedidosContainer.appendChild(card);
 
-      // Generar notificación sonora y alerta para el vendedor si el estado cambia a LISTO
+      // Sonido si está listo
       if(pedido.estado==='listo' && !card.dataset.notificado){
         alertSound.play();
         card.dataset.notificado = true;
-
-        // También se puede usar notificaciones del navegador:
-        if("Notification" in window && Notification.permission === "granted"){
-          new Notification(`Pedido listo: ${pedido.cliente.nombre}`, { body: "El pedido está listo para entregar." });
-        } else if("Notification" in window && Notification.permission !== "denied"){
-          Notification.requestPermission().then(permission => {
-            if(permission === "granted"){
-              new Notification(`Pedido listo: ${pedido.cliente.nombre}`, { body: "El pedido está listo para entregar." });
-            }
-          });
-        }
       }
     });
   });
