@@ -1,5 +1,7 @@
 import { auth, db } from "./firebase.js";
-import { collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 let carrito = [];
@@ -11,20 +13,24 @@ const totalPedido = document.getElementById("totalPedido");
 const clienteSelect = document.getElementById("clienteSelect");
 const pedidosContainer = document.getElementById("pedidosContainer");
 
-// Proteccion
+let vendedorId = null; // Vendedor logueado
+
+// PROTECCIÓN
 onAuthStateChanged(auth, async user => {
   if(!user) location.href = "index.html";
+  vendedorId = user.uid; // guardamos el id del vendedor
   await cargarProductos();
   await cargarClientes();
   cargarPedidos();
 });
 
+// LOGOUT
 document.getElementById("logoutBtn").onclick = async () => {
   await signOut(auth);
   location.href = "index.html";
 };
 
-// Cargar productos
+// CARGAR PRODUCTOS
 async function cargarProductos() {
   productoSelect.innerHTML = "";
   const snap = await getDocs(collection(db, "productos"));
@@ -42,22 +48,24 @@ async function cargarProductos() {
   });
 }
 
-// Cargar clientes
+// CARGAR CLIENTES DEL VENDEDOR (sin repetir)
 async function cargarClientes() {
   clienteSelect.innerHTML = "<option value=''>Seleccione cliente</option>";
   const snap = await getDocs(collection(db, "clientes"));
+  const agregados = new Set();
   snap.forEach(docSnap => {
     const c = docSnap.data();
-    if(c.vendedorId === auth.currentUser.uid){
+    if(c.vendedorId === vendedorId && !agregados.has(docSnap.id)){
       const opt = document.createElement("option");
       opt.value = docSnap.id;
       opt.textContent = `${c.nombre} (${c.telefono || "-"})`;
       clienteSelect.appendChild(opt);
+      agregados.add(docSnap.id);
     }
   });
 }
 
-// Agregar al carrito
+// AGREGAR AL CARRITO
 document.getElementById("agregarLineaBtn").onclick = () => {
   const opt = productoSelect.selectedOptions[0];
   const cantidad = Number(cantidadInput.value);
@@ -71,12 +79,13 @@ document.getElementById("agregarLineaBtn").onclick = () => {
     cantidad,
     subtotal
   });
+
   cantidadInput.value="";
   renderCarrito();
-  clienteSelect.disabled = true; // bloquear cliente al agregar línea
+  clienteSelect.disabled = true; // bloquea cliente después de agregar primera línea
 };
 
-// Render carrito
+// RENDER CARRITO
 function renderCarrito() {
   carritoBody.innerHTML="";
   let total=0;
@@ -93,11 +102,15 @@ function renderCarrito() {
       </tr>
     `;
   });
-  totalPedido.textContent=total;
+  totalPedido.textContent = total;
 }
-window.eliminarLinea = (i)=>{ carrito.splice(i,1); renderCarrito(); };
+window.eliminarLinea = (i) => {
+  carrito.splice(i,1);
+  renderCarrito();
+  if(carrito.length===0) clienteSelect.disabled = false; // desbloquea si carrito vacío
+};
 
-// Confirmar venta
+// CONFIRMAR PEDIDO
 document.getElementById("confirmarVentaBtn").onclick = async () => {
   const clienteId = clienteSelect.value;
   if(!clienteId) return alert("Seleccione un cliente");
@@ -108,7 +121,7 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
   const total = carrito.reduce((s,l)=>s+l.subtotal,0);
 
   await addDoc(collection(db,"ventas"),{
-    vendedorId: auth.currentUser.uid,
+    vendedorId,
     cliente:{id:clienteId, nombre:clienteData.nombre, telefono:clienteData.telefono||null},
     fecha: new Date(),
     total,
@@ -117,19 +130,22 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
     comentario: ""
   });
 
-  carrito=[]; renderCarrito(); clienteSelect.value=""; clienteSelect.disabled=false;
+  carrito=[];
+  renderCarrito();
+  clienteSelect.value="";
+  clienteSelect.disabled=false;
   alert("Pedido registrado");
   cargarPedidos();
 };
 
-// Cargar pedidos
+// CARGAR PEDIDOS REGISTRADOS
 function cargarPedidos(){
   pedidosContainer.innerHTML="";
   onSnapshot(collection(db,"ventas"),snap=>{
     pedidosContainer.innerHTML="";
-    snap.forEach(async docSnap=>{
+    snap.forEach(docSnap=>{
       const venta = docSnap.data();
-      if(venta.vendedorId!==auth.currentUser.uid) return;
+      if(venta.vendedorId!==vendedorId) return;
       const pedidoId = docSnap.id;
 
       const card = document.createElement("div");
@@ -153,6 +169,7 @@ function cargarPedidos(){
 
         <button onclick="actualizarEstadoVendedor('${pedidoId}')">Actualizar</button>
       `;
+
       pedidosContainer.appendChild(card);
     });
   });
