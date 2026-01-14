@@ -1,9 +1,37 @@
 /* ===============================
    PRÓDIGO SUELO – SISTEMA INTERNO
-   Estilos responsive premium
+   Paleta y estilo premium
    =============================== */
 
-/* Ya tienes los imports y colores base */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@400;500&display=swap');
+
+/* 🎨 COLORES BASE */
+:root {
+  --verde-oscuro: #1f3b36;
+  --verde-medio: #2f5d50;
+  --verde-claro: #4f8f7c;
+
+  --naranja: #e86a2a;
+  --naranja-oscuro: #c8571f;
+
+  --blanco: #ffffff;
+  --gris: #eaeaea;
+}
+
+/* 🧱 RESET BÁSICO */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* 🌿 BODY */
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #162b27, var(--verde-oscuro));
+  color: var(--blanco);
+  min-height: 100vh;
+}
 
 /* 📦 CONTENEDOR */
 .container {
@@ -13,6 +41,47 @@
   padding: 32px;
   border-radius: 16px;
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+}
+
+/* 🔠 TÍTULOS */
+h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 32px;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+
+h2 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 22px;
+  margin: 25px 0 12px;
+  color: var(--naranja);
+}
+
+/* 🧾 FORMULARIOS */
+form {
+  margin-top: 15px;
+}
+
+label {
+  font-size: 14px;
+  margin-bottom: 5px;
+  display: block;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 15px;
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid var(--naranja);
 }
 
 /* 🔥 BOTONES */
@@ -37,9 +106,9 @@ button:hover {
 .btn-eliminar {
   background-color: transparent;
   border: none;
-  color: #e74c3c;
+  color: #e74c3c; /* rojo para eliminar */
   cursor: pointer;
-  font-size: 1.5rem; /* Más grande para tocar en móvil */
+  font-size: 1.5rem; /* más grande para tocar en móvil */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -47,6 +116,17 @@ button:hover {
 
 .btn-eliminar:hover {
   color: #c0392b;
+}
+
+/* 🚪 LOGOUT */
+#btnLogout {
+  background: transparent;
+  border: 2px solid var(--naranja);
+  margin-bottom: 20px;
+}
+
+#btnLogout:hover {
+  background: var(--naranja);
 }
 
 /* 📊 TABLAS */
@@ -57,7 +137,7 @@ table {
   background: var(--verde-oscuro);
   border-radius: 12px;
   overflow: hidden;
-  display: block; /* Para que sea scrollable en móvil */
+  display: block; /* para scroll en móvil */
 }
 
 thead {
@@ -69,7 +149,7 @@ td {
   padding: 12px;
   text-align: left;
   font-size: 14px;
-  min-width: 100px; /* Para evitar celdas muy estrechas */
+  min-width: 100px; /* para evitar celdas demasiado estrechas */
 }
 
 tbody tr:nth-child(even) {
@@ -83,7 +163,7 @@ table thead {
 }
 
 table tbody {
-  max-height: 300px; /* Altura limitada con scroll */
+  max-height: 300px; /* altura limitada con scroll */
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -100,15 +180,25 @@ table tbody tr {
   table-layout: fixed;
 }
 
+/* 🏷️ BADGE */
+.badge {
+  display: inline-block;
+  background: var(--naranja);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 /* 📱 RESPONSIVE */
 @media (max-width: 768px) {
   .container {
     margin: 20px;
-    padding: 20px;
+    padding: 22px;
   }
 
   h1 {
-    font-size: 24px;
+    font-size: 26px;
   }
 
   h2 {
@@ -134,6 +224,12 @@ table tbody tr {
   }
 
   .btn-eliminar {
-    font-size: 1.8rem; /* Más grande para tocar en móvil */
+    font-size: 1.8rem; /* más grande para tocar en móvil */
+  }
+
+  /* Aumenta altura de filas de la tabla para dedos */
+  table tbody tr,
+  table thead tr {
+    height: 50px;
   }
 }
