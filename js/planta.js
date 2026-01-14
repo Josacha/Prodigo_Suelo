@@ -1,7 +1,5 @@
 import { auth, db } from "./firebase.js";
-import {
-  collection, onSnapshot, updateDoc, doc, getDoc
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, onSnapshot, updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const pedidosContainer = document.getElementById("pedidosContainer");
@@ -37,9 +35,9 @@ function cargarPedidos() {
       const vendedorDoc = await getDoc(doc(db, "usuarios", pedido.vendedorId));
       const vendedorNombre = vendedorDoc.exists() ? vendedorDoc.data().nombre : "N/A";
 
-      // Crear card del pedido
+      // Card del pedido con color por estado
       const card = document.createElement("div");
-      card.className = "card";
+      card.className = `card estado-${pedido.estado || 'entrante'}`;
       card.id = `pedido-${pedidoId}`;
 
       const lineasHTML = pedido.lineas.map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
@@ -65,11 +63,24 @@ function cargarPedidos() {
 
       pedidosContainer.appendChild(card);
 
-      // Reproducir alerta si es un pedido nuevo (entrante)
+      // Alerta pedido nuevo
       if(pedido.estado==='entrante' && !card.dataset.alertShown){
         alert(`Nuevo pedido de ${pedido.cliente.nombre}`);
         alertSound.play();
         card.dataset.alertShown = true;
+      }
+
+      // Si pedido listo, notificación visual
+      if(pedido.estado==='listo'){
+        if(!card.querySelector('.notificacion')){
+          const notif = document.createElement('div');
+          notif.className = 'notificacion';
+          notif.textContent = 'Listo para entrega';
+          card.appendChild(notif);
+        }
+      } else {
+        const existingNotif = card.querySelector('.notificacion');
+        if(existingNotif) existingNotif.remove();
       }
     });
   });
@@ -92,9 +103,4 @@ window.actualizarEstado = async (pedidoId) => {
     estado: nuevoEstado,
     comentario: nuevoEstado==='atrasado' ? comentario : ''
   });
-
-  // Si está listo, mostrar alerta al vendedor (puedes luego hacer push notification)
-  if(nuevoEstado==='listo'){
-    alert(`Pedido ${pedidoId} listo para entrega`);
-  }
 };
