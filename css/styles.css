@@ -556,6 +556,61 @@ body.login-page {
   flex: 1;
 }
 
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+  gap: 15px;
+}
+
+.kpi-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,.1);
+  text-align: center;
+}
+
+.kpi-card h4 {
+  margin: 0;
+  color: #555;
+}
+
+.kpi-card p {
+  font-size: 26px;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.kpi-card.alerta {
+  background: #fff3cd;
+  border-left: 6px solid #ff9800;
+}
+
+.estado-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px,1fr));
+  gap: 15px;
+}
+
+.estado-box {
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: bold;
+  color: white;
+}
+
+.entrante { background: #2196f3; }
+.proceso { background: #ff9800; }
+.listo { background: #4caf50; }
+.atrasado { background: #f44336; }
+
 
 
 
