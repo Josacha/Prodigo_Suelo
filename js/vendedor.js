@@ -36,37 +36,27 @@ document.getElementById("logoutBtn").onclick = async () => {
 // CARGAR PRODUCTOS
 async function cargarProductos() {
   productoSelect.innerHTML = "";
+
   const snap = await getDocs(collection(db, "productos"));
+
   snap.forEach(d => {
     const p = d.data();
-    if(p.activo){
+
+    if (p.activo) {
       const opt = document.createElement("option");
-      opt.value = d.id;
-      opt.textContent = `${p.nombre} - ₡${p.precio} (Stock: ${p.stock})`;
-      opt.dataset.precio = p.precio;
-      opt.dataset.stock = p.stock;
-      opt.dataset.nombre = p.nombre;
-      async function cargarProductos() {
-  productoSelect.innerHTML = "";
-  const snap = await getDocs(collection(db, "productos"));
-  snap.forEach(d => {
-    const p = d.data();
-    if(p.activo){
-      const opt = document.createElement("option");
+
       opt.value = d.id;
       opt.textContent = `${p.nombre} - ₡${p.precio}`;
+
       opt.dataset.precio = p.precio;
       opt.dataset.nombre = p.nombre;
-      opt.dataset.peso = p.peso; 
-      productoSelect.appendChild(opt);
-    }
-  });
-}
+      opt.dataset.peso = p.peso; // ✅ ESTO ES CLAVE
 
       productoSelect.appendChild(opt);
     }
   });
 }
+
 
 // CARGAR CLIENTES DEL VENDEDOR (sin repetir)
 async function cargarClientes() {
@@ -238,4 +228,5 @@ window.eliminarPedido = async (pedidoId)=>{
     alert("Pedido eliminado");
   }
 };
+
 
