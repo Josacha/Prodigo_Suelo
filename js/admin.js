@@ -50,19 +50,7 @@ onAuthStateChanged(auth, async (user) => {
   if (!snap.exists()) {
     alert("Usuario no autorizado");
     location.href = "index.html";
-    return;
-  }
-
-  const data = snap.data();
-  console.log("ROL USUARIO:", data.rol);
-
-  // 📒 Mostrar botón solo a admin
-  if (data.rol === "admin") {
-    btnRegistro.style.display = "inline-block";
-    btnRegistro.onclick = () => {
-      location.href = "registro.html";
-    };
-  }
+   
 
   // 🔄 Cargar sistema
   await cargarVendedores();
@@ -72,7 +60,14 @@ onAuthStateChanged(auth, async (user) => {
   cargarDashboard();
 });
 
-
+ 
+// =====================
+// registro
+// =====================
+document.getElementById("btnLogout").onclick = async () => {
+  await signOut(auth);
+  location.href = "index.html";
+};
 // =====================
 // LOGOUT
 // =====================
@@ -491,6 +486,7 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
     <p><strong>Total en dinero:</strong> ₡${totalDinero.toLocaleString()}</p>
   `;
 };
+
 
 
 
