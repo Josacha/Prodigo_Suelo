@@ -265,10 +265,7 @@ ${venta.consignacion ? `Consignación: ${venta.consignacion.estado}` : ""}
 btnPrint.style.display = "block";
 btnPrint.onclick = imprimirTicket; // ahora llama a la función que abre ventana independiente
 
-  };
-}
-
-function imprimirTicket() {
+  function imprimirTicket() {
   const ticket = document.getElementById("ticket");
   if(!ticket) return alert("No hay ticket para imprimir");
 
@@ -285,6 +282,10 @@ function imprimirTicket() {
   ventana.print();
   ventana.close();
 }
+  };
+}
+
+
 
 
 // CARGAR PEDIDOS REGISTRADOS
@@ -375,6 +376,7 @@ window.eliminarPedido = async (pedidoId)=>{
     alert("Pedido eliminado");
   }
 };
+
 
 
 
