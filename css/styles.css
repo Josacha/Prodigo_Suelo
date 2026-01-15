@@ -1,211 +1,231 @@
 /* ===============================
-   PRÓDIGO SUELO – PLANTA
-   Estilo premium con cards
+   PRÓDIGO SUELO – ESTILO GLOBAL
    =============================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@400;500&display=swap');
 
-/* 🎨 VARIABLES */
 :root {
-  --verde-oscuro: #1f3d36;
-  --verde: #2e7d32;
-  --verde-claro: #e8f5e9;
+  --verde-principal: #1f4d45;
+  --verde-oscuro: #163b35;
+  --verde-claro: #2ecc71;
 
   --naranja: #f39c12;
   --naranja-oscuro: #d68910;
 
-  --rojo: #c0392b;
-  --azul: #2980b9;
-  --gris: #7f8c8d;
+  --rojo: #e74c3c;
   --blanco: #ffffff;
+  --gris-claro: #f4f6f8;
+  --gris: #e0e0e0;
+  --negro: #222;
 
   /* Estados */
-  --estado-entrante-bg: #fff3cd;
-  --estado-entrante-text: #856404;
+  --entrante-bg: #fff3cd;
+  --entrante-text: #856404;
 
-  --estado-en-proceso-bg: #cce5ff;
-  --estado-en-proceso-text: #004085;
+  --proceso-bg: #cce5ff;
+  --proceso-text: #004085;
 
-  --estado-listo-bg: #d4edda;
-  --estado-listo-text: #155724;
+  --listo-bg: #d4edda;
+  --listo-text: #155724;
 
-  --estado-atrasado-bg: #f8d7da;
-  --estado-atrasado-text: #721c24;
+  --atrasado-bg: #f8d7da;
+  --atrasado-text: #721c24;
 
-  --estado-entregado-bg: #e0e0e0;
-  --estado-entregado-text: #2c3e50;
+  --entregado-bg: #d1ecf1;
+  --entregado-text: #0c5460;
 }
 
-/* 🧱 RESET */
+/* ===============================
+   RESET
+   =============================== */
 * {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
-/* 🖥️ BODY */
 body {
   font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #f4f6f8, #e9ecef);
+  background: linear-gradient(135deg, var(--verde-principal), var(--verde-oscuro));
+  min-height: 100vh;
   padding: 20px;
+  color: var(--blanco);
 }
 
-/* 🧾 TITULO */
+/* ===============================
+   TÍTULOS
+   =============================== */
 h1 {
   text-align: center;
-  margin-bottom: 25px;
   font-family: 'Montserrat', sans-serif;
-  color: var(--verde-oscuro);
+  margin-bottom: 25px;
+  font-size: 32px;
 }
 
-/* 🔓 BOTÓN LOGOUT */
+/* ===============================
+   BOTONES GENERALES
+   =============================== */
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: all 0.25s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+}
+
+/* ===============================
+   LOGOUT
+   =============================== */
 #logoutBtn {
-  position: absolute;
+  position: fixed;
   top: 20px;
   right: 20px;
-  background-color: var(--rojo);
+  background: var(--rojo);
   color: var(--blanco);
-  border: none;
   padding: 10px 16px;
   border-radius: 8px;
-  cursor: pointer;
   font-weight: 600;
-  transition: background 0.2s, transform 0.2s;
 }
 
 #logoutBtn:hover {
-  background-color: #a93226;
-  transform: scale(1.05);
+  background: #c0392b;
 }
 
-/* 📦 CONTENEDOR DE CARDS */
+/* ===============================
+   CONTENEDOR DE CARDS
+   =============================== */
 .cards-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
+  gap: 22px;
+  max-width: 1200px;
+  margin: auto;
 }
 
-/* 🧩 CARD */
+/* ===============================
+   CARD GLOBAL
+   =============================== */
 .card {
-  border-radius: 15px;
-  padding: 20px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  position: relative;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.25);
+  box-shadow: 0 14px 35px rgba(0,0,0,0.4);
 }
 
-/* 📄 TEXTO */
 .card p,
 .card li {
   font-size: 14px;
   margin-bottom: 6px;
 }
 
-/* 🧾 LISTA */
+/* ===============================
+   LISTAS
+   =============================== */
 .card ul {
   list-style: none;
   padding-left: 0;
 }
 
-/* ✍️ INPUTS */
+/* ===============================
+   INPUTS / SELECT
+   =============================== */
 .card input,
 .card select {
   width: 100%;
   padding: 9px;
   border-radius: 6px;
   border: 1px solid #ccc;
-  margin-top: 5px;
+  margin-top: 6px;
   font-size: 14px;
 }
 
-/* 🔘 BOTÓN */
+/* ===============================
+   BOTÓN CARD
+   =============================== */
 .card button {
-  margin-top: 10px;
-  background-color: var(--naranja);
+  margin-top: 12px;
+  background: var(--naranja);
   color: var(--blanco);
-  border: none;
   padding: 10px;
-  border-radius: 8px;
-  cursor: pointer;
+  border-radius: 10px;
   font-weight: 600;
-  transition: background 0.2s, transform 0.2s;
 }
 
 .card button:hover {
-  background-color: var(--naranja-oscuro);
-  transform: scale(1.03);
+  background: var(--naranja-oscuro);
 }
 
-/* 🎯 ESTADOS VISUALES */
+/* ===============================
+   ESTADOS DE PEDIDOS
+   =============================== */
 .card.estado-entrante {
-  background-color: var(--estado-entrante-bg);
-  color: var(--estado-entrante-text);
+  background: var(--entrante-bg);
+  color: var(--entrante-text);
 }
 
 .card.estado-en-proceso {
-  background-color: var(--estado-en-proceso-bg);
-  color: var(--estado-en-proceso-text);
+  background: var(--proceso-bg);
+  color: var(--proceso-text);
 }
 
 .card.estado-listo {
-  background-color: var(--estado-listo-bg);
-  color: var(--estado-listo-text);
+  background: var(--listo-bg);
+  color: var(--listo-text);
 }
 
 .card.estado-atrasado {
-  background-color: var(--estado-atrasado-bg);
-  color: var(--estado-atrasado-text);
+  background: var(--atrasado-bg);
+  color: var(--atrasado-text);
 }
 
 .card.estado-entregado {
-  background-color: var(--estado-entregado-bg);
-  color: var(--estado-entregado-text);
+  background: var(--entregado-bg);
+  color: var(--entregado-text);
 }
 
-/* 🔔 NOTIFICACIÓN LISTO */
+/* ===============================
+   NOTIFICACIÓN LISTO
+   =============================== */
 .notificacion {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background-color: var(--naranja);
+  top: 12px;
+  right: 12px;
+  background: var(--naranja);
   color: #000;
   padding: 6px 12px;
   border-radius: 6px;
+  font-size: 12px;
   font-weight: 700;
-  animation: flash 1s infinite;
+  animation: blink 1s infinite;
 }
 
-@keyframes flash {
-  0%, 100% { opacity: 1; }
+@keyframes blink {
+  0% { opacity: 1; }
   50% { opacity: 0.4; }
+  100% { opacity: 1; }
 }
 
-/* 📱 RESPONSIVE */
+/* ===============================
+   RESPONSIVE
+   =============================== */
 @media (max-width: 768px) {
+  h1 {
+    font-size: 26px;
+  }
+
   body {
     padding: 12px;
   }
 
-  h1 {
-    font-size: 24px;
-  }
-
   .cards-container {
     grid-template-columns: 1fr;
-  }
-
-  .card {
-    padding: 16px;
-  }
-
-  #logoutBtn {
-    top: 10px;
-    right: 10px;
-    padding: 8px 12px;
   }
 }
