@@ -303,13 +303,17 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
     // ✔️ Seguridad: validar lineas
     if (Array.isArray(v.lineas)) {
       v.lineas.forEach(l => {
-        const peso = Number(l.peso);
-        const cantidad = Number(l.cantidad);
+  let peso = Number(l.peso);
+  const cantidad = Number(l.cantidad);
 
-        if (!isNaN(peso) && !isNaN(cantidad)) {
-          totalKg += (peso * cantidad) / 1000;
-        }
-      });
+  // 🔁 fallback para ventas antiguas
+  if (isNaN(peso)) peso = 0;
+
+  if (!isNaN(cantidad)) {
+    totalKg += (peso * cantidad) / 1000;
+  }
+});
+
     }
 
     const totalVenta = Number(v.total);
@@ -324,6 +328,7 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
     <p><strong>Total en dinero:</strong> ₡${totalDinero.toLocaleString()}</p>
   `;
 };
+
 
 
 
