@@ -38,26 +38,14 @@ const btnRegistro = document.getElementById("btnRegistro");
 // PROTECCIÓN
 // =====================
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    location.href = "index.html";
-    return;
-  }
+  if (!user) location.href = "index.html";
 
-  // 🔍 Verificar rol
-  const ref = doc(db, "usuarios", user.uid);
-  const snap = await getDoc(ref);
-
-  if (!snap.exists()) {
-    alert("Usuario no autorizado");
-    location.href = "index.html";
-   
-
-  // 🔄 Cargar sistema
   await cargarVendedores();
   cargarClientes();
   listarProductos();
-  cargarGraficaMensual();
-  cargarDashboard();
+
+  cargarDashboard();       // 👈 KPIs + producción
+  cargarGraficaMensual();  // 👈 gráfica
 });
 
  
@@ -486,6 +474,7 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
     <p><strong>Total en dinero:</strong> ₡${totalDinero.toLocaleString()}</p>
   `;
 };
+
 
 
 
