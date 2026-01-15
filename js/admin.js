@@ -275,34 +275,57 @@ window.eliminarCliente = async (id) => {
 document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
   const inicio = fechaInicioInput.value;
   const fin = fechaFinInput.value;
-  if (!inicio || !fin) return alert("Seleccione ambas fechas");
+
+  if (!inicio || !fin) {
+    alert("Seleccione ambas fechas");
+    return;
+  }
 
   const q = query(
     collection(db, "ventas"),
     where("fecha", ">=", Timestamp.fromDate(new Date(inicio))),
-    where("fecha", "<=", Timestamp.fromDate(new Date(new Date(fin).setHours(23,59,59))))
+    where(
+      "fecha",
+      "<=",
+      Timestamp.fromDate(new Date(new Date(fin).setHours(23, 59, 59)))
+    )
   );
 
   const snap = await getDocs(q);
 
   let totalPedidos = snap.size;
-  let totalGramos = 0;
+  let totalKg = 0;
   let totalDinero = 0;
 
   snap.forEach(docSnap => {
     const v = docSnap.data();
-    v.lineas.forEach(l => {
-      totalGramos += (l.peso * l.cantidad)/1000;
-    });
-    totalDinero += v.total;
+
+    // ✔️ Seguridad: validar lineas
+    if (Array.isArray(v.lineas)) {
+      v.lineas.forEach(l => {
+        const peso = Number(l.peso);
+        const cantidad = Number(l.cantidad);
+
+        if (!isNaN(peso) && !isNaN(cantidad)) {
+          totalKg += (peso * cantidad) / 1000;
+        }
+      });
+    }
+
+    const totalVenta = Number(v.total);
+    if (!isNaN(totalVenta)) {
+      totalDinero += totalVenta;
+    }
   });
 
   estadisticasContainer.innerHTML = `
     <p><strong>Total pedidos:</strong> ${totalPedidos}</p>
-    <p><strong>Total Kilogramos de café vendidos:</strong> ${totalGramos}</p>
-    <p><strong>Total en dinero:</strong> ₡${totalDinero}</p>
+    <p><strong>Total Kilogramos de café vendidos:</strong> ${totalKg.toFixed(2)} kg</p>
+    <p><strong>Total en dinero:</strong> ₡${totalDinero.toLocaleString()}</p>
   `;
 };
+
+
 
 
 
