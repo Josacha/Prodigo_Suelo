@@ -16,11 +16,33 @@
 <h1>Planta – Pedidos en Producción</h1>
 <button id="logoutBtn">Cerrar sesión</button>
 
-<section>
-  <div id="pedidosContainer" class="cards-container"></div>
+<section class="tablero-produccion">
+
+  <div class="columna entrante">
+    <h2>📥 Entrante</h2>
+    <div class="columna-body" id="col-entrante"></div>
+  </div>
+
+  <div class="columna proceso">
+    <h2>⚙️ En proceso</h2>
+    <div class="columna-body" id="col-proceso"></div>
+  </div>
+
+  <div class="columna listo">
+    <h2>✅ Listo</h2>
+    <div class="columna-body" id="col-listo"></div>
+  </div>
+
+  <div class="columna atrasado">
+    <h2>⏰ Atrasado</h2>
+    <div class="columna-body" id="col-atrasado"></div>
+  </div>
+
 </section>
+
 
 <audio id="alertSound" src="audio/alerta.mp3" preload="auto"></audio>
 <script type="module" src="js/planta.js"></script>
 </body>
 </html>
+
