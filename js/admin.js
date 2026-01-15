@@ -42,6 +42,7 @@ onAuthStateChanged(auth, async (user) => {
   cargarClientes();
   listarProductos();
 cargarGraficaMensual();
+    cargarDashboard(); 
 
 
   
@@ -348,6 +349,62 @@ function renderGraficaMensual(meses, ventas, kilos, pedidos) {
 }
 
 
+// =====================
+// DASHBOARD
+// =====================
+async function cargarDashboard() {
+  const snap = await getDocs(collection(db, "ventas"));
+
+  let totalVentas = 0;
+  let totalKg = 0;
+  let pedidosMes = 0;
+
+  let estados = {
+    entrante: 0,
+    "en proceso": 0,
+    listo: 0,
+    atrasado: 0
+  };
+
+  const hoy = new Date();
+  const mesActual = hoy.getMonth();
+  const anioActual = hoy.getFullYear();
+
+  snap.forEach(docSnap => {
+    const v = docSnap.data();
+    const fecha = v.fecha.toDate ? v.fecha.toDate() : new Date(v.fecha);
+
+    totalVentas += Number(v.total || 0);
+
+    if (fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual) {
+      pedidosMes++;
+    }
+
+    estados[v.estado] = (estados[v.estado] || 0) + 1;
+
+    if (Array.isArray(v.lineas)) {
+      v.lineas.forEach(l => {
+        totalKg += (Number(l.peso || 0) * Number(l.cantidad || 0)) / 1000;
+      });
+    }
+  });
+
+  // KPIs
+  document.getElementById("kpiVentas").textContent = `₡${totalVentas.toLocaleString()}`;
+  document.getElementById("kpiKg").textContent = `${totalKg.toFixed(2)} kg`;
+  document.getElementById("kpiPedidos").textContent = pedidosMes;
+  document.getElementById("kpiEntrantes").textContent = estados.entrante || 0;
+
+  // Producción
+  document.getElementById("estadoProduccion").innerHTML = `
+    <div class="estado-box entrante">Entrantes<br>${estados.entrante}</div>
+    <div class="estado-box proceso">En Proceso<br>${estados["en proceso"]}</div>
+    <div class="estado-box listo">Listos<br>${estados.listo}</div>
+    <div class="estado-box atrasado">Atrasados<br>${estados.atrasado}</div>
+  `;
+}
+
+
 
 
 // =====================
@@ -409,6 +466,7 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
     <p><strong>Total en dinero:</strong> ₡${totalDinero.toLocaleString()}</p>
   `;
 };
+
 
 
 
