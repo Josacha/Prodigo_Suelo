@@ -244,13 +244,13 @@ function generarTicket(venta) {
   const fecha = venta.fecha.toDate ? venta.fecha.toDate() : new Date(venta.fecha);
 
   ticketDiv.innerHTML = `
-    <pre>
-   Pródigo Suelo
+<pre>
+      PRÓDIGO SUELO
 ----------------------------
 Fecha: ${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}
 Cliente: ${venta.cliente.nombre}
 
-${venta.lineas.map(l => `${l.nombre} x ${l.cantidad} = ₡${l.subtotal}`).join("\n")}
+${venta.lineas.map(l => `${l.nombre.padEnd(20)} x${String(l.cantidad).padStart(2)} = ₡${String(l.subtotal).padStart(8)}`).join("\n")}
 
 Total: ₡${venta.total}
 Estado Pedido: ${venta.estado}
@@ -258,19 +258,16 @@ Estado Pago: ${venta.estadoPago || "pendiente"}
 ${venta.consignacion ? `Consignación: ${venta.consignacion.estado}` : ""}
 ----------------------------
 ¡Gracias por su compra!
-    </pre>
+</pre>
   `;
 
   const btnPrint = document.getElementById("imprimirTicketBtn");
   btnPrint.style.display = "block";
   btnPrint.onclick = () => {
-    const originalContent = document.body.innerHTML;
-    document.body.innerHTML = ticketDiv.innerHTML;
     window.print();
-    document.body.innerHTML = originalContent;
-    location.reload();
   };
 }
+
 
 // CARGAR PEDIDOS REGISTRADOS
 function cargarPedidos(){
@@ -360,3 +357,4 @@ window.eliminarPedido = async (pedidoId)=>{
     alert("Pedido eliminado");
   }
 };
+
