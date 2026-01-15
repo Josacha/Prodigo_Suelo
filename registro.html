@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro Contable</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<h2>📒 Registro Contable</h2>
+
+<!-- FILTROS -->
+<div class="filtros">
+  <input type="date" id="fechaInicio">
+  <input type="date" id="fechaFin">
+
+  <select id="clienteFiltro">
+    <option value="">Todos los clientes</option>
+  </select>
+
+  <select id="vendedorFiltro">
+    <option value="">Todos los vendedores</option>
+  </select>
+
+  <button id="btnFiltrar">Filtrar</button>
+</div>
+
+<!-- KPI -->
+<div class="kpis">
+  <div class="kpi-card kpi-ventas">
+    <h3>Total Ventas</h3>
+    <p id="kpiTotalVentas">₡0</p>
+  </div>
+
+  <div class="kpi-card kpi-kg">
+    <h3>Kilogramos Vendidos</h3>
+    <p id="kpiKg">0 kg</p>
+  </div>
+
+  <div class="kpi-card kpi-pedidos">
+    <h3>Pedidos</h3>
+    <p id="kpiPedidos">0</p>
+  </div>
+</div>
+
+<!-- TABLA -->
+<div class="tabla-container">
+<table>
+  <thead>
+    <tr>
+      <th>Fecha</th>
+      <th>Cliente</th>
+      <th>Vendedor</th>
+      <th>Kg</th>
+      <th>Total ₡</th>
+      <th>Estado</th>
+    </tr>
+  </thead>
+  <tbody id="tablaRegistros"></tbody>
+</table>
+</div>
+
+<script type="module" src="registro.js"></script>
+</body>
+</html>
