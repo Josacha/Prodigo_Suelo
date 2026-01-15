@@ -1,231 +1,170 @@
 /* ===============================
    PRÓDIGO SUELO – ESTILO GLOBAL
-   =============================== */
+   Inspirado en empaques oficiales
+=============================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@400;500&display=swap');
 
+/* 🎨 COLORES OFICIALES */
 :root {
-  --verde-principal: #1f4d45;
-  --verde-oscuro: #163b35;
-  --verde-claro: #2ecc71;
+  --verde-profundo: #163a33;
+  --verde-medio: #1f4d44;
+  --verde-claro: #2f6b5e;
 
-  --naranja: #f39c12;
-  --naranja-oscuro: #d68910;
+  --naranja: #e86a2a;
+  --naranja-oscuro: #c8571f;
 
-  --rojo: #e74c3c;
   --blanco: #ffffff;
-  --gris-claro: #f4f6f8;
-  --gris: #e0e0e0;
-  --negro: #222;
+  --gris-suave: #e6e6e6;
 
   /* Estados */
-  --entrante-bg: #fff3cd;
-  --entrante-text: #856404;
-
-  --proceso-bg: #cce5ff;
-  --proceso-text: #004085;
-
-  --listo-bg: #d4edda;
-  --listo-text: #155724;
-
-  --atrasado-bg: #f8d7da;
-  --atrasado-text: #721c24;
-
-  --entregado-bg: #d1ecf1;
-  --entregado-text: #0c5460;
+  --entrante: #f4a261;
+  --proceso: #2a9d8f;
+  --listo: #2ecc71;
+  --atrasado: #e63946;
+  --entregado: #6c757d;
 }
 
-/* ===============================
-   RESET
-   =============================== */
+/* 🧱 RESET */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+/* 🌿 FONDO GENERAL */
 body {
   font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, var(--verde-principal), var(--verde-oscuro));
-  min-height: 100vh;
-  padding: 20px;
+  background: radial-gradient(circle at top, #1f4d44, #102a25);
   color: var(--blanco);
+  min-height: 100vh;
 }
 
-/* ===============================
-   TÍTULOS
-   =============================== */
+/* 🔠 TITULOS */
+h1, h2 {
+  font-family: 'Montserrat', sans-serif;
+  letter-spacing: 0.5px;
+}
+
 h1 {
   text-align: center;
-  font-family: 'Montserrat', sans-serif;
-  margin-bottom: 25px;
-  font-size: 32px;
+  margin: 20px 0;
 }
 
-/* ===============================
-   BOTONES GENERALES
-   =============================== */
-button {
-  cursor: pointer;
+/* 📦 SECCIONES */
+section {
+  background: linear-gradient(145deg, var(--verde-medio), var(--verde-profundo));
+  padding: 20px;
+  border-radius: 16px;
+  margin-bottom: 25px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+}
+
+/* 🔘 INPUTS */
+input, select {
+  background: #ffffff;
+  color: #333;
+  border-radius: 10px;
+  padding: 10px;
   border: none;
-  font-family: inherit;
+  font-size: 14px;
+}
+
+input:focus, select:focus {
+  outline: 2px solid var(--naranja);
+}
+
+/* 🔥 BOTONES */
+button {
+  background: linear-gradient(135deg, var(--naranja), var(--naranja-oscuro));
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
   transition: all 0.25s ease;
 }
 
 button:hover {
   transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(232,106,42,0.5);
 }
 
-/* ===============================
-   LOGOUT
-   =============================== */
-#logoutBtn {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background: var(--rojo);
-  color: var(--blanco);
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-weight: 600;
-}
-
-#logoutBtn:hover {
-  background: #c0392b;
-}
-
-/* ===============================
-   CONTENEDOR DE CARDS
-   =============================== */
+/* =======================
+   CARDS (PEDIDOS / DATA)
+======================= */
 .cards-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 22px;
-  max-width: 1200px;
-  margin: auto;
 }
 
-/* ===============================
-   CARD GLOBAL
-   =============================== */
 .card {
-  border-radius: 16px;
-  padding: 18px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+  background: linear-gradient(160deg, #1f4d44, #163a33);
+  border-radius: 18px;
+  padding: 20px;
+  color: white;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.4);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 14px 35px rgba(0,0,0,0.4);
+  box-shadow: 0 20px 45px rgba(0,0,0,0.55);
 }
 
-.card p,
-.card li {
+.card p {
   font-size: 14px;
   margin-bottom: 6px;
 }
 
-/* ===============================
-   LISTAS
-   =============================== */
-.card ul {
-  list-style: none;
-  padding-left: 0;
-}
-
-/* ===============================
-   INPUTS / SELECT
-   =============================== */
-.card input,
-.card select {
-  width: 100%;
-  padding: 9px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  margin-top: 6px;
-  font-size: 14px;
-}
-
-/* ===============================
-   BOTÓN CARD
-   =============================== */
-.card button {
-  margin-top: 12px;
-  background: var(--naranja);
-  color: var(--blanco);
-  padding: 10px;
-  border-radius: 10px;
-  font-weight: 600;
-}
-
-.card button:hover {
-  background: var(--naranja-oscuro);
-}
-
-/* ===============================
-   ESTADOS DE PEDIDOS
-   =============================== */
+/* 🎯 ESTADOS */
 .card.estado-entrante {
-  background: var(--entrante-bg);
-  color: var(--entrante-text);
+  border-left: 8px solid var(--entrante);
 }
 
 .card.estado-en-proceso {
-  background: var(--proceso-bg);
-  color: var(--proceso-text);
+  border-left: 8px solid var(--proceso);
 }
 
 .card.estado-listo {
-  background: var(--listo-bg);
-  color: var(--listo-text);
+  border-left: 8px solid var(--listo);
 }
 
 .card.estado-atrasado {
-  background: var(--atrasado-bg);
-  color: var(--atrasado-text);
+  border-left: 8px solid var(--atrasado);
 }
 
 .card.estado-entregado {
-  background: var(--entregado-bg);
-  color: var(--entregado-text);
+  border-left: 8px solid var(--entregado);
 }
 
-/* ===============================
-   NOTIFICACIÓN LISTO
-   =============================== */
+/* 🔔 BADGE LISTO */
 .notificacion {
   position: absolute;
   top: 12px;
   right: 12px;
   background: var(--naranja);
-  color: #000;
   padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 700;
-  animation: blink 1s infinite;
+  border-radius: 8px;
+  font-weight: bold;
+  animation: pulse 1.2s infinite;
 }
 
-@keyframes blink {
+@keyframes pulse {
   0% { opacity: 1; }
-  50% { opacity: 0.4; }
+  50% { opacity: 0.6; }
   100% { opacity: 1; }
 }
 
-/* ===============================
-   RESPONSIVE
-   =============================== */
+/* 📱 RESPONSIVE */
 @media (max-width: 768px) {
-  h1 {
-    font-size: 26px;
-  }
-
-  body {
-    padding: 12px;
-  }
-
   .cards-container {
     grid-template-columns: 1fr;
+  }
+
+  h1 {
+    font-size: 24px;
   }
 }
