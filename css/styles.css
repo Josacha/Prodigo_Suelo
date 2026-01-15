@@ -231,3 +231,9 @@ section p span {
 
   .cards-container { grid-template-columns: 1fr; }
   .card p { font-size: 13px; }
+
+   .card {
+  background: #244b43 !important;
+  color: #ffffff !important;
+}
+
