@@ -197,6 +197,10 @@ document.getElementById("btnAgregarCliente").onclick = async () => {
 };
 
 
+
+
+
+
 // =====================
 // LISTAR CLIENTES
 // =====================
@@ -232,6 +236,40 @@ async function cargarClientes() {
 }
 
 // =====================
+// EDITAR CLIENTES
+// =====================
+
+window.editarCliente = async (id) => {
+  const docSnap = await getDoc(doc(db, "clientes", id));
+  if (!docSnap.exists()) return;
+
+  const c = docSnap.data();
+
+  clienteNombre.value = c.nombre || "";
+  clienteTelefono.value = c.telefono || "";
+  clienteDireccion.value = c.direccion || "";
+  clienteUbicacion.value = c.ubicacion || "";
+  vendedorSelect.value = c.vendedorId || "";
+
+  editClienteId = id;
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+
+
+// =====================
+// ELIMINAR CLIENTES
+// =====================
+
+window.eliminarCliente = async (id) => {
+  if (!confirm("¿Eliminar este cliente?")) return;
+  await deleteDoc(doc(db, "clientes", id));
+  cargarClientes();
+};
+
+
+// =====================
 // ESTADÍSTICAS POR RANGO DE FECHAS
 // =====================
 document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
@@ -265,6 +303,7 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
     <p><strong>Total en dinero:</strong> ₡${totalDinero}</p>
   `;
 };
+
 
 
 
