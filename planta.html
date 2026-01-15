@@ -1,50 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-   <link rel="stylesheet" href="css/styles.css">
   <meta charset="UTF-8">
   <title>Planta – Pródigo Suelo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- SOLO UN CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
-    h1 { text-align: center; margin-bottom: 20px; }
-    #logoutBtn {
-      position: absolute; top: 20px; right: 20px;
-      background-color: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer;
-    }
-    #logoutBtn:hover { background-color: #a71d2a; }
-
-    .cards-container {
-      display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;
-    }
-
-    .card {
-      width: 300px; border-radius: 15px; padding: 15px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15); position: relative;
-      display: flex; flex-direction: column; gap: 10px;
-      transition: transform 0.2s, box-shadow 0.2s;
-      color: white; font-weight: bold;
-    }
-
-    .card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
-
-    /* Colores de estados con buen contraste */
-    .estado-entrante { background: #f1c40f; color: #000; }      /* amarillo */
-    .estado-en-proceso { background: #2980b9; color: #fff; }    /* azul oscuro */
-    .estado-listo { background: #27ae60; color: #fff; }          /* verde */
-    .estado-atrasado { background: #c0392b; color: #fff; }       /* rojo */
-    .estado-entregado { background: #7f8c8d; color: #fff; }      /* gris */
-
-    .card input, .card select, .card button { padding: 7px; border-radius: 5px; border: none; width: 100%; font-size: 14px; }
-    .card select { cursor: pointer; }
-    .card button { background-color: rgba(0,0,0,0.2); color: white; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-    .card button:hover { background-color: rgba(0,0,0,0.4); }
-    .card ul { list-style: none; padding-left: 0; margin: 0; }
-    .card ul li { font-size: 14px; }
-  </style>
 </head>
+
 <body>
 
 <h1>Planta – Pedidos en Producción</h1>
@@ -58,4 +24,3 @@
 <script type="module" src="js/planta.js"></script>
 </body>
 </html>
-
