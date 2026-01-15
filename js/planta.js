@@ -136,6 +136,30 @@ function mostrarNotificacion(cliente) {
   }
 }
 
+function mostrarPopupPedido(pedido) {
+  document.getElementById("popupCliente").innerText =
+    `Cliente: ${pedido.cliente.nombre}`;
+
+  document.getElementById("popupTotal").innerText =
+    `Total: ₡${pedido.total}`;
+
+  const ul = document.getElementById("popupProductos");
+  ul.innerHTML = "";
+
+  pedido.lineas.forEach(l => {
+    const li = document.createElement("li");
+    li.textContent = `${l.nombre} x ${l.cantidad}`;
+    ul.appendChild(li);
+  });
+
+  document.getElementById("popupPedido").className = "popup-visible";
+}
+
+window.cerrarPopup = () => {
+  document.getElementById("popupPedido").className = "popup-oculto";
+};
+
+
 window.actualizarEstadoPlanta = async (pedidoId) => {
   const estadoSelect = document.getElementById(`estado-${pedidoId}`);
   const comentarioInput = document.getElementById(`comentario-${pedidoId}`);
@@ -148,4 +172,5 @@ window.actualizarEstadoPlanta = async (pedidoId) => {
     comentario: nuevoEstado === 'atrasado' ? comentarioInput.value : ''
   });
 };
+
 
