@@ -1,13 +1,14 @@
 import { auth, db } from "./firebase.js";
-import { collection, onSnapshot, updateDoc, doc, getDoc } 
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { onAuthStateChanged, signOut } 
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { collection, onSnapshot, updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const pedidosContainer = document.getElementById("pedidosContainer");
-const alertSound = new Audio("audio/alerta.mp3"); // sonido ENTRANTE
+const alertSound = new Audio("audio/alerta.mp3");
 
-onAuthStateChanged(auth, async user => {
+// pedidos ya notificados (persistente aunque recargue)
+const pedidosNotificados = JSON.parse(localStorage.getItem("pedidosNotificados") || "[]");
+
+onAuthStateChanged(auth, user => {
   if (!user) location.href = "index.html";
   cargarPedidos();
 });
@@ -38,14 +39,18 @@ function cargarPedidos() {
       const pedido = docSnap.data();
       const pedidoId = docSnap.id;
 
-      // Vendedor
-      const vendedorDoc = await getDoc(doc(db, "usuarios", pedido.vendedorId));
-      const vendedorData = vendedorDoc.data();
-      const vendedorNombre = vendedorData ? vendedorData.nombre : "Desconocido";
+      // 👉 PLANTA NO MANEJA ENTREGADOS
+      if (pedido.estado === "entregado") return;
+
+      // vendedor
+      let vendedorNombre = "Desconocido";
+      if (pedido.vendedorId) {
+        const vendedorDoc = await getDoc(doc(db, "usuarios", pedido.vendedorId));
+        vendedorNombre = vendedorDoc.exists() ? vendedorDoc.data().nombre : "Desconocido";
+      }
 
       const card = document.createElement("div");
       card.className = `card estado-${pedido.estado || 'entrante'}`;
-      card.id = `pedido-${pedidoId}`;
 
       const lineasHTML = pedido.lineas
         .map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`)
@@ -65,57 +70,55 @@ function cargarPedidos() {
           <option value="atrasado" ${pedido.estado==='atrasado'?'selected':''}>Atrasado</option>
         </select>
 
-        <input type="text"
-          id="comentario-${pedidoId}"
+        <input type="text" id="comentario-${pedidoId}"
           placeholder="Motivo atraso"
           value="${pedido.comentario || ''}"
-          ${pedido.estado!=='atrasado'?'disabled':''}
-        >
+          ${pedido.estado!=='atrasado'?'disabled':''}>
 
         <button onclick="actualizarEstadoPlanta('${pedidoId}')">Actualizar</button>
       `;
 
       pedidosContainer.appendChild(card);
 
-      /* ============================
-         🔔 NOTIFICACIÓN ENTRANTE
-      ============================ */
+      // 🔊 SONIDO SOLO LA PRIMERA VEZ QUE ENTRA
+      if (pedido.estado === "entrante" && !pedidosNotificados.includes(pedidoId)) {
+        alertSound.play();
+
+        pedidosNotificados.push(pedidoId);
+        localStorage.setItem("pedidosNotificados", JSON.stringify(pedidosNotificados));
+      }
+
+      // 🔔 NOTIFICACIÓN VISUAL (SIEMPRE)
       if (pedido.estado === "entrante") {
-
-        const notificadoKey = `pedidoEntrante_${pedidoId}`;
-
-        // 🔊 Sonido SOLO la primera vez
-        if (!localStorage.getItem(notificadoKey)) {
-          alertSound.play();
-          localStorage.setItem(notificadoKey, "true");
-        }
-
-        // 🪟 Notificación visual SIEMPRE
-        if ("Notification" in window) {
-          if (Notification.permission === "granted") {
-            new Notification("📥 Pedido entrante", {
-              body: `Cliente: ${pedido.cliente.nombre}`
-            });
-          } else if (Notification.permission !== "denied") {
-            Notification.requestPermission().then(p => {
-              if (p === "granted") {
-                new Notification("📥 Pedido entrante", {
-                  body: `Cliente: ${pedido.cliente.nombre}`
-                });
-              }
-            });
-          }
-        }
+        mostrarNotificacion(pedido.cliente.nombre);
       }
     });
   });
 }
 
+function mostrarNotificacion(cliente) {
+  if (!("Notification" in window)) return;
+
+  if (Notification.permission === "granted") {
+    new Notification("📦 Pedido Entrante", {
+      body: `Nuevo pedido de ${cliente}`
+    });
+  } else if (Notification.permission !== "denied") {
+    Notification.requestPermission().then(p => {
+      if (p === "granted") {
+        new Notification("📦 Pedido Entrante", {
+          body: `Nuevo pedido de ${cliente}`
+        });
+      }
+    });
+  }
+}
+
 window.actualizarEstadoPlanta = async (pedidoId) => {
   const estadoSelect = document.getElementById(`estado-${pedidoId}`);
   const comentarioInput = document.getElementById(`comentario-${pedidoId}`);
-
   const nuevoEstado = estadoSelect.value;
+
   comentarioInput.disabled = nuevoEstado !== 'atrasado';
 
   await updateDoc(doc(db, "ventas", pedidoId), {
