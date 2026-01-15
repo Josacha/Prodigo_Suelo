@@ -31,6 +31,7 @@ let editClienteId = null;
 
 const clienteDireccion = document.getElementById("clienteDireccion");
 const clienteUbicacion = document.getElementById("clienteUbicacion");
+const btnRegistro = document.getElementById("btnRegistro");
 
 
 // =====================
@@ -38,6 +39,23 @@ const clienteUbicacion = document.getElementById("clienteUbicacion");
 // =====================
 onAuthStateChanged(auth, async (user) => {
   if (!user) location.href = "index.html";
+
+ return;
+  }
+
+  const data = snap.data();
+  console.log("ROL USUARIO:", data.rol);
+
+  // 📒 Mostrar botón solo a admin
+  if (data.rol === "admin") {
+    btnRegistro.style.display = "inline-block";
+    btnRegistro.onclick = () => {
+      location.href = "registro.html";
+    };
+  }
+
+
+  
   await cargarVendedores();
   cargarClientes();
   listarProductos();
@@ -466,6 +484,7 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
     <p><strong>Total en dinero:</strong> ₡${totalDinero.toLocaleString()}</p>
   `;
 };
+
 
 
 
