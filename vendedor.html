@@ -16,9 +16,19 @@
 <!-- AGREGAR AL CARRITO -->
 <section>
   <h2>Agregar al carrito</h2>
+
+  <label>Cliente:</label>
   <select id="clienteSelect"></select>
+
+  <label>Producto:</label>
   <select id="productoSelect"></select>
+
+  <label>Cantidad:</label>
   <input type="number" id="cantidadInput" placeholder="Cantidad">
+
+  <label>Días de consignación (opcional):</label>
+  <input type="number" id="diasConsignacion" placeholder="Ej: 3" min="0">
+
   <button id="agregarLineaBtn">Agregar al carrito</button>
 </section>
 
