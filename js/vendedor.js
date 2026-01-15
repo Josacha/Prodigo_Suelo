@@ -245,8 +245,8 @@ function generarTicket(venta) {
 
   ticketDiv.innerHTML = `
 <pre>
-      PRÓDIGO SUELO
-----------------------------
+PRÓDIGO SUELO
+---------------------------
 Fecha: ${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}
 Cliente: ${venta.cliente.nombre}
 
@@ -256,7 +256,7 @@ Total: ₡${venta.total}
 Estado Pedido: ${venta.estado}
 Estado Pago: ${venta.estadoPago || "pendiente"}
 ${venta.consignacion ? `Consignación: ${venta.consignacion.estado}` : ""}
-----------------------------
+---------------------------
 ¡Gracias por su compra!
 </pre>
   `;
@@ -264,7 +264,7 @@ ${venta.consignacion ? `Consignación: ${venta.consignacion.estado}` : ""}
   const btnPrint = document.getElementById("imprimirTicketBtn");
   btnPrint.style.display = "block";
   btnPrint.onclick = () => {
-    window.print();
+    window.print(); // Solo imprimirá ticket gracias al @media print
   };
 }
 
@@ -357,4 +357,5 @@ window.eliminarPedido = async (pedidoId)=>{
     alert("Pedido eliminado");
   }
 };
+
 
