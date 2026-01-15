@@ -1,67 +1,170 @@
 /* ===============================
-   ESPACIADO GLOBAL – PRÓDIGO SUELO
-   (no altera colores ni layouts)
+   PRÓDIGO SUELO – ESTILO GLOBAL
+   Inspirado en empaques oficiales
 =============================== */
 
-/* Separación vertical natural */
-h1, h2, h3 {
-  margin-bottom: 20px;
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@400;500&display=swap');
+
+/* 🎨 COLORES OFICIALES */
+:root {
+  --verde-profundo: #163a33;
+  --verde-medio: #1f4d44;
+  --verde-claro: #2f6b5e;
+
+  --naranja: #e86a2a;
+  --naranja-oscuro: #c8571f;
+
+  --blanco: #ffffff;
+  --gris-suave: #e6e6e6;
+
+  /* Estados */
+  --entrante: #f4a261;
+  --proceso: #2a9d8f;
+  --listo: #2ecc71;
+  --atrasado: #e63946;
+  --entregado: #6c757d;
 }
 
-p {
-  margin-bottom: 10px;
-  line-height: 1.5;
+/* 🧱 RESET */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-/* Formularios */
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+/* 🌿 FONDO GENERAL */
+body {
+  font-family: 'Poppins', sans-serif;
+  background: radial-gradient(circle at top, #1f4d44, #102a25);
+  color: var(--blanco);
+  min-height: 100vh;
 }
 
-/* Label + input */
-label {
-  display: block;
-  margin-bottom: 6px;
+/* 🔠 TITULOS */
+h1, h2 {
+  font-family: 'Montserrat', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+h1 {
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* 📦 SECCIONES */
+section {
+  background: linear-gradient(145deg, var(--verde-medio), var(--verde-profundo));
+  padding: 20px;
+  border-radius: 16px;
+  margin-bottom: 25px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+}
+
+/* 🔘 INPUTS */
+input, select {
+  background: #ffffff;
+  color: #333;
+  border-radius: 10px;
+  padding: 10px;
+  border: none;
   font-size: 14px;
 }
 
-/* Inputs y selects */
-input,
-select,
-textarea {
-  margin-bottom: 12px;
+input:focus, select:focus {
+  outline: 2px solid var(--naranja);
 }
 
-/* Botones */
+/* 🔥 BOTONES */
 button {
-  margin-top: 10px;
+  background: linear-gradient(135deg, var(--naranja), var(--naranja-oscuro));
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
 }
 
-/* Secciones */
-section {
-  margin-bottom: 30px;
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(232,106,42,0.5);
 }
 
-/* Tablas y listas */
-ul, ol {
-  margin-top: 10px;
-  margin-bottom: 10px;
+/* =======================
+   CARDS (PEDIDOS / DATA)
+======================= */
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 22px;
 }
 
-li {
+.card {
+  background: linear-gradient(160deg, #1f4d44, #163a33);
+  border-radius: 18px;
+  padding: 20px;
+  color: white;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 45px rgba(0,0,0,0.55);
+}
+
+.card p {
+  font-size: 14px;
   margin-bottom: 6px;
 }
 
-/* Cards */
-.card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* 🎯 ESTADOS */
+.card.estado-entrante {
+  border-left: 8px solid var(--entrante);
 }
 
-/* Evita que todo quede pegado al borde */
-body > * {
-  margin-bottom: 20px;
+.card.estado-en-proceso {
+  border-left: 8px solid var(--proceso);
+}
+
+.card.estado-listo {
+  border-left: 8px solid var(--listo);
+}
+
+.card.estado-atrasado {
+  border-left: 8px solid var(--atrasado);
+}
+
+.card.estado-entregado {
+  border-left: 8px solid var(--entregado);
+}
+
+/* 🔔 BADGE LISTO */
+.notificacion {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--naranja);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  animation: pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+/* 📱 RESPONSIVE */
+@media (max-width: 768px) {
+  .cards-container {
+    grid-template-columns: 1fr;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
 }
