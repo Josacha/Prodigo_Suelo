@@ -356,6 +356,89 @@ function renderGraficaMensual(meses, ventas, kilos, pedidos) {
   });
 }
 
+// =====================
+// EXCEL
+// =====================
+
+document.getElementById("btnExportExcel").onclick = async () => {
+  const inicio = fechaInicioInput.value;
+  const fin = fechaFinInput.value;
+
+  if (!inicio || !fin) {
+    alert("Seleccione ambas fechas");
+    return;
+  }
+
+  const q = query(
+    collection(db, "ventas"),
+    where("fecha", ">=", Timestamp.fromDate(new Date(inicio))),
+    where("fecha", "<=", Timestamp.fromDate(new Date(new Date(fin).setHours(23, 59, 59))))
+  );
+
+  const snap = await getDocs(q);
+
+  if (snap.empty) {
+    alert("No hay ventas en ese rango de fechas");
+    return;
+  }
+
+  // Crear datos para Excel
+  const datos = [];
+  snap.forEach(docSnap => {
+    const v = docSnap.data();
+    const fecha = v.fecha.toDate ? v.fecha.toDate() : new Date(v.fecha);
+
+    if (Array.isArray(v.lineas)) {
+      v.lineas.forEach(l => {
+        datos.push({
+          Fecha: fecha.toLocaleDateString(),
+          Cliente: v.clienteNombre || "-",
+          Vendedor: v.vendedorNombre || "-",
+          Producto: l.nombre || "-",
+          Variedad: l.variedad || "-",
+          Cantidad: l.cantidad || 0,
+          PesoGramos: l.peso || 0,
+          TotalVenta: v.total || 0,
+          Estado: v.estado || "-"
+        });
+      });
+    }
+  });
+
+  // Crear workbook y hoja
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(datos);
+
+  // Formato bonito: encabezados en negrita y fondo gris
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for(let C = range.s.c; C <= range.e.c; ++C) {
+    const cell = ws[XLSX.utils.encode_cell({r:0, c:C})];
+    if(!cell.s) cell.s = {};
+    cell.s.font = { bold: true, color: { rgb: "FFFFFF" } };
+    cell.s.fill = { fgColor: { rgb: "4F81BD" } }; // azul estilo botino
+    cell.s.alignment = { horizontal: "center" };
+  }
+
+  // Ajustar anchos de columna
+  const cols = [
+    { wch: 12 }, // Fecha
+    { wch: 20 }, // Cliente
+    { wch: 20 }, // Vendedor
+    { wch: 25 }, // Producto
+    { wch: 15 }, // Variedad
+    { wch: 10 }, // Cantidad
+    { wch: 12 }, // PesoGramos
+    { wch: 15 }, // TotalVenta
+    { wch: 15 }  // Estado
+  ];
+  ws['!cols'] = cols;
+
+  XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+  XLSX.writeFile(wb, `Ventas_${inicio}_a_${fin}.xlsx`);
+};
+
+
+
 
 // =====================
 // DASHBOARD
@@ -474,6 +557,7 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
     <p><strong>Total en dinero:</strong> ₡${totalDinero.toLocaleString()}</p>
   `;
 };
+
 
 
 
