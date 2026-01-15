@@ -346,6 +346,94 @@ body {
   }
 }
 
+/* ====== LOGIN PAGE ====== */
+body.login-page {
+    min-height: 100vh;
+    background:
+        linear-gradient(rgba(10, 40, 35, 0.85), rgba(10, 40, 35, 0.85)),
+        url("imagenes/empaque.jpg") center/cover no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* CONTENEDOR DEL LOGIN */
+.login-container {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 40px 35px;
+    border-radius: 18px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* TÍTULO */
+.login-container h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 26px;
+    color: #0b3b32;
+    letter-spacing: 0.5px;
+}
+
+/* GRUPO DE INPUT */
+.login-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+/* LABEL */
+.login-group label {
+    margin-bottom: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #0b3b32;
+}
+
+/* INPUTS */
+.login-group input {
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: 15px;
+    transition: border 0.3s, box-shadow 0.3s;
+}
+
+.login-group input:focus {
+    outline: none;
+    border-color: #2e8b7d;
+    box-shadow: 0 0 0 3px rgba(46, 139, 125, 0.15);
+}
+
+/* BOTÓN */
+.login-btn {
+    width: 100%;
+    padding: 13px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f57c00, #ff9800);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(245, 124, 0, 0.4);
+}
+
+/* RESPONSIVE */
+@media (max-width: 480px) {
+    .login-container {
+        padding: 30px 25px;
+    }
+}
+
 
 
 
