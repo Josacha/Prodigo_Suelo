@@ -133,6 +133,7 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
     total,
     lineas: carrito,
     estado: "entrante",
+    estadoPago: "pendiente",
     consignacion: diasConsignacion>0 ? { dias:diasConsignacion, vencimiento: fechaVencimiento, estado:"pendiente de pago" } : null,
     comentario: ""
   });
@@ -184,6 +185,12 @@ function cargarPedidos(){
           <option value="entregado" ${venta.estado==='entregado'?'selected':''}>Entregado</option>
         </select>
 
+        <label>Estado Pago:</label>
+  <select id="estadoPago-${pedidoId}">
+    <option value="pendiente" ${venta.estadoPago==='pendiente'?'selected':''}>Pendiente</option>
+    <option value="pagado" ${venta.estadoPago==='pagado'?'selected':''}>Pagado</option>
+  </select>
+
         ${consignacionHTML}
 
         <button onclick="actualizarEstadoVendedor('${pedidoId}')">Actualizar</button>
@@ -211,22 +218,30 @@ function cargarPedidos(){
 // Actualizar estado
 window.actualizarEstadoVendedor = async (pedidoId)=>{
   const estadoSelect = document.getElementById(`estado-${pedidoId}`);
+  const estadoPagoSelect = document.getElementById(`estadoPago-${pedidoId}`);
+
   const nuevoEstado = estadoSelect.value;
+  const nuevoEstadoPago = estadoPagoSelect.value;
+
   const docRef = doc(db,"ventas",pedidoId);
   const docSnap = await getDoc(docRef);
   const pedido = docSnap.data();
 
-  // Solo LISTO → ENTREGADO para vendedor
+  // Vendedor solo puede marcar LISTO → ENTREGADO
   if(pedido.estado === 'listo' && nuevoEstado==='entregado'){
-    await updateDoc(docRef,{estado:'entregado'});
-    alert("Pedido marcado como ENTREGADO");
+    await updateDoc(docRef,{estado:'entregado', estadoPago:nuevoEstadoPago});
+    alert("Pedido marcado como ENTREGADO y estado de pago actualizado");
   } else if(nuevoEstado!=='entregado'){
-    await updateDoc(docRef,{estado:nuevoEstado});
-    alert("Estado actualizado");
+    await updateDoc(docRef,{estado:nuevoEstado, estadoPago:nuevoEstadoPago});
+    alert("Estado del pedido y de pago actualizado");
   } else {
-    alert("Solo puede marcar como ENTREGADO un pedido que esté LISTO");
+    alert("Solo puede marcar como ENTREGADO un pedido que esté LISTO, pero el estado de pago sí se puede cambiar");
+    await updateDoc(docRef,{estadoPago:nuevoEstadoPago});
   }
 };
+
+
+ 
 
 // Eliminar pedido
 window.eliminarPedido = async (pedidoId)=>{
@@ -235,3 +250,4 @@ window.eliminarPedido = async (pedidoId)=>{
     alert("Pedido eliminado");
   }
 };
+
