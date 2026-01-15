@@ -15,6 +15,48 @@
   <h1>Panel Administrador</h1>
   <button id="btnLogout">Cerrar sesión</button>
 
+
+
+  <section class="dashboard">
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi-card">
+      <h4>Total Ventas</h4>
+      <p id="kpiVentas">₡0</p>
+    </div>
+
+    <div class="kpi-card">
+      <h4>Kilogramos Vendidos</h4>
+      <p id="kpiKg">0 kg</p>
+    </div>
+
+    <div class="kpi-card">
+      <h4>Pedidos del Mes</h4>
+      <p id="kpiPedidos">0</p>
+    </div>
+
+    <div class="kpi-card alerta">
+      <h4>Pedidos Entrantes</h4>
+      <p id="kpiEntrantes">0</p>
+    </div>
+  </div>
+
+  <!-- GRÁFICA -->
+  <div class="card">
+    <h3>📊 Ventas Mensuales</h3>
+    <canvas id="graficaVentasMensuales"></canvas>
+  </div>
+
+  <!-- PRODUCCIÓN -->
+  <div class="card">
+    <h3>📦 Estado de Producción</h3>
+    <div id="estadoProduccion" class="estado-grid"></div>
+  </div>
+
+</section>
+
+
   <!-- AGREGAR / EDITAR PRODUCTO -->
   <section>
     <h2>Agregar / Editar Producto</h2>
@@ -88,5 +130,6 @@
 
 </body>
 </html>
+
 
 
