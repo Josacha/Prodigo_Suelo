@@ -67,6 +67,94 @@ async function cargarClientes() {
   });
 }
 
+
+// CARGAR HISTORIAL
+const filtroCliente = document.getElementById("filtroCliente");
+const fechaInicioFiltro = document.getElementById("fechaInicioFiltro");
+const fechaFinFiltro = document.getElementById("fechaFinFiltro");
+const btnBuscarPedidos = document.getElementById("btnBuscarPedidos");
+const resultadosPedidos = document.getElementById("resultadosPedidos");
+
+// Cargar clientes en el filtro
+async function cargarClientesFiltro() {
+  filtroCliente.innerHTML = "<option value=''>Todos los clientes</option>";
+  const snap = await getDocs(collection(db, "clientes"));
+  const agregados = new Set();
+  snap.forEach(docSnap => {
+    const c = docSnap.data();
+    if(c.vendedorId === vendedorId && !agregados.has(docSnap.id)){
+      const opt = document.createElement("option");
+      opt.value = docSnap.id;
+      opt.textContent = `${c.nombre} (${c.telefono || "-"})`;
+      filtroCliente.appendChild(opt);
+      agregados.add(docSnap.id);
+    }
+  });
+}
+
+// Ejecutar al cargar la página
+cargarClientesFiltro();
+
+// Buscar pedidos
+btnBuscarPedidos.onclick = async () => {
+  const clienteId = filtroCliente.value;
+  const inicio = fechaInicioFiltro.value;
+  const fin = fechaFinFiltro.value;
+
+  let q = collection(db, "ventas");
+
+  // Consultar todas las ventas y luego filtrar en JS
+  const snap = await getDocs(q);
+
+  resultadosPedidos.innerHTML = "";
+  snap.forEach(docSnap => {
+    const venta = docSnap.data();
+    const pedidoId = docSnap.id;
+
+    // Filtrar por cliente
+    if(clienteId && venta.cliente.id !== clienteId) return;
+
+    // Filtrar por fechas
+    const fechaVenta = venta.fecha.toDate ? venta.fecha.toDate() : new Date(venta.fecha);
+    if(inicio && fechaVenta < new Date(inicio)) return;
+    if(fin){
+      const fechaFin = new Date(fin);
+      fechaFin.setHours(23,59,59,999); // incluir todo el día
+      if(fechaVenta > fechaFin) return;
+    }
+
+    // Crear tarjeta de pedido
+    const lineasHTML = venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
+
+    let consignacionHTML = "";
+    if(venta.consignacion){
+      const venc = venta.consignacion.vencimiento ? new Date(venta.consignacion.vencimiento.toDate ? venta.consignacion.vencimiento.toDate() : venta.consignacion.vencimiento) : null;
+      consignacionHTML = `<p><strong>Consignación:</strong> ${venta.consignacion.estado} ${venc?`(Vence: ${venc.toLocaleDateString()})`:""}</p>`;
+    }
+
+    const estadoPago = venta.estadoPago || "pendiente";
+
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
+      <p><strong>Fecha:</strong> ${fechaVenta.toLocaleDateString()}</p>
+      <p><strong>Total:</strong> ₡${venta.total}</p>
+      <ul>${lineasHTML}</ul>
+      <p><strong>Estado Pedido:</strong> ${venta.estado}</p>
+      <p><strong>Estado Pago:</strong> ${estadoPago}</p>
+      ${consignacionHTML}
+    `;
+
+    resultadosPedidos.appendChild(card);
+  });
+};
+
+
+
+
+
+
 // AGREGAR AL CARRITO
 document.getElementById("agregarLineaBtn").onclick = () => {
   const opt = productoSelect.selectedOptions[0];
@@ -244,5 +332,6 @@ window.eliminarPedido = async (pedidoId)=>{
     alert("Pedido eliminado");
   }
 };
+
 
 
