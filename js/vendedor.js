@@ -1,85 +1,121 @@
 import { auth, db } from "./firebase.js";
 import {
-  collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, onSnapshot
   collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, onSnapshot, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-@@ -12,11 +12,10 @@ const carritoBody = document.getElementById("carritoBody");
+let carrito = [];
+
+const productoSelect = document.getElementById("productoSelect");
+const cantidadInput = document.getElementById("cantidadInput");
+const carritoBody = document.getElementById("carritoBody");
 const totalPedido = document.getElementById("totalPedido");
 const clienteSelect = document.getElementById("clienteSelect");
 const pedidosContainer = document.getElementById("pedidosContainer");
 const diasConsignacionInput = document.getElementById("diasConsignacion");
 
-let vendedorId = null; // Vendedor logueado
-
-// Sonido de notificación
-const sonidoPedidoListo = new Audio("audio/alerta.mp3"); // Pon tu archivo de sonido aquí
 let vendedorId = null;
 const sonidoPedidoListo = new Audio("audio/alerta.mp3");
 
 // PROTECCIÓN
 onAuthStateChanged(auth, async user => {
-@@ -36,29 +35,22 @@ document.getElementById("logoutBtn").onclick = async () => {
+  if(!user) location.href = "index.html";
+  vendedorId = user.uid; 
+  await cargarProductos();
+  await cargarClientes();
+  cargarPedidos();
+});
+
+// LOGOUT
+document.getElementById("logoutBtn").onclick = async () => {
+  await signOut(auth);
+  location.href = "index.html";
+};
+
 // CARGAR PRODUCTOS
 async function cargarProductos() {
   productoSelect.innerHTML = "";
-
   const snap = await getDocs(collection(db, "productos"));
-
   snap.forEach(d => {
     const p = d.data();
-
     if (p.activo) {
       const opt = document.createElement("option");
-
       opt.value = d.id;
       opt.textContent = `${p.nombre} - ₡${p.precio}`;
-
       opt.dataset.precio = p.precio;
       opt.dataset.nombre = p.nombre;
-      opt.dataset.peso = p.peso; // ✅ ESTO ES CLAVE
-
       opt.dataset.peso = p.peso;
       productoSelect.appendChild(opt);
     }
   });
 }
 
-
-// CARGAR CLIENTES DEL VENDEDOR (sin repetir)
 // CARGAR CLIENTES DEL VENDEDOR
 async function cargarClientes() {
   clienteSelect.innerHTML = "<option value=''>Seleccione cliente</option>";
   const snap = await getDocs(collection(db, "clientes"));
-@@ -79,7 +71,7 @@ async function cargarClientes() {
+  const agregados = new Set();
+  snap.forEach(docSnap => {
+    const c = docSnap.data();
+    if(c.vendedorId === vendedorId && !agregados.has(docSnap.id)){
+      const opt = document.createElement("option");
+      opt.value = docSnap.id;
+      opt.textContent = `${c.nombre} (${c.telefono || "-"})`;
+      clienteSelect.appendChild(opt);
+      agregados.add(docSnap.id);
+    }
+  });
+}
+
+// AGREGAR AL CARRITO
 document.getElementById("agregarLineaBtn").onclick = () => {
   const opt = productoSelect.selectedOptions[0];
   const cantidad = Number(cantidadInput.value);
-  if(!opt || cantidad <=0 || cantidad>Number(opt.dataset.stock)) return alert("Cantidad inválida o stock insuficiente");
   if(!opt || cantidad <=0) return alert("Cantidad inválida");
   const subtotal = cantidad*Number(opt.dataset.precio);
 
   carrito.push({
-@@ -93,7 +85,7 @@ document.getElementById("agregarLineaBtn").onclick = () => {
+    productoId: opt.value,
+    nombre: opt.dataset.nombre,
+    precio: Number(opt.dataset.precio),
+    peso: Number(opt.dataset.peso), 
+    cantidad,
+    subtotal
+  });
 
   cantidadInput.value="";
   renderCarrito();
-  clienteSelect.disabled = true; // bloquea cliente después de agregar primera línea
   clienteSelect.disabled = true;
 };
 
 // RENDER CARRITO
-@@ -118,7 +110,7 @@ function renderCarrito() {
+function renderCarrito() {
+  carritoBody.innerHTML="";
+  let total=0;
+  carrito.forEach((l,i)=>{
+    total+=l.subtotal;
+    carritoBody.innerHTML += `
+      <tr>
+        <td>${l.nombre}</td>
+        <td>${l.cantidad}</td>
+        <td>₡${l.subtotal}</td>
+        <td>
+          <button class="btn-eliminar" onclick="eliminarLinea(${i})"><i class="fa fa-trash"></i></button>
+        </td>
+      </tr>
+    `;
+  });
+  totalPedido.textContent = total;
+}
 window.eliminarLinea = (i) => {
   carrito.splice(i,1);
   renderCarrito();
-  if(carrito.length===0) clienteSelect.disabled = false; // desbloquea si carrito vacío
   if(carrito.length===0) clienteSelect.disabled = false;
 };
 
 // CONFIRMAR PEDIDO
-@@ -127,6 +119,9 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
+document.getElementById("confirmarVentaBtn").onclick = async () => {
+  const clienteId = clienteSelect.value;
   if(!clienteId) return alert("Seleccione un cliente");
   if(carrito.length===0) return alert("Carrito vacío");
 
@@ -89,7 +125,11 @@ window.eliminarLinea = (i) => {
   const clienteDoc = await getDoc(doc(db,"clientes",clienteId));
   const clienteData = clienteDoc.data();
   const total = carrito.reduce((s,l)=>s+l.subtotal,0);
-@@ -138,13 +133,15 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
+
+  await addDoc(collection(db,"ventas"),{
+    vendedorId,
+    cliente:{id:clienteId, nombre:clienteData.nombre, telefono:clienteData.telefono||null},
+    fecha: new Date(),
     total,
     lineas: carrito,
     estado: "entrante",
@@ -105,7 +145,14 @@ window.eliminarLinea = (i) => {
   alert("Pedido registrado");
   cargarPedidos();
 };
-@@ -159,14 +156,22 @@ function cargarPedidos(){
+
+// CARGAR PEDIDOS REGISTRADOS
+function cargarPedidos(){
+  pedidosContainer.innerHTML="";
+  onSnapshot(collection(db,"ventas"),snap=>{
+    pedidosContainer.innerHTML="";
+    snap.forEach(async docSnap=>{
+      const venta = docSnap.data();
       if(venta.vendedorId!==vendedorId) return;
       const pedidoId = docSnap.id;
 
@@ -123,15 +170,17 @@ window.eliminarLinea = (i) => {
       const card = document.createElement("div");
       card.className = "card";
 
-      const lineasHTML = venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
-
       card.innerHTML = `
         <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
-        <p><strong>Vendedor:</strong> ${vendedorId}</p>
         <p><strong>Total:</strong> ₡${venta.total}</p>
         <ul>${lineasHTML}</ul>
 
-@@ -179,54 +184,54 @@ function cargarPedidos(){
+        <label>Estado:</label>
+        <select id="estado-${pedidoId}">
+          <option value="entrante" ${venta.estado==='entrante'?'selected':''}>Entrante</option>
+          <option value="en proceso" ${venta.estado==='en proceso'?'selected':''}>En Proceso</option>
+          <option value="listo" ${venta.estado==='listo'?'selected':''}>Listo</option>
+          <option value="atrasado" ${venta.estado==='atrasado'?'selected':''}>Atrasado</option>
           <option value="entregado" ${venta.estado==='entregado'?'selected':''}>Entregado</option>
         </select>
 
@@ -143,17 +192,10 @@ window.eliminarLinea = (i) => {
 
       pedidosContainer.appendChild(card);
 
-      // Notificación cuando el pedido está LISTO
       // Notificación pedido listo
       if(venta.estado === "listo" && !card.dataset.notificado){
         sonidoPedidoListo.play();
         card.dataset.notificado = true;
-
-        if("Notification" in window && Notification.permission === "granted"){
-          new Notification(`Pedido LISTO: ${venta.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
-        } else if("Notification" in window && Notification.permission !== "denied"){
-          Notification.requestPermission().then(p => {
-            if(p==="granted") new Notification(`Pedido LISTO: ${venta.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
         if("Notification" in window && Notification.permission==="granted"){
           new Notification(`Pedido LISTO: ${venta.cliente.nombre}`, { body:"Revisa el pedido para entregar." });
         } else if("Notification" in window && Notification.permission!=="denied"){
@@ -166,12 +208,10 @@ window.eliminarLinea = (i) => {
   });
 }
 
-// Vendedor solo puede cambiar LISTO → ENTREGADO
 // Actualizar estado
 window.actualizarEstadoVendedor = async (pedidoId)=>{
   const estadoSelect = document.getElementById(`estado-${pedidoId}`);
   const nuevoEstado = estadoSelect.value;
-  const docRef = doc(db, "ventas", pedidoId);
   const docRef = doc(db,"ventas",pedidoId);
   const docSnap = await getDoc(docRef);
   const pedido = docSnap.data();
@@ -180,7 +220,6 @@ window.actualizarEstadoVendedor = async (pedidoId)=>{
   if(pedido.estado === 'listo' && nuevoEstado==='entregado'){
     await updateDoc(docRef,{estado:'entregado'});
     alert("Pedido marcado como ENTREGADO");
-  } else if(nuevoEstado !== 'entregado'){
   } else if(nuevoEstado!=='entregado'){
     await updateDoc(docRef,{estado:nuevoEstado});
     alert("Estado actualizado");
@@ -189,10 +228,10 @@ window.actualizarEstadoVendedor = async (pedidoId)=>{
   }
 };
 
-// ELIMINAR PEDIDO
 // Eliminar pedido
 window.eliminarPedido = async (pedidoId)=>{
   if(confirm("¿Desea eliminar este pedido?")){
     await deleteDoc(doc(db,"ventas",pedidoId));
     alert("Pedido eliminado");
   }
+};
