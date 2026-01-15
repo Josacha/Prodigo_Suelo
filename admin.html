@@ -9,6 +9,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 </head>
 <body>
+
+  
+
   <h1>Panel Administrador</h1>
   <button id="btnLogout">Cerrar sesión</button>
 
@@ -70,9 +73,20 @@
       <p><strong>Total gramos de café vendidos:</strong> 0</p>
       <p><strong>Total en dinero:</strong> ₡0</p>
     </div>
+
+
+
   </section>
 
+      <section class="card">
+  <h3>📊 Ventas Mensuales</h3>
+  <canvas id="graficaVentasMensuales"></canvas>
+</section>
+
   <script type="module" src="js/admin.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </body>
 </html>
+
 
