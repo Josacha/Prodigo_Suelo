@@ -261,31 +261,12 @@ ${venta.consignacion ? `Consignación: ${venta.consignacion.estado}` : ""}
 </pre>
   `;
 
- const btnPrint = document.getElementById("imprimirTicketBtn");
-btnPrint.style.display = "block";
-btnPrint.onclick = imprimirTicket; // ahora llama a la función que abre ventana independiente
-
-  function imprimirTicket() {
-  const ticket = document.getElementById("ticket");
-  if(!ticket) return alert("No hay ticket para imprimir");
-
-  const ventana = window.open('', 'PRINT', 'height=600,width=300');
-
-  ventana.document.write('<html><head><title>Ticket</title>');
-  ventana.document.write('<style>@page{size:100mm auto;margin:0} body{font-family:monospace;}</style>');
-  ventana.document.write('</head><body>');
-  ventana.document.write(ticket.innerHTML);
-  ventana.document.write('</body></html>');
-
-  ventana.document.close();
-  ventana.focus();
-  ventana.print();
-  ventana.close();
-}
+  const btnPrint = document.getElementById("imprimirTicketBtn");
+  btnPrint.style.display = "block";
+  btnPrint.onclick = () => {
+    window.print(); // Solo imprimirá ticket gracias al @media print
   };
 }
-
-
 
 
 // CARGAR PEDIDOS REGISTRADOS
@@ -376,7 +357,4 @@ window.eliminarPedido = async (pedidoId)=>{
     alert("Pedido eliminado");
   }
 };
-
-
-
 
