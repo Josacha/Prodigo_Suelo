@@ -46,6 +46,29 @@ document.getElementById("btnLogout").onclick = async () => {
 };
 
 // =====================
+// Ubicacion
+// =====================
+
+window.obtenerUbicacion = () => {
+  if (!navigator.geolocation) {
+    alert("La geolocalización no está disponible");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      document.getElementById("clienteUbicacion").value = `${lat}, ${lng}`;
+    },
+    () => {
+      alert("No se pudo obtener la ubicación");
+    }
+  );
+};
+
+
+// =====================
 // CALCULAR IVA
 // =====================
 precio.addEventListener("input", () => {
@@ -136,17 +159,27 @@ async function cargarVendedores() {
 // AGREGAR CLIENTE
 // =====================
 document.getElementById("btnAgregarCliente").onclick = async () => {
-  if (!clienteNombre.value || !vendedorSelect.value) return alert("Complete los campos");
+  if (!clienteNombre.value || !vendedorSelect.value) {
+    return alert("Complete los campos obligatorios");
+  }
 
   await addDoc(collection(db, "clientes"), {
     nombre: clienteNombre.value,
     telefono: clienteTelefono.value || null,
-    vendedorId: vendedorSelect.value
+    direccion: document.getElementById("clienteDireccion").value || null,
+    ubicacion: document.getElementById("clienteUbicacion").value || null,
+    vendedorId: vendedorSelect.value,
+    fecha: Timestamp.now()
   });
 
-  clienteNombre.value = clienteTelefono.value = "";
+  clienteNombre.value = "";
+  clienteTelefono.value = "";
+  document.getElementById("clienteDireccion").value = "";
+  document.getElementById("clienteUbicacion").value = "";
+
   cargarClientes();
 };
+;
 
 // =====================
 // LISTAR CLIENTES
@@ -160,11 +193,14 @@ async function cargarClientes() {
     const vendedorName = vendedorSelect.querySelector(`option[value="${vendedor}"]`)?.text || "N/A";
     const card = document.createElement("div");
     card.className = "card";
-    card.innerHTML = `
-      <p><strong>Nombre:</strong> ${c.nombre}</p>
-      <p><strong>Teléfono:</strong> ${c.telefono || "-"}</p>
-      <p><strong>Vendedor:</strong> ${vendedorName}</p>
-    `;
+   card.innerHTML = `
+  <p><strong>Nombre:</strong> ${c.nombre}</p>
+  <p><strong>Teléfono:</strong> ${c.telefono || "-"}</p>
+  <p><strong>Dirección:</strong> ${c.direccion || "-"}</p>
+  <p><strong>Ubicación:</strong> ${c.ubicacion || "-"}</p>
+  <p><strong>Vendedor:</strong> ${vendedorName}</p>
+`;
+
     clientesContainer.appendChild(card);
   });
 }
@@ -203,5 +239,6 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
     <p><strong>Total en dinero:</strong> ₡${totalDinero}</p>
   `;
 };
+
 
 
