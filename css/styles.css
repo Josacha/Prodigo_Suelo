@@ -710,6 +710,21 @@ td {
   border-bottom: 1px solid #ddd;
 }
 
+<style>
+.btn-registro{
+  background:#1e293b;
+  color:#fff;
+  padding:12px 18px;
+  border:none;
+  border-radius:10px;
+  font-weight:600;
+  cursor:pointer;
+}
+.btn-registro:hover{
+  background:#0f172a;
+}
+</style>
+
 
 
 
