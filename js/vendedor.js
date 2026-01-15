@@ -235,6 +235,100 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
   cargarPedidos();
 };
 
+
+
+// GENERAR TICKET
+function generarTicket(venta) {
+  const ticketDiv = document.getElementById("ticket");
+  ticketDiv.innerHTML = ""; // limpiar
+
+  const fecha = venta.fecha.toDate ? venta.fecha.toDate() : new Date(venta.fecha);
+
+  ticketDiv.innerHTML = `
+    <h3>Pródigo Suelo</h3>
+    <p>Fecha: ${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}</p>
+    <p>Cliente: ${venta.cliente.nombre}</p>
+    <hr>
+    <ul>
+      ${venta.lineas.map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("")}
+    </ul>
+    <hr>
+    <p><strong>Total:</strong> ₡${venta.total}</p>
+    <p>Estado Pedido: ${venta.estado}</p>
+    <p>Estado Pago: ${venta.estadoPago || "pendiente"}</p>
+    ${venta.consignacion ? `<p>Consignación: ${venta.consignacion.estado}</p>` : ""}
+    <hr>
+    <p>¡Gracias por su compra!</p>
+  `;
+
+  // Mostrar botón para imprimir
+  const btnPrint = document.getElementById("imprimirTicketBtn");
+  btnPrint.style.display = "block";
+  btnPrint.onclick = () => {
+    const originalContent = document.body.innerHTML;
+    document.body.innerHTML = ticketDiv.innerHTML;
+    window.print();
+    document.body.innerHTML = originalContent;
+    location.reload(); // recargar para restaurar todo
+  };
+}
+
+// Llamar después de confirmar venta
+document.getElementById("confirmarVentaBtn").onclick = async () => {
+  const clienteId = clienteSelect.value;
+  if(!clienteId) return alert("Seleccione un cliente");
+  if(carrito.length===0) return alert("Carrito vacío");
+
+  const diasConsignacion = Number(diasConsignacionInput.value || 0);
+  const fechaVencimiento = diasConsignacion > 0 ? new Date(Date.now() + diasConsignacion*24*60*60*1000) : null;
+
+  const clienteDoc = await getDoc(doc(db,"clientes",clienteId));
+  const clienteData = clienteDoc.data();
+  const total = carrito.reduce((s,l)=>s+l.subtotal,0);
+
+  const ventaRef = await addDoc(collection(db,"ventas"),{
+    vendedorId,
+    cliente:{id:clienteId, nombre:clienteData.nombre, telefono:clienteData.telefono||null},
+    fecha: new Date(),
+    total,
+    lineas: carrito,
+    estado: "entrante",
+    estadoPago: "pendiente",
+    consignacion: diasConsignacion>0 ? { dias:diasConsignacion, vencimiento: fechaVencimiento, estado:"pendiente de pago" } : null,
+    comentario: ""
+  });
+
+  const ventaData = {
+    ...{
+      vendedorId,
+      cliente:{id:clienteId, nombre:clienteData.nombre, telefono:clienteData.telefono||null},
+      fecha: new Date(),
+      total,
+      lineas: carrito,
+      estado: "entrante",
+      estadoPago: "pendiente",
+      consignacion: diasConsignacion>0 ? { dias:diasConsignacion, vencimiento: fechaVencimiento, estado:"pendiente de pago" } : null,
+      comentario: ""
+    },
+    id: ventaRef.id
+  };
+
+  carrito=[];
+  renderCarrito();
+  clienteSelect.value="";
+  clienteSelect.disabled=false;
+  diasConsignacionInput.value="";
+  alert("Pedido registrado");
+
+  cargarPedidos();
+
+  generarTicket(ventaData); // Genera el ticket
+};
+
+
+
+
+
 // CARGAR PEDIDOS REGISTRADOS
 function cargarPedidos(){
   pedidosContainer.innerHTML = "";
@@ -332,6 +426,7 @@ window.eliminarPedido = async (pedidoId)=>{
     alert("Pedido eliminado");
   }
 };
+
 
 
 
