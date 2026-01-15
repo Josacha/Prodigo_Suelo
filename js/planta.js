@@ -2,7 +2,11 @@ import { auth, db } from "./firebase.js";
 import { collection, onSnapshot, updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-const pedidosContainer = document.getElementById("pedidosContainer");
+const colEntrante  = document.getElementById("col-entrante");
+const colProceso   = document.getElementById("col-proceso");
+const colListo     = document.getElementById("col-listo");
+const colAtrasado  = document.getElementById("col-atrasado");
+
 const alertSound = new Audio("audio/alerta.mp3");
 
 // pedidos ya notificados (persistente aunque recargue)
@@ -33,7 +37,11 @@ function cargarPedidos() {
   const ventasRef = collection(db, "ventas");
 
   onSnapshot(ventasRef, snapshot => {
-    pedidosContainer.innerHTML = "";
+    colEntrante.innerHTML = "";
+    colProceso.innerHTML = "";
+    colListo.innerHTML = "";
+    colAtrasado.innerHTML = "";
+
 
     snapshot.forEach(async docSnap => {
       const pedido = docSnap.data();
@@ -78,7 +86,21 @@ function cargarPedidos() {
         <button onclick="actualizarEstadoPlanta('${pedidoId}')">Actualizar</button>
       `;
 
-      pedidosContainer.appendChild(card);
+      switch (pedido.estado) {
+  case "entrante":
+    colEntrante.appendChild(card);
+    break;
+  case "en proceso":
+    colProceso.appendChild(card);
+    break;
+  case "listo":
+    colListo.appendChild(card);
+    break;
+  case "atrasado":
+    colAtrasado.appendChild(card);
+    break;
+}
+
 
       // 🔊 SONIDO SOLO LA PRIMERA VEZ QUE ENTRA
       if (pedido.estado === "entrante" && !pedidosNotificados.includes(pedidoId)) {
@@ -126,3 +148,4 @@ window.actualizarEstadoPlanta = async (pedidoId) => {
     comentario: nuevoEstado === 'atrasado' ? comentarioInput.value : ''
   });
 };
+
