@@ -23,7 +23,7 @@ onAuthStateChanged(auth, async user => {
   vendedorId = user.uid;
   await cargarProductos();
   await cargarClientes();
-  cargarPedidos();
+  cargarPedidos(); // Esto ahora es en tiempo real
 });
 
 // ====== LOGOUT ======
@@ -141,7 +141,7 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
     fecha: new Date(),
     total,
     lineas: carrito,
-    estadoPedido: "entrante", // conservamos estado de producción
+    estadoPedido: "entrante",
     estadoPago: estadoPagoInicial,
     consignacion: !!fechaVencimiento,
     diasConsignacion: fechaVencimiento ? Math.max(...carrito.map(l=>l.diasConsignacion)) : 0,
@@ -154,10 +154,9 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
   clienteSelect.value="";
   clienteSelect.disabled=false;
   alert("Pedido registrado");
-  cargarPedidos();
 };
 
-// ====== CARGAR PEDIDOS ======
+// ====== CARGAR PEDIDOS EN TIEMPO REAL ======
 function cargarPedidos() {
   pedidosContainer.innerHTML="";
   onSnapshot(collection(db,"ventas"),snap=>{
@@ -208,6 +207,19 @@ function cargarPedidos() {
       `;
 
       pedidosContainer.appendChild(card);
+
+      // sonido y notificación si el pedido está listo
+      if(venta.estadoPedido === "listo" && !card.dataset.notificado){
+        sonidoPedidoListo.play();
+        card.dataset.notificado = true;
+        if("Notification" in window && Notification.permission === "granted"){
+          new Notification(`Pedido LISTO: ${venta.cliente.nombre}`);
+        } else if(Notification.permission !== "denied"){
+          Notification.requestPermission().then(p=>{
+            if(p==="granted") new Notification(`Pedido LISTO: ${venta.cliente.nombre}`);
+          });
+        }
+      }
     });
   });
 }
@@ -224,7 +236,6 @@ window.actualizarPedido = async (pedidoId)=>{
   const docSnap = await getDoc(docRef);
   const pedido = docSnap.data();
 
-  // regla: consignación solo puede pasar a pagado
   if(pedido.estadoPago==="consignacion" && nuevoEstadoPago!=="pagado"){
     alert("Los pedidos en consignación solo pueden marcarse como Pagado");
     estadoPagoSelect.value = "consignacion";
