@@ -1,9 +1,11 @@
 import { auth, db } from "./firebase.js";
-import { collection, onSnapshot, updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { collection, onSnapshot, updateDoc, doc, getDoc } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { onAuthStateChanged, signOut } 
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const pedidosContainer = document.getElementById("pedidosContainer");
-const alertSound = new Audio("audio/alerta.mp3"); // sonido al marcar listo
+const alertSound = new Audio("audio/alerta.mp3"); // sonido ENTRANTE
 
 onAuthStateChanged(auth, async user => {
   if (!user) location.href = "index.html";
@@ -36,7 +38,7 @@ function cargarPedidos() {
       const pedido = docSnap.data();
       const pedidoId = docSnap.id;
 
-      // Traer el nombre del vendedor
+      // Vendedor
       const vendedorDoc = await getDoc(doc(db, "usuarios", pedido.vendedorId));
       const vendedorData = vendedorDoc.data();
       const vendedorNombre = vendedorData ? vendedorData.nombre : "Desconocido";
@@ -45,7 +47,9 @@ function cargarPedidos() {
       card.className = `card estado-${pedido.estado || 'entrante'}`;
       card.id = `pedido-${pedidoId}`;
 
-      const lineasHTML = pedido.lineas.map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
+      const lineasHTML = pedido.lineas
+        .map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`)
+        .join("");
 
       card.innerHTML = `
         <p><strong>${getEstadoIcon(pedido.estado)} Cliente:</strong> ${pedido.cliente.nombre}</p>
@@ -61,23 +65,46 @@ function cargarPedidos() {
           <option value="atrasado" ${pedido.estado==='atrasado'?'selected':''}>Atrasado</option>
         </select>
 
-        <input type="text" id="comentario-${pedidoId}" placeholder="Motivo atraso" value="${pedido.comentario || ''}" ${pedido.estado!=='atrasado'?'disabled':''}>
+        <input type="text"
+          id="comentario-${pedidoId}"
+          placeholder="Motivo atraso"
+          value="${pedido.comentario || ''}"
+          ${pedido.estado!=='atrasado'?'disabled':''}
+        >
+
         <button onclick="actualizarEstadoPlanta('${pedidoId}')">Actualizar</button>
       `;
 
       pedidosContainer.appendChild(card);
 
-      // Sonido si está listo
-      if(pedido.estado==='listo' && !card.dataset.notificado){
-        alertSound.play();
-        card.dataset.notificado = true;
-        // Notificación en ventana
-        if("Notification" in window && Notification.permission === "granted"){
-          new Notification(`Pedido LISTO: ${pedido.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
-        } else if("Notification" in window && Notification.permission !== "denied"){
-          Notification.requestPermission().then(p => {
-            if(p==="granted") new Notification(`Pedido LISTO: ${pedido.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
-          });
+      /* ============================
+         🔔 NOTIFICACIÓN ENTRANTE
+      ============================ */
+      if (pedido.estado === "entrante") {
+
+        const notificadoKey = `pedidoEntrante_${pedidoId}`;
+
+        // 🔊 Sonido SOLO la primera vez
+        if (!localStorage.getItem(notificadoKey)) {
+          alertSound.play();
+          localStorage.setItem(notificadoKey, "true");
+        }
+
+        // 🪟 Notificación visual SIEMPRE
+        if ("Notification" in window) {
+          if (Notification.permission === "granted") {
+            new Notification("📥 Pedido entrante", {
+              body: `Cliente: ${pedido.cliente.nombre}`
+            });
+          } else if (Notification.permission !== "denied") {
+            Notification.requestPermission().then(p => {
+              if (p === "granted") {
+                new Notification("📥 Pedido entrante", {
+                  body: `Cliente: ${pedido.cliente.nombre}`
+                });
+              }
+            });
+          }
         }
       }
     });
@@ -87,13 +114,12 @@ function cargarPedidos() {
 window.actualizarEstadoPlanta = async (pedidoId) => {
   const estadoSelect = document.getElementById(`estado-${pedidoId}`);
   const comentarioInput = document.getElementById(`comentario-${pedidoId}`);
-  const nuevoEstado = estadoSelect.value;
-  const comentario = comentarioInput.value;
 
+  const nuevoEstado = estadoSelect.value;
   comentarioInput.disabled = nuevoEstado !== 'atrasado';
 
   await updateDoc(doc(db, "ventas", pedidoId), {
     estado: nuevoEstado,
-    comentario: nuevoEstado==='atrasado' ? comentario : ''
+    comentario: nuevoEstado === 'atrasado' ? comentarioInput.value : ''
   });
 };
