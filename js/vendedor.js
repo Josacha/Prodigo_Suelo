@@ -46,6 +46,23 @@ async function cargarProductos() {
       opt.dataset.precio = p.precio;
       opt.dataset.stock = p.stock;
       opt.dataset.nombre = p.nombre;
+      async function cargarProductos() {
+  productoSelect.innerHTML = "";
+  const snap = await getDocs(collection(db, "productos"));
+  snap.forEach(d => {
+    const p = d.data();
+    if(p.activo){
+      const opt = document.createElement("option");
+      opt.value = d.id;
+      opt.textContent = `${p.nombre} - ₡${p.precio}`;
+      opt.dataset.precio = p.precio;
+      opt.dataset.nombre = p.nombre;
+      opt.dataset.peso = p.peso; 
+      productoSelect.appendChild(opt);
+    }
+  });
+}
+
       productoSelect.appendChild(opt);
     }
   });
@@ -79,6 +96,7 @@ document.getElementById("agregarLineaBtn").onclick = () => {
     productoId: opt.value,
     nombre: opt.dataset.nombre,
     precio: Number(opt.dataset.precio),
+    peso: Number(opt.dataset.peso), 
     cantidad,
     subtotal
   });
@@ -220,3 +238,4 @@ window.eliminarPedido = async (pedidoId)=>{
     alert("Pedido eliminado");
   }
 };
+
