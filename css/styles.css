@@ -436,6 +436,65 @@ body.login-page {
 
 
 
+/* ===== TABLERO DE PRODUCCIÓN ===== */
+.tablero-produccion {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 30px;
+  margin-top: 30px;
+}
+
+/* COLUMNAS */
+.columna {
+  background: rgba(255,255,255,0.06);
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* TITULO COLUMNA */
+.columna h2 {
+  text-align: center;
+  margin-bottom: 18px;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+}
+
+/* CUERPO */
+.columna-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* COLORES PRODIGO SUELO */
+.columna.entrante { border-top: 5px solid #f4b942; }
+.columna.proceso  { border-top: 5px solid #3498db; }
+.columna.listo    { border-top: 5px solid #27ae60; }
+.columna.atrasado { border-top: 5px solid #c0392b; }
+
+/* CARD PEDIDO */
+.card {
+  background: #1f3b36;
+  border-radius: 14px;
+  padding: 16px;
+  color: #ffffff;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+}
+
+/* ESPACIADO INTERNO */
+.card p {
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+/* LISTA */
+.card ul {
+  padding-left: 16px;
+  font-size: 13px;
+}
+
 
 
 
