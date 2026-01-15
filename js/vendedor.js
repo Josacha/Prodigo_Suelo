@@ -4,9 +4,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// ====== VARIABLES ======
 let carrito = [];
-let vendedorId = null; // Vendedor logueado
+let vendedorId = null;
 
 const productoSelect = document.getElementById("productoSelect");
 const cantidadInput = document.getElementById("cantidadInput");
@@ -16,7 +15,6 @@ const totalPedido = document.getElementById("totalPedido");
 const clienteSelect = document.getElementById("clienteSelect");
 const pedidosContainer = document.getElementById("pedidosContainer");
 
-// Sonido de notificación
 const sonidoPedidoListo = new Audio("audio/alerta.mp3");
 
 // ====== PROTECCIÓN ======
@@ -76,7 +74,7 @@ document.getElementById("agregarLineaBtn").onclick = () => {
   const diasConsignacion = Number(diasConsignacionInput.value) || 0;
 
   if(!opt || cantidad <= 0) return alert("Cantidad inválida");
-  
+
   const subtotal = cantidad * Number(opt.dataset.precio);
 
   carrito.push({
@@ -96,7 +94,7 @@ document.getElementById("agregarLineaBtn").onclick = () => {
 };
 
 // ====== RENDER CARRITO ======
-function renderCarrito(){
+function renderCarrito() {
   carritoBody.innerHTML = "";
   let total = 0;
   carrito.forEach((l,i)=>{
@@ -131,12 +129,11 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
   const clienteData = clienteDoc.data();
   const total = carrito.reduce((s,l)=>s+l.subtotal,0);
 
-  // Calculamos la fecha de vencimiento si hay consignación
   const fechaVencimiento = carrito.some(l=>l.diasConsignacion>0)
     ? new Date(new Date().getTime() + Math.max(...carrito.map(l=>l.diasConsignacion))*24*60*60*1000)
     : null;
 
-  const estadoInicial = fechaVencimiento ? "consignacion" : "pendiente";
+  const estadoPagoInicial = fechaVencimiento ? "consignacion" : "pendiente";
 
   await addDoc(collection(db,"ventas"),{
     vendedorId,
@@ -144,7 +141,8 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
     fecha: new Date(),
     total,
     lineas: carrito,
-    estado: estadoInicial,
+    estadoPedido: "entrante", // conservamos estado de producción
+    estadoPago: estadoPagoInicial,
     consignacion: !!fechaVencimiento,
     diasConsignacion: fechaVencimiento ? Math.max(...carrito.map(l=>l.diasConsignacion)) : 0,
     fechaVencimiento,
@@ -160,7 +158,7 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
 };
 
 // ====== CARGAR PEDIDOS ======
-function cargarPedidos(){
+function cargarPedidos() {
   pedidosContainer.innerHTML="";
   onSnapshot(collection(db,"ventas"),snap=>{
     pedidosContainer.innerHTML="";
@@ -174,9 +172,9 @@ function cargarPedidos(){
 
       const lineasHTML = venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
 
-      // Si es consignación vencida
+      // alerta de consignación vencida
       let alertaVencimiento = "";
-      if(venta.estado==="consignacion" && venta.fechaVencimiento){
+      if(venta.estadoPago==="consignacion" && venta.fechaVencimiento){
         const hoy = new Date();
         if(new Date(venta.fechaVencimiento) < hoy){
           alertaVencimiento = `<p style="color:red;font-weight:bold;">¡Consignación vencida!</p>`;
@@ -188,46 +186,57 @@ function cargarPedidos(){
         <p><strong>Total:</strong> ₡${venta.total}</p>
         <ul>${lineasHTML}</ul>
 
-        <label>Estado:</label>
-        <select id="estado-${pedidoId}">
-          <option value="pendiente" ${venta.estado==='pendiente'?'selected':''}>Pendiente de pago</option>
-          <option value="pagado" ${venta.estado==='pagado'?'selected':''}>Pagado</option>
-          <option value="consignacion" ${venta.estado==='consignacion'?'selected':''}>Consignación</option>
+        <label>Estado Pedido:</label>
+        <select id="estadoPedido-${pedidoId}">
+          <option value="entrante" ${venta.estadoPedido==='entrante'?'selected':''}>Entrante</option>
+          <option value="en proceso" ${venta.estadoPedido==='en proceso'?'selected':''}>En Proceso</option>
+          <option value="listo" ${venta.estadoPedido==='listo'?'selected':''}>Listo</option>
+          <option value="entregado" ${venta.estadoPedido==='entregado'?'selected':''}>Entregado</option>
         </select>
 
-        <button onclick="actualizarEstadoVendedor('${pedidoId}')">Actualizar</button>
+        <label>Estado Pago:</label>
+        <select id="estadoPago-${pedidoId}">
+          <option value="pendiente" ${venta.estadoPago==='pendiente'?'selected':''}>Pendiente de pago</option>
+          <option value="pagado" ${venta.estadoPago==='pagado'?'selected':''}>Pagado</option>
+          <option value="consignacion" ${venta.estadoPago==='consignacion'?'selected':''}>Consignación</option>
+        </select>
+
+        <button onclick="actualizarPedido('${pedidoId}')">Actualizar</button>
         <button onclick="eliminarPedido('${pedidoId}')" class="btn-eliminar">Eliminar pedido</button>
 
         ${alertaVencimiento}
       `;
 
       pedidosContainer.appendChild(card);
-
-      // Notificación si consignación vencida
-      if(alertaVencimiento && "Notification" in window && Notification.permission==="granted"){
-        new Notification(`Consignación vencida: ${venta.cliente.nombre}`, {body:"Revisa el pedido"});
-      }
     });
   });
 }
 
-// ====== ACTUALIZAR ESTADO ======
-window.actualizarEstadoVendedor = async (pedidoId)=>{
-  const estadoSelect = document.getElementById(`estado-${pedidoId}`);
-  const nuevoEstado = estadoSelect.value;
+// ====== ACTUALIZAR PEDIDO ======
+window.actualizarPedido = async (pedidoId)=>{
+  const estadoPedidoSelect = document.getElementById(`estadoPedido-${pedidoId}`);
+  const estadoPagoSelect = document.getElementById(`estadoPago-${pedidoId}`);
+
+  const nuevoEstadoPedido = estadoPedidoSelect.value;
+  const nuevoEstadoPago = estadoPagoSelect.value;
+
   const docRef = doc(db,"ventas",pedidoId);
   const docSnap = await getDoc(docRef);
   const pedido = docSnap.data();
 
-  // reglas: si es consignación, solo se puede pasar a pagado
-  if(pedido.estado==="consignacion" && nuevoEstado!=="pagado"){
-    alert("Los pedidos en consignación solo se pueden marcar como Pagado");
-    estadoSelect.value = "consignacion";
+  // regla: consignación solo puede pasar a pagado
+  if(pedido.estadoPago==="consignacion" && nuevoEstadoPago!=="pagado"){
+    alert("Los pedidos en consignación solo pueden marcarse como Pagado");
+    estadoPagoSelect.value = "consignacion";
     return;
   }
 
-  await updateDoc(docRef,{estado:nuevoEstado});
-  alert("Estado actualizado");
+  await updateDoc(docRef,{
+    estadoPedido: nuevoEstadoPedido,
+    estadoPago: nuevoEstadoPago
+  });
+
+  alert("Pedido actualizado");
 };
 
 // ====== ELIMINAR PEDIDO ======
