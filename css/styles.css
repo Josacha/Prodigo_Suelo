@@ -725,14 +725,19 @@ td {
 }
 </style>
 
-
+/* Ticket para impresión y pantalla */
 .ticket {
-  width: 280px; /* ancho estándar POS */
+  width: 100mm;       /* para imprimir */
+  min-height: 150mm;  /* para imprimir */
+  max-width: 90%;     /* para celular */
   padding: 10px;
-  font-family: monospace;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  line-height: 1.2;
   background: #fff;
-  border: 1px dashed #000;
+  border: 1px solid #000;
   margin: 10px auto;
+  box-sizing: border-box;
 }
 
 .ticket h3, .ticket p, .ticket li {
@@ -750,39 +755,32 @@ td {
   margin: 5px 0;
 }
 
-.ticket {
-  width: 100mm; /* Ancho del ticket */
-  height: 150mm; /* Alto del ticket */
-  padding: 10px;
-  font-family: 'Courier New', Courier, monospace; /* Fuente monoespaciada estilo POS */
-  font-size: 12px;
-  line-height: 1.2;
-  background: white;
-  border: 1px solid #000;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
-
-/* Para impresión */
+/* IMPRESIÓN: solo ticket */
 @media print {
   body * {
-    visibility: hidden;
+    visibility: hidden !important;
   }
   #ticketContainer, #ticketContainer * {
-    visibility: visible;
+    visibility: visible !important;
   }
   #ticketContainer {
     position: absolute;
     left: 0;
     top: 0;
     width: 100mm;
-    height: 150mm;
+    min-height: 150mm;
   }
   #imprimirTicketBtn {
-    display: none;
+    display: none !important;
   }
 }
 
-
-
-
+/* Ajuste responsive para celular */
+@media (max-width: 480px) {
+  .ticket {
+    width: 95%;        /* casi todo el ancho de la pantalla */
+    min-height: auto;  /* que se ajuste al contenido */
+    font-size: 11px;
+    padding: 8px;
+  }
+}
