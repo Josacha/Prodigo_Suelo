@@ -10,7 +10,21 @@
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 </head>
+  
+<div id="popupPedido" class="popup-oculto">
+  <div class="popup-card">
+    <h2>📦 Pedido Entrante</h2>
+    <p id="popupCliente"></p>
+    <p id="popupTotal"></p>
+    <ul id="popupProductos"></ul>
 
+    <button onclick="cerrarPopup()">Cerrar</button>
+  </div>
+</div>
+
+
+
+  
 <body>
 
 <h1>Planta – Pedidos en Producción</h1>
@@ -45,4 +59,5 @@
 <script type="module" src="js/planta.js"></script>
 </body>
 </html>
+
 
