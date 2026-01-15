@@ -41,6 +41,10 @@ onAuthStateChanged(auth, async (user) => {
   await cargarVendedores();
   cargarClientes();
   listarProductos();
+cargarGraficaMensual();
+
+
+  
 });
 
 // =====================
@@ -268,6 +272,83 @@ window.eliminarCliente = async (id) => {
   cargarClientes();
 };
 
+// =====================
+// Graficos
+// =====================
+async function cargarGraficaMensual() {
+  const snap = await getDocs(collection(db, "ventas"));
+
+  const meses = [
+    "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+    "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
+  ];
+
+  let ventasPorMes = Array(12).fill(0);
+  let kgPorMes = Array(12).fill(0);
+  let pedidosPorMes = Array(12).fill(0);
+
+  snap.forEach(docSnap => {
+    const v = docSnap.data();
+    if (!v.fecha) return;
+
+    const fecha = v.fecha.toDate ? v.fecha.toDate() : new Date(v.fecha);
+    const mes = fecha.getMonth(); // 0–11
+
+    pedidosPorMes[mes]++;
+
+    // Dinero
+    ventasPorMes[mes] += Number(v.total || 0);
+
+    // Kilogramos
+    if (Array.isArray(v.lineas)) {
+      v.lineas.forEach(l => {
+        const peso = Number(l.peso || 0); // gramos
+        const cantidad = Number(l.cantidad || 0);
+        kgPorMes[mes] += (peso * cantidad) / 1000;
+      });
+    }
+  });
+
+  renderGraficaMensual(meses, ventasPorMes, kgPorMes, pedidosPorMes);
+}
+
+
+function renderGraficaMensual(meses, ventas, kilos, pedidos) {
+  const ctx = document.getElementById("graficaVentasMensuales").getContext("2d");
+
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: meses,
+      datasets: [
+        {
+          label: "₡ Ventas",
+          data: ventas,
+          backgroundColor: "rgba(75,192,192,0.6)"
+        },
+        {
+          label: "Kg vendidos",
+          data: kilos,
+          backgroundColor: "rgba(255,159,64,0.6)"
+        },
+        {
+          label: "Pedidos",
+          data: pedidos,
+          backgroundColor: "rgba(153,102,255,0.6)"
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+}
+
+
+
 
 // =====================
 // ESTADÍSTICAS POR RANGO DE FECHAS
@@ -328,6 +409,7 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
     <p><strong>Total en dinero:</strong> ₡${totalDinero.toLocaleString()}</p>
   `;
 };
+
 
 
 
