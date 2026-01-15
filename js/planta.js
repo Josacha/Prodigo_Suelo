@@ -105,6 +105,7 @@ function cargarPedidos() {
       // 🔊 SONIDO SOLO LA PRIMERA VEZ QUE ENTRA
       if (pedido.estado === "entrante" && !pedidosNotificados.includes(pedidoId)) {
         alertSound.play();
+        mostrarPopupPedido(pedido);
 
         pedidosNotificados.push(pedidoId);
         localStorage.setItem("pedidosNotificados", JSON.stringify(pedidosNotificados));
@@ -172,5 +173,6 @@ window.actualizarEstadoPlanta = async (pedidoId) => {
     comentario: nuevoEstado === 'atrasado' ? comentarioInput.value : ''
   });
 };
+
 
 
