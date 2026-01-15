@@ -1,212 +1,215 @@
-/* ===============================
-   PRÓDIGO SUELO – PANEL ADMIN
-   Estilo premium y responsive con cards
-=============================== */
-
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@400;500&display=swap');
 
-/* 🎨 COLORES */
+/* ===============================
+   🎨 VARIABLES DE COLOR
+================================ */
 :root {
-  --verde-oscuro: #1f3b36;
-  --verde-medio: #2f5d50;
-  --verde-claro: #4f8f7c;
+  --verde-oscuro: #162b27;
+  --verde-base: #1f3b36;
+  --verde-card: #244b43;
 
   --naranja: #e86a2a;
-  --naranja-oscuro: #c8571f;
+  --naranja-hover: #c8571f;
 
   --blanco: #ffffff;
-  --gris: #eaeaea;
-  --rojo: #e74c3c;
+  --gris-claro: #eaeaea;
 
-  /* Estados de pedidos */
-  --estado-entrante-bg: #fff3cd;
-  --estado-entrante-text: #856404;
-
-  --estado-en-proceso-bg: #cce5ff;
-  --estado-en-proceso-text: #004085;
-
-  --estado-listo-bg: #d4edda;
-  --estado-listo-text: #155724;
-
-  --estado-atrasado-bg: #f8d7da;
-  --estado-atrasado-text: #721c24;
-
-  --estado-entregado-bg: #d1ecf1;
-  --estado-entregado-text: #0c5460;
+  /* Estados */
+  --entrante: #ffc107;
+  --proceso: #0d6efd;
+  --listo: #198754;
+  --atrasado: #dc3545;
+  --entregado: #20c997;
 }
 
-/* 🧱 RESET */
+/* ===============================
+   🔄 RESET
+================================ */
 * {
-  box-sizing: border-box;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
-/* 🌿 BODY */
+/* ===============================
+   🌿 BODY
+================================ */
 body {
   font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #162b27, var(--verde-oscuro));
+  background: linear-gradient(135deg, #10201d, var(--verde-oscuro));
   color: var(--blanco);
   min-height: 100vh;
   padding: 20px;
 }
 
-/* 🔠 TITULOS */
+/* ===============================
+   🔠 TITULOS
+================================ */
 h1 {
   font-family: 'Montserrat', sans-serif;
   font-size: 32px;
-  margin-bottom: 20px;
-  letter-spacing: 1px;
   text-align: center;
+  margin-bottom: 25px;
 }
 
 h2 {
   font-family: 'Montserrat', sans-serif;
-  font-size: 22px;
-  margin: 20px 0 10px;
   color: var(--naranja);
+  margin-bottom: 15px;
 }
 
-/* 📦 SECCIONES */
-section {
-  background: var(--verde-medio);
-  padding: 20px;
-  margin-bottom: 25px;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-}
-
-/* 🧾 INPUTS Y SELECT */
-input, select {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 12px;
-  border-radius: 8px;
-  border: none;
-  font-size: 15px;
-}
-
-input:focus, select:focus {
-  outline: 2px solid var(--naranja);
-}
-
-/* 🔥 BOTONES */
+/* ===============================
+   🔘 BOTONES
+================================ */
 button {
   background: var(--naranja);
   color: var(--blanco);
   border: none;
-  padding: 12px 18px;
+  padding: 12px;
   border-radius: 10px;
-  font-family: 'Montserrat', sans-serif;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.25s ease;
 }
 
 button:hover {
-  background: var(--naranja-oscuro);
+  background: var(--naranja-hover);
   transform: translateY(-2px);
 }
 
-/* 🚪 LOGOUT */
-#btnLogout {
-  background: transparent;
-  border: 2px solid var(--naranja);
-  margin-bottom: 20px;
-}
-
-#btnLogout:hover {
-  background: var(--naranja);
-}
-
-/* =======================
-   CARDS PARA PEDIDOS
-======================= */
+/* ===============================
+   📦 CONTENEDOR DE CARDS
+================================ */
 .cards-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
 }
 
+/* ===============================
+   🧾 CARD PEDIDO
+================================ */
 .card {
-  border-radius: 12px;
+  background: var(--verde-card);
+  border-radius: 14px;
   padding: 20px;
-  background: var(--verde-oscuro);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-  transition: transform 0.2s, box-shadow 0.2s;
   position: relative;
-  color: var(--blanco);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+  transition: transform .2s ease, box-shadow .2s ease;
 }
 
 .card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  transform: translateY(-4px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.45);
 }
 
 .card p {
+  font-size: 14px;
   margin-bottom: 8px;
+}
+
+/* ===============================
+   🏷 BADGE ESTADO
+================================ */
+.estado-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: #000;
+}
+
+/* ===============================
+   🎯 ESTADOS VISUALES
+================================ */
+.estado-entrante {
+  border-left: 6px solid var(--entrante);
+}
+.estado-entrante .estado-badge {
+  background: var(--entrante);
+}
+
+.estado-en-proceso {
+  border-left: 6px solid var(--proceso);
+}
+.estado-en-proceso .estado-badge {
+  background: var(--proceso);
+  color: var(--blanco);
+}
+
+.estado-listo {
+  border-left: 6px solid var(--listo);
+}
+.estado-listo .estado-badge {
+  background: var(--listo);
+  color: var(--blanco);
+}
+
+.estado-atrasado {
+  border-left: 6px solid var(--atrasado);
+}
+.estado-atrasado .estado-badge {
+  background: var(--atrasado);
+  color: var(--blanco);
+}
+
+.estado-entregado {
+  border-left: 6px solid var(--entregado);
+}
+.estado-entregado .estado-badge {
+  background: var(--entregado);
+  color: #000;
+}
+
+/* ===============================
+   📋 LISTA PRODUCTOS
+================================ */
+.card ul {
+  margin: 10px 0;
+  padding-left: 18px;
+}
+
+.card li {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+/* ===============================
+   🧾 INPUTS EN CARD
+================================ */
+.card input,
+.card select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  border-radius: 8px;
+  border: none;
   font-size: 14px;
 }
 
-/* 🎯 Estados de pedidos */
-.card.estado-entrante { background-color: var(--estado-entrante-bg); color: var(--estado-entrante-text); }
-.card.estado-en-proceso { background-color: var(--estado-en-proceso-bg); color: var(--estado-en-proceso-text); }
-.card.estado-listo { background-color: var(--estado-listo-bg); color: var(--estado-listo-text); }
-.card.estado-atrasado { background-color: var(--estado-atrasado-bg); color: var(--estado-atrasado-text); }
-.card.estado-entregado { background-color: var(--estado-entregado-bg); color: var(--estado-entregado-text); }
-
-/* 🔔 Notificación “Listo” */
-.notificacion {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background-color: #ffc107;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-weight: bold;
-  animation: flash 1s infinite;
+.card input:disabled {
+  background: #3a4d49;
+  color: #bbb;
 }
 
-/* Animación de flash */
-@keyframes flash {
-  0%, 50%, 100% { opacity: 1; }
-  25%, 75% { opacity: 0; }
-}
-
-/* Inputs y selects dentro de la card */
-.card input, .card select, .card button {
-  margin-top: 5px;
-  margin-bottom: 5px;
-  width: 100%;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-/* Botón actualizar dentro de card */
-.card button {
-  background-color: var(--naranja);
-  color: var(--blanco);
-  cursor: pointer;
-  border: none;
-}
-
-.card button:hover {
-  background-color: var(--naranja-oscuro);
-}
-
-/* 📱 RESPONSIVE */
+/* ===============================
+   📱 RESPONSIVE
+================================ */
 @media (max-width: 768px) {
   body {
-    padding: 10px;
+    padding: 12px;
   }
 
-  h1 { font-size: 26px; }
-  h2 { font-size: 18px; }
+  h1 {
+    font-size: 26px;
+  }
 
-  input, select { padding: 10px; font-size: 14px; }
-  button { padding: 10px 14px; font-size: 14px; }
-
-  .cards-container { grid-template-columns: 1fr; }
-  .card p { font-size: 13px; }
+  .card {
+    padding: 16px;
+  }
 }
