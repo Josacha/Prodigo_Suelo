@@ -27,6 +27,12 @@ const fechaInicioInput = document.getElementById("fechaInicio");
 const fechaFinInput = document.getElementById("fechaFin");
 const estadisticasContainer = document.getElementById("estadisticasContainer");
 
+let editClienteId = null;
+
+const clienteDireccion = document.getElementById("clienteDireccion");
+const clienteUbicacion = document.getElementById("clienteUbicacion");
+
+
 // =====================
 // PROTECCIÓN
 // =====================
@@ -163,23 +169,33 @@ document.getElementById("btnAgregarCliente").onclick = async () => {
     return alert("Complete los campos obligatorios");
   }
 
-  await addDoc(collection(db, "clientes"), {
+  const data = {
     nombre: clienteNombre.value,
     telefono: clienteTelefono.value || null,
-    direccion: document.getElementById("clienteDireccion").value || null,
-    ubicacion: document.getElementById("clienteUbicacion").value || null,
-    vendedorId: vendedorSelect.value,
-    fecha: Timestamp.now()
-  });
+    direccion: clienteDireccion.value || null,
+    ubicacion: clienteUbicacion.value || null,
+    vendedorId: vendedorSelect.value
+  };
+
+  if (editClienteId) {
+    await updateDoc(doc(db, "clientes", editClienteId), data);
+    editClienteId = null;
+  } else {
+    await addDoc(collection(db, "clientes"), {
+      ...data,
+      fecha: Timestamp.now()
+    });
+  }
 
   clienteNombre.value = "";
   clienteTelefono.value = "";
-  document.getElementById("clienteDireccion").value = "";
-  document.getElementById("clienteUbicacion").value = "";
+  clienteDireccion.value = "";
+  clienteUbicacion.value = "";
+  vendedorSelect.value = "";
 
   cargarClientes();
 };
-;
+
 
 // =====================
 // LISTAR CLIENTES
@@ -193,13 +209,23 @@ async function cargarClientes() {
     const vendedorName = vendedorSelect.querySelector(`option[value="${vendedor}"]`)?.text || "N/A";
     const card = document.createElement("div");
     card.className = "card";
-   card.innerHTML = `
+  card.innerHTML = `
   <p><strong>Nombre:</strong> ${c.nombre}</p>
   <p><strong>Teléfono:</strong> ${c.telefono || "-"}</p>
   <p><strong>Dirección:</strong> ${c.direccion || "-"}</p>
   <p><strong>Ubicación:</strong> ${c.ubicacion || "-"}</p>
   <p><strong>Vendedor:</strong> ${vendedorName}</p>
+
+  <div class="acciones">
+    <button class="btn-editar" onclick="editarCliente('${docSnap.id}')">
+      <i class="fa fa-edit"></i>
+    </button>
+    <button class="btn-eliminar" onclick="eliminarCliente('${docSnap.id}')">
+      <i class="fa fa-trash"></i>
+    </button>
+  </div>
 `;
+
 
     clientesContainer.appendChild(card);
   });
@@ -239,6 +265,7 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
     <p><strong>Total en dinero:</strong> ₡${totalDinero}</p>
   `;
 };
+
 
 
 
