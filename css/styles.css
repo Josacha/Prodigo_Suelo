@@ -351,7 +351,7 @@ body.login-page {
     min-height: 100vh;
     background:
         linear-gradient(rgba(10, 40, 35, 0.85), rgba(10, 40, 35, 0.85)),
-        url("imagenes/empaque.jpg") center/cover no-repeat;
+        url("../imagenes/empaque.jpg") center/cover no-repeat;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -433,6 +433,7 @@ body.login-page {
         padding: 30px 25px;
     }
 }
+
 
 
 
