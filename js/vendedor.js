@@ -149,13 +149,19 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
 
 // CARGAR PEDIDOS REGISTRADOS
 function cargarPedidos(){
-  pedidosContainer.innerHTML="";
-  onSnapshot(collection(db,"ventas"),snap=>{
-    pedidosContainer.innerHTML="";
-    snap.forEach(async docSnap=>{
+  pedidosContainer.innerHTML = "";
+  
+  onSnapshot(collection(db,"ventas"), snap => {
+    pedidosContainer.innerHTML = "";
+
+    snap.forEach(docSnap => {
       const venta = docSnap.data();
-      if(venta.vendedorId!==vendedorId) return;
       const pedidoId = docSnap.id;
+
+      // 🔹 FILTRO: ignorar si ya está ENTREGADO y PAGADO
+      if(venta.estado === "entregado" && venta.estadoPago === "pagado") return;
+
+      if(venta.vendedorId !== vendedorId) return;
 
       const lineasHTML = venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
 
@@ -164,7 +170,7 @@ function cargarPedidos(){
         const venc = venta.consignacion.vencimiento ? new Date(venta.consignacion.vencimiento.toDate ? venta.consignacion.vencimiento.toDate() : venta.consignacion.vencimiento) : null;
         const hoy = new Date();
         let alerta = "";
-        if(venc && hoy>venc && venta.consignacion.estado==="pendiente de pago") alerta = " ⚠ PLAZO VENCIDO";
+        if(venc && hoy > venc && venta.consignacion.estado === "pendiente de pago") alerta = " ⚠ PLAZO VENCIDO";
         consignacionHTML = `<p><strong>Consignación:</strong> ${venta.consignacion.estado} ${alerta} ${venc?`(Vence: ${venc.toLocaleDateString()})`:""}</p>`;
       }
 
@@ -176,7 +182,7 @@ function cargarPedidos(){
         <p><strong>Total:</strong> ₡${venta.total}</p>
         <ul>${lineasHTML}</ul>
 
-        <label>Estado:</label>
+        <label>Estado Pedido:</label>
         <select id="estado-${pedidoId}">
           <option value="entrante" ${venta.estado==='entrante'?'selected':''}>Entrante</option>
           <option value="en proceso" ${venta.estado==='en proceso'?'selected':''}>En Proceso</option>
@@ -186,10 +192,10 @@ function cargarPedidos(){
         </select>
 
         <label>Estado Pago:</label>
-  <select id="estadoPago-${pedidoId}">
-    <option value="pendiente" ${venta.estadoPago==='pendiente'?'selected':''}>Pendiente</option>
-    <option value="pagado" ${venta.estadoPago==='pagado'?'selected':''}>Pagado</option>
-  </select>
+        <select id="estadoPago-${pedidoId}">
+          <option value="pendiente" ${venta.estadoPago==='pendiente'?'selected':''}>Pendiente</option>
+          <option value="pagado" ${venta.estadoPago==='pagado'?'selected':''}>Pagado</option>
+        </select>
 
         ${consignacionHTML}
 
@@ -198,22 +204,10 @@ function cargarPedidos(){
       `;
 
       pedidosContainer.appendChild(card);
-
-      // Notificación pedido listo
-      if(venta.estado === "listo" && !card.dataset.notificado){
-        sonidoPedidoListo.play();
-        card.dataset.notificado = true;
-        if("Notification" in window && Notification.permission==="granted"){
-          new Notification(`Pedido LISTO: ${venta.cliente.nombre}`, { body:"Revisa el pedido para entregar." });
-        } else if("Notification" in window && Notification.permission!=="denied"){
-          Notification.requestPermission().then(p=>{
-            if(p==="granted") new Notification(`Pedido LISTO: ${venta.cliente.nombre}`, { body:"Revisa el pedido para entregar." });
-          });
-        }
-      }
     });
   });
 }
+
 
 // Actualizar estado
 window.actualizarEstadoVendedor = async (pedidoId)=>{
@@ -250,4 +244,5 @@ window.eliminarPedido = async (pedidoId)=>{
     alert("Pedido eliminado");
   }
 };
+
 
