@@ -237,3 +237,19 @@ body > * {
   margin-bottom: 20px;
 }
 
+/* ===============================
+   FONDO CON EMPAQUE – ESTÉTICA PRO
+=============================== */
+
+body {
+  background:
+    linear-gradient(
+      rgba(20, 45, 40, 0.85),
+      rgba(20, 45, 40, 0.85)
+    ),
+    url("imagenes/empaque.jpg") no-repeat center center fixed;
+
+  background-size: cover;
+}
+
+
