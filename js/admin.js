@@ -64,9 +64,9 @@ onAuthStateChanged(auth, async (user) => {
 // =====================
 // registro
 // =====================
-document.getElementById("btnLogout").onclick = async () => {
+document.getElementById("btnRegistro").onclick = async () => {
   await signOut(auth);
-  location.href = "index.html";
+  location.href = "registro.html";
 };
 // =====================
 // LOGOUT
@@ -486,6 +486,7 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
     <p><strong>Total en dinero:</strong> ₡${totalDinero.toLocaleString()}</p>
   `;
 };
+
 
 
 
