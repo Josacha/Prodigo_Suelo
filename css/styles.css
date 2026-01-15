@@ -757,23 +757,31 @@ td {
 
 /* Para impresión */
 @media print {
+  @page {
+    size: 100mm auto; /* ancho fijo, altura automática */
+    margin: 0;        /* elimina márgenes de impresora */
+  }
+
   body * {
-    visibility: hidden;
+    visibility: hidden; /* ocultar todo */
   }
+
   #ticketContainer, #ticketContainer * {
-    visibility: visible;
+    visibility: visible; /* mostrar solo ticket */
   }
+
   #ticketContainer {
     position: absolute;
     left: 0;
     top: 0;
     width: 100mm;
-    /* height: auto; */ /* ⚠ dejar que crezca según contenido */
   }
+
   #imprimirTicketBtn {
     display: none;
   }
 }
+
 
 
 /* Ajuste responsive para celular */
@@ -785,4 +793,5 @@ td {
     padding: 8px;
   }
 }
+
 
