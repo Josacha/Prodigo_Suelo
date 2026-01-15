@@ -1,17 +1,25 @@
 /* ===============================
-   PRÓDIGO SUELO – PANEL ADMIN
-   Estilo premium y responsive con cards
+   PRÓDIGO SUELO – PLANTA
+   Estilo premium con cards
    =============================== */
-=============================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Poppins:wght@400;500&display=swap');
 
-@@ -17,6 +17,22 @@
-  --blanco: #ffffff;
-  --gris: #eaeaea;
-  --rojo: #e74c3c;
+/* 🎨 VARIABLES */
+:root {
+  --verde-oscuro: #1f3d36;
+  --verde: #2e7d32;
+  --verde-claro: #e8f5e9;
 
-  /* Estados de pedidos */
+  --naranja: #f39c12;
+  --naranja-oscuro: #d68910;
+
+  --rojo: #c0392b;
+  --azul: #2980b9;
+  --gris: #7f8c8d;
+  --blanco: #ffffff;
+
+  /* Estados */
   --estado-entrante-bg: #fff3cd;
   --estado-entrante-text: #856404;
 
@@ -24,216 +32,180 @@
   --estado-atrasado-bg: #f8d7da;
   --estado-atrasado-text: #721c24;
 
-  --estado-entregado-bg: #d1ecf1;
-  --estado-entregado-text: #0c5460;
+  --estado-entregado-bg: #e0e0e0;
+  --estado-entregado-text: #2c3e50;
 }
 
 /* 🧱 RESET */
-@@ -104,138 +120,49 @@ button:hover {
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* =======================
-   CARDS PARA PRODUCTOS Y CLIENTES
-   CARDS PARA PEDIDOS
-======================= */
+/* 🖥️ BODY */
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #f4f6f8, #e9ecef);
+  padding: 20px;
+}
+
+/* 🧾 TITULO */
+h1 {
+  text-align: center;
+  margin-bottom: 25px;
+  font-family: 'Montserrat', sans-serif;
+  color: var(--verde-oscuro);
+}
+
+/* 🔓 BOTÓN LOGOUT */
+#logoutBtn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: var(--rojo);
+  color: var(--blanco);
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s, transform 0.2s;
+}
+
+#logoutBtn:hover {
+  background-color: #a93226;
+  transform: scale(1.05);
+}
+
+/* 📦 CONTENEDOR DE CARDS */
 .cards-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 15px;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
 }
 
+/* 🧩 CARD */
 .card {
-  background: var(--verde-oscuro);
-  padding: 15px;
-  border-radius: 12px;
+  border-radius: 15px;
   padding: 20px;
-  background: var(--verde-oscuro);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-  transition: transform 0.2s ease;
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
-  color: var(--blanco);
 }
 
 .card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.25);
 }
 
-.card p {
+/* 📄 TEXTO */
+.card p,
+.card li {
+  font-size: 14px;
   margin-bottom: 6px;
-  margin-bottom: 8px;
+}
+
+/* 🧾 LISTA */
+.card ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+/* ✍️ INPUTS */
+.card input,
+.card select {
+  width: 100%;
+  padding: 9px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-top: 5px;
   font-size: 14px;
 }
 
-.acciones {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+/* 🔘 BOTÓN */
+.card button {
   margin-top: 10px;
-}
-
-/* ICONOS ELIMINAR / EDITAR */
-.btn-eliminar, .btn-editar {
-  background-color: transparent;
+  background-color: var(--naranja);
+  color: var(--blanco);
   border: none;
+  padding: 10px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 1.3rem;
-  color: var(--rojo);
-  transition: color 0.2s ease;
-}
-
-.btn-eliminar:hover, .btn-editar:hover {
-  color: var(--naranja);
-}
-
-/* ESTADÍSTICAS */
-section p span {
-  color: var(--naranja);
-  font-weight: 700;
-}
-
-/* 🏷️ BADGES */
-.badge {
-  display: inline-block;
-  background: var(--naranja);
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 12px;
   font-weight: 600;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.card button:hover {
+  background-color: var(--naranja-oscuro);
+  transform: scale(1.03);
+}
+
+/* 🎯 ESTADOS VISUALES */
+.card.estado-entrante {
+  background-color: var(--estado-entrante-bg);
+  color: var(--estado-entrante-text);
+}
+
+.card.estado-en-proceso {
+  background-color: var(--estado-en-proceso-bg);
+  color: var(--estado-en-proceso-text);
+}
+
+.card.estado-listo {
+  background-color: var(--estado-listo-bg);
+  color: var(--estado-listo-text);
+}
+
+.card.estado-atrasado {
+  background-color: var(--estado-atrasado-bg);
+  color: var(--estado-atrasado-text);
+}
+
+.card.estado-entregado {
+  background-color: var(--estado-entregado-bg);
+  color: var(--estado-entregado-text);
+}
+
+/* 🔔 NOTIFICACIÓN LISTO */
+.notificacion {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: var(--naranja);
+  color: #000;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  animation: flash 1s infinite;
+}
+
+@keyframes flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 /* 📱 RESPONSIVE */
 @media (max-width: 768px) {
   body {
-    padding: 10px;
+    padding: 12px;
   }
 
   h1 {
-    font-size: 26px;
-  }
-
-  h2 {
-    font-size: 18px;
-  }
-/* 🎯 Estados de pedidos */
-.card.estado-entrante { background-color: var(--estado-entrante-bg); color: var(--estado-entrante-text); }
-.card.estado-en-proceso { background-color: var(--estado-en-proceso-bg); color: var(--estado-en-proceso-text); }
-.card.estado-listo { background-color: var(--estado-listo-bg); color: var(--estado-listo-text); }
-.card.estado-atrasado { background-color: var(--estado-atrasado-bg); color: var(--estado-atrasado-text); }
-.card.estado-entregado { background-color: var(--estado-entregado-bg); color: var(--estado-entregado-text); }
-
-  input, select {
-    padding: 10px;
-    font-size: 14px;
-  }
-
-  button {
-    padding: 10px 14px;
-    font-size: 14px;
-  }
-
-  .btn-eliminar, .btn-editar {
-    font-size: 1.5rem;
+    font-size: 24px;
   }
 
   .cards-container {
     grid-template-columns: 1fr;
   }
 
-  section p {
-    font-size: 13px;
-  }
-}
-
-
-<style>
-.cards-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-}
-.card {
-  border-radius: 10px;
-  padding: 15px;
-  width: 300px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  transition: transform 0.2s;
-  position: relative;
-}
-.card:hover {
-  transform: scale(1.02);
-}
-
-/* Colores de fondo por estado */
-.estado-entrante { background-color: #fff3cd; color: #856404; }       /* amarillo fondo, texto marrón oscuro */
-.estado-en-proceso { background-color: #cce5ff; color: #004085; }    /* azul claro, texto azul oscuro */
-.estado-listo { background-color: #d4edda; color: #155724; }         /* verde claro, texto verde oscuro */
-.estado-atrasado { background-color: #f8d7da; color: #721c24; }      /* rojo claro, texto rojo oscuro */
-
-/* Notificación “Listo” */
-/* 🔔 Notificación “Listo” */
-.notificacion {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  top: 10px;
-  right: 10px;
-  background-color: #ffc107;
-  padding: 5px 10px;
-  border-radius: 5px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-weight: bold;
-  animation: flash 1s infinite;
-}
-@@ -251,20 +178,35 @@ section p span {
-  margin-top: 5px;
-  margin-bottom: 5px;
-  width: 100%;
-  padding: 5px;
-  border-radius: 5px;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-/* Botón actualizar */
-/* Botón actualizar dentro de card */
-.card button {
-  background-color: #007bff;
-  color: white;
-  background-color: var(--naranja);
-  color: var(--blanco);
-  cursor: pointer;
-  border: none;
-}
-
-.card button:hover {
-  background-color: #0056b3;
-  background-color: var(--naranja-oscuro);
-}
-</style>
-
-/* 📱 RESPONSIVE */
-@media (max-width: 768px) {
-  body {
-    padding: 10px;
+  .card {
+    padding: 16px;
   }
 
-  h1 { font-size: 26px; }
-  h2 { font-size: 18px; }
-
-  input, select { padding: 10px; font-size: 14px; }
-  button { padding: 10px 14px; font-size: 14px; }
-
-  .cards-container { grid-template-columns: 1fr; }
-  .card p { font-size: 13px; }
-
-   .card {
-  background: #244b43 !important;
-  color: #ffffff !important;
+  #logoutBtn {
+    top: 10px;
+    right: 10px;
+    padding: 8px 12px;
+  }
 }
-
