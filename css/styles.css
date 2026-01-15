@@ -750,5 +750,39 @@ td {
   margin: 5px 0;
 }
 
+.ticket {
+  width: 100mm; /* Ancho del ticket */
+  height: 150mm; /* Alto del ticket */
+  padding: 10px;
+  font-family: 'Courier New', Courier, monospace; /* Fuente monoespaciada estilo POS */
+  font-size: 12px;
+  line-height: 1.2;
+  background: white;
+  border: 1px solid #000;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* Para impresión */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #ticketContainer, #ticketContainer * {
+    visibility: visible;
+  }
+  #ticketContainer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100mm;
+    height: 150mm;
+  }
+  #imprimirTicketBtn {
+    display: none;
+  }
+}
+
+
 
 
