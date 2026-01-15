@@ -726,5 +726,29 @@ td {
 </style>
 
 
+.ticket {
+  width: 280px; /* ancho estándar POS */
+  padding: 10px;
+  font-family: monospace;
+  background: #fff;
+  border: 1px dashed #000;
+  margin: 10px auto;
+}
+
+.ticket h3, .ticket p, .ticket li {
+  margin: 2px 0;
+}
+
+.ticket ul {
+  padding-left: 0;
+  list-style: none;
+  margin: 5px 0;
+}
+
+.ticket hr {
+  border: 1px dashed #000;
+  margin: 5px 0;
+}
+
 
 
