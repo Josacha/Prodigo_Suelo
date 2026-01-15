@@ -67,18 +67,22 @@ function cargarPedidos() {
 
       pedidosContainer.appendChild(card);
 
- // Solo notificar si se pasa a LISTO
-  if(pedido.estado !== 'entrante' && nuevoEstado === 'entrante'){
-    sonidoPedidoListo.play();
-
-    if("Notification" in window && Notification.permission === "granted"){
-      new Notification(`Pedido ENTRANTE: ${pedido.cliente.nombre}`, { body: "Revisa el pedido." });
-    } else if("Notification" in window && Notification.permission !== "denied"){
-      Notification.requestPermission().then(p => {
-        if(p==="granted") new Notification(`Pedido ENTREGADO: ${pedido.cliente.nombre}`, { body: "Revisa el pedido ." });
-      });
-    }
-  }
+      // Sonido si está listo
+      if(pedido.estado==='listo' && !card.dataset.notificado){
+        alertSound.play();
+        card.dataset.notificado = true;
+        // Notificación en ventana
+        if("Notification" in window && Notification.permission === "granted"){
+          new Notification(`Pedido LISTO: ${pedido.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
+        } else if("Notification" in window && Notification.permission !== "denied"){
+          Notification.requestPermission().then(p => {
+            if(p==="granted") new Notification(`Pedido LISTO: ${pedido.cliente.nombre}`, { body: "Revisa el pedido para entregar." });
+          });
+        }
+      }
+    });
+  });
+}
 
 window.actualizarEstadoPlanta = async (pedidoId) => {
   const estadoSelect = document.getElementById(`estado-${pedidoId}`);
@@ -93,4 +97,3 @@ window.actualizarEstadoPlanta = async (pedidoId) => {
     comentario: nuevoEstado==='atrasado' ? comentario : ''
   });
 };
-
