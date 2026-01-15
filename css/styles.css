@@ -546,6 +546,16 @@ body.login-page {
   to { transform: scale(1); opacity: 1; }
 }
 
+.ubicacion-box {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ubicacion-box input {
+  flex: 1;
+}
+
 
 
 
