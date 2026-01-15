@@ -168,3 +168,72 @@ button:hover {
     font-size: 24px;
   }
 }
+
+/* ===============================
+   ESPACIADO GLOBAL – PRÓDIGO SUELO
+   (no altera colores ni layouts)
+=============================== */
+
+/* Separación vertical natural */
+h1, h2, h3 {
+  margin-bottom: 20px;
+}
+
+p {
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+/* Formularios */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Label + input */
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+/* Inputs y selects */
+input,
+select,
+textarea {
+  margin-bottom: 12px;
+}
+
+/* Botones */
+button {
+  margin-top: 10px;
+}
+
+/* Secciones */
+section {
+  margin-bottom: 30px;
+}
+
+/* Tablas y listas */
+ul, ol {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+li {
+  margin-bottom: 6px;
+}
+
+/* Cards */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Evita que todo quede pegado al borde */
+body > * {
+  margin-bottom: 20px;
+}
+
