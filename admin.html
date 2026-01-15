@@ -31,13 +31,24 @@
   </section>
 
   <!-- AGREGAR CLIENTE -->
-  <section>
-    <h2>Agregar Cliente</h2>
-    <input id="clienteNombre" placeholder="Nombre del cliente">
-    <input id="clienteTelefono" placeholder="Teléfono">
-    <select id="vendedorSelect"></select>
-    <button id="btnAgregarCliente">Guardar Cliente</button>
-  </section>
+<section>
+  <h2>Agregar Cliente</h2>
+
+  <input id="clienteNombre" placeholder="Nombre del cliente">
+  <input id="clienteTelefono" placeholder="Teléfono">
+
+  <input id="clienteDireccion" placeholder="Dirección exacta">
+
+  <div class="ubicacion-box">
+    <input id="clienteUbicacion" placeholder="Lat, Lng" readonly>
+    <button type="button" onclick="obtenerUbicacion()">📍 Usar mi ubicación</button>
+  </div>
+
+  <select id="vendedorSelect"></select>
+
+  <button id="btnAgregarCliente">Guardar Cliente</button>
+</section>
+
 
   <!-- LISTA DE CLIENTES -->
   <section>
@@ -64,3 +75,4 @@
   <script type="module" src="js/admin.js"></script>
 </body>
 </html>
+
