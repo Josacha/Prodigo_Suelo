@@ -252,6 +252,101 @@ body {
   background-size: cover;
 }
 
+/* ===============================
+   LOGIN – PRÓDIGO SUELO PRO
+=============================== */
+
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Caja del login */
+.login-box {
+  background: rgba(31, 59, 54, 0.96);
+  padding: 40px 35px;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.55);
+  backdrop-filter: blur(6px);
+}
+
+/* Título */
+.login-box h1 {
+  text-align: center;
+  margin-bottom: 25px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 30px;
+  letter-spacing: 1px;
+  color: #ffffff;
+}
+
+/* Labels */
+.login-box label {
+  font-size: 14px;
+  margin-bottom: 6px;
+  display: block;
+  color: #eaeaea;
+}
+
+/* Inputs */
+.login-box input {
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 18px;
+  border-radius: 10px;
+  border: none;
+  font-size: 15px;
+  background: #f4f6f8;
+}
+
+.login-box input:focus {
+  outline: 2px solid #e86a2a;
+}
+
+/* Botón */
+.login-box button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #e86a2a, #c8571f);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.login-box button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(232, 106, 42, 0.6);
+}
+
+/* Texto pequeño */
+.login-box small {
+  display: block;
+  text-align: center;
+  margin-top: 15px;
+  color: #ccc;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .login-box {
+    padding: 30px 25px;
+  }
+
+  .login-box h1 {
+    font-size: 26px;
+  }
+}
+
+
 
 
 
