@@ -247,9 +247,11 @@ body {
       rgba(20, 45, 40, 0.85),
       rgba(20, 45, 40, 0.85)
     ),
-    url("imagenes/empaque.jpg") no-repeat center center fixed;
+    url("../imagenes/empaque.jpg") no-repeat center center fixed;
 
   background-size: cover;
 }
+
+
 
 
