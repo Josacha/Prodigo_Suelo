@@ -38,9 +38,19 @@ const btnRegistro = document.getElementById("btnRegistro");
 // PROTECCIÓN
 // =====================
 onAuthStateChanged(auth, async (user) => {
-  if (!user) location.href = "index.html";
+  if (!user) {
+    location.href = "index.html";
+    return;
+  }
 
- return;
+  // 🔍 Verificar rol
+  const ref = doc(db, "usuarios", user.uid);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    alert("Usuario no autorizado");
+    location.href = "index.html";
+    return;
   }
 
   const data = snap.data();
@@ -54,17 +64,14 @@ onAuthStateChanged(auth, async (user) => {
     };
   }
 
-
-  
+  // 🔄 Cargar sistema
   await cargarVendedores();
   cargarClientes();
   listarProductos();
-cargarGraficaMensual();
-    cargarDashboard(); 
-
-
-  
+  cargarGraficaMensual();
+  cargarDashboard();
 });
+
 
 // =====================
 // LOGOUT
@@ -484,6 +491,7 @@ document.getElementById("btnFiltrarEstadisticas").onclick = async () => {
     <p><strong>Total en dinero:</strong> ₡${totalDinero.toLocaleString()}</p>
   `;
 };
+
 
 
 
