@@ -50,7 +50,7 @@ async function cargarProductos() {
       opt.dataset.precio = p.precio;
       opt.dataset.nombre = p.nombre;
       opt.dataset.peso = p.peso;
-      opt.dataset.peso = p.variedad;
+      opt.dataset.variedad = p.variedad;
       productoSelect.appendChild(opt);
     }
   });
@@ -353,5 +353,6 @@ window.imprimirTicket = (venta) => {
   ventana.print();
   // NO cerramos la ventana automáticamente, así puedes revisarla
 };
+
 
 
