@@ -46,10 +46,11 @@ async function cargarProductos() {
     if (p.activo) {
       const opt = document.createElement("option");
       opt.value = d.id;
-      opt.textContent = `${p.peso}g-${p.nombre} - ₡${p.precio}`;
+      opt.textContent = `${p.peso}g-${p.nombre} -${p.variedad} - ₡${p.precio}`;
       opt.dataset.precio = p.precio;
       opt.dataset.nombre = p.nombre;
       opt.dataset.peso = p.peso;
+      opt.dataset.peso = p.variedad;
       productoSelect.appendChild(opt);
     }
   });
@@ -352,4 +353,5 @@ window.imprimirTicket = (venta) => {
   ventana.print();
   // NO cerramos la ventana automáticamente, así puedes revisarla
 };
+
 
