@@ -24,8 +24,8 @@ const resultadosPedidos = document.getElementById("resultadosPedidos");
 
 // ================== AUTENTICACIÓN ==================
 onAuthStateChanged(auth, async user => {
-  if(!user) location.href = "index.html";
-  vendedorId = user.uid; 
+  if (!user) location.href = "index.html";
+  vendedorId = user.uid;
   await cargarProductos();
   await cargarClientes();
   cargarPedidos();
@@ -43,7 +43,7 @@ async function cargarProductos() {
   const snap = await getDocs(collection(db, "productos"));
   snap.forEach(d => {
     const p = d.data();
-    if(p.activo){
+    if (p.activo) {
       const opt = document.createElement("option");
       opt.value = d.id;
       opt.textContent = `${p.nombre} - ₡${p.precio}`;
@@ -62,10 +62,10 @@ async function cargarClientes() {
   const agregados = new Set();
   snap.forEach(docSnap => {
     const c = docSnap.data();
-    if(c.vendedorId === vendedorId && !agregados.has(docSnap.id)){
+    if (c.vendedorId === vendedorId && !agregados.has(docSnap.id)) {
       const opt = document.createElement("option");
       opt.value = docSnap.id;
-      opt.textContent = `${c.nombre} (${c.telefono||"-"})`;
+      opt.textContent = `${c.nombre} (${c.telefono || "-"})`;
       clienteSelect.appendChild(opt);
       agregados.add(docSnap.id);
     }
@@ -75,14 +75,14 @@ async function cargarClientes() {
 // ================== CARGAR CLIENTES FILTRO ==================
 async function cargarClientesFiltro() {
   filtroCliente.innerHTML = "<option value=''>Todos los clientes</option>";
-  const snap = await getDocs(collection(db,"clientes"));
+  const snap = await getDocs(collection(db, "clientes"));
   const agregados = new Set();
   snap.forEach(docSnap => {
     const c = docSnap.data();
-    if(c.vendedorId === vendedorId && !agregados.has(docSnap.id)){
+    if (c.vendedorId === vendedorId && !agregados.has(docSnap.id)) {
       const opt = document.createElement("option");
       opt.value = docSnap.id;
-      opt.textContent = `${c.nombre} (${c.telefono||"-"})`;
+      opt.textContent = `${c.nombre} (${c.telefono || "-"})`;
       filtroCliente.appendChild(opt);
       agregados.add(docSnap.id);
     }
@@ -93,7 +93,7 @@ async function cargarClientesFiltro() {
 document.getElementById("agregarLineaBtn").onclick = () => {
   const opt = productoSelect.selectedOptions[0];
   const cantidad = Number(cantidadInput.value);
-  if(!opt || cantidad <= 0) return alert("Cantidad inválida");
+  if (!opt || cantidad <= 0) return alert("Cantidad inválida");
   const subtotal = cantidad * Number(opt.dataset.precio);
 
   carrito.push({
@@ -114,7 +114,7 @@ document.getElementById("agregarLineaBtn").onclick = () => {
 function renderCarrito() {
   carritoBody.innerHTML = "";
   let total = 0;
-  carrito.forEach((l,i)=>{
+  carrito.forEach((l, i) => {
     total += l.subtotal;
     carritoBody.innerHTML += `
       <tr>
@@ -129,79 +129,85 @@ function renderCarrito() {
 }
 
 window.eliminarLinea = (i) => {
-  carrito.splice(i,1);
+  carrito.splice(i, 1);
   renderCarrito();
-  if(carrito.length===0) clienteSelect.disabled = false;
+  if (carrito.length === 0) clienteSelect.disabled = false;
 };
 
 // ================== CONFIRMAR VENTA ==================
 document.getElementById("confirmarVentaBtn").onclick = async () => {
   const clienteId = clienteSelect.value;
-  if(!clienteId) return alert("Seleccione un cliente");
-  if(carrito.length===0) return alert("Carrito vacío");
+  if (!clienteId) return alert("Seleccione un cliente");
+  if (carrito.length === 0) return alert("Carrito vacío");
 
   const diasConsignacion = Number(diasConsignacionInput.value || 0);
-  const fechaVencimiento = diasConsignacion>0 ? new Date(Date.now() + diasConsignacion*24*60*60*1000) : null;
+  const fechaVencimiento = diasConsignacion > 0 ? new Date(Date.now() + diasConsignacion * 24 * 60 * 60 * 1000) : null;
 
-  const clienteDoc = await getDoc(doc(db,"clientes",clienteId));
+  const clienteDoc = await getDoc(doc(db, "clientes", clienteId));
   const clienteData = clienteDoc.data();
-  const total = carrito.reduce((s,l)=>s+l.subtotal,0);
+  const total = carrito.reduce((s, l) => s + l.subtotal, 0);
 
-  const ventaRef = await addDoc(collection(db,"ventas"),{
+  const ventaRef = await addDoc(collection(db, "ventas"), {
     vendedorId,
-    cliente:{id:clienteId, nombre:clienteData.nombre, telefono:clienteData.telefono||null},
+    cliente: { id: clienteId, nombre: clienteData.nombre, telefono: clienteData.telefono || null },
     fecha: new Date(),
     total,
     lineas: carrito,
     estado: "entrante",
     estadoPago: "pendiente",
-    consignacion: diasConsignacion>0 ? { dias:diasConsignacion, vencimiento: fechaVencimiento, estado:"pendiente de pago" } : null,
+    consignacion: diasConsignacion > 0 ? { dias: diasConsignacion, vencimiento: fechaVencimiento, estado: "pendiente de pago" } : null,
     comentario: ""
   });
 
-  const ventaData = { id: ventaRef.id, vendedorId, cliente:{id:clienteId, nombre:clienteData.nombre, telefono:clienteData.telefono||null}, fecha:new Date(), total, lineas: carrito, estado:"entrante", estadoPago:"pendiente", consignacion: diasConsignacion>0 ? { dias:diasConsignacion, vencimiento: fechaVencimiento, estado:"pendiente de pago"} : null};
+  const ventaData = {
+    id: ventaRef.id,
+    vendedorId,
+    cliente: { id: clienteId, nombre: clienteData.nombre, telefono: clienteData.telefono || null },
+    fecha: new Date(),
+    total,
+    lineas: carrito,
+    estado: "entrante",
+    estadoPago: "pendiente",
+    consignacion: diasConsignacion > 0 ? { dias: diasConsignacion, vencimiento: fechaVencimiento, estado: "pendiente de pago" } : null
+  };
 
-  carrito=[];
+  carrito = [];
   renderCarrito();
-  clienteSelect.value="";
-  clienteSelect.disabled=false;
-  diasConsignacionInput.value="";
+  clienteSelect.value = "";
+  clienteSelect.disabled = false;
+  diasConsignacionInput.value = "";
 
   alert("Pedido registrado");
-
   cargarPedidos();
-
-  imprimirTicket(ventaData); // Genera ticket inmediatamente
+  imprimirTicket(ventaData);
 };
 
 // ================== CARGAR PEDIDOS ==================
 function cargarPedidos() {
   pedidosContainer.innerHTML = "";
-  onSnapshot(collection(db,"ventas"), snap => {
+  onSnapshot(collection(db, "ventas"), snap => {
     pedidosContainer.innerHTML = "";
 
     snap.forEach(docSnap => {
       const venta = docSnap.data();
       const pedidoId = docSnap.id;
 
-      // FILTRO: ignorar pedidos ENTREGADOS y PAGADOS
-      if(venta.estado==='entregado' && venta.estadoPago==='pagado') return;
-      if(venta.vendedorId !== vendedorId) return;
+      if (venta.vendedorId !== vendedorId) return;
+      if (venta.estado === 'entregado' && venta.estadoPago === 'pagado') return;
 
-      const lineasHTML = venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
+      const lineasHTML = venta.lineas.map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join('');
 
       let consignacionHTML = "";
-      if(venta.consignacion){
+      if (venta.consignacion) {
         const venc = venta.consignacion.vencimiento ? new Date(venta.consignacion.vencimiento.toDate ? venta.consignacion.vencimiento.toDate() : venta.consignacion.vencimiento) : null;
         const hoy = new Date();
         let alerta = "";
-        if(venc && hoy>venc && venta.consignacion.estado==="pendiente de pago") alerta=" ⚠ PLAZO VENCIDO";
-        consignacionHTML = `<p><strong>Consignación:</strong> ${venta.consignacion.estado}${alerta}${venc?`(Vence: ${venc.toLocaleDateString()})`:""}</p>`;
+        if (venc && hoy > venc && venta.consignacion.estado === "pendiente de pago") alerta = " ⚠ PLAZO VENCIDO";
+        consignacionHTML = `<p><strong>Consignación:</strong> ${venta.consignacion.estado}${alerta}${venc ? `(Vence: ${venc.toLocaleDateString()})` : ""}</p>`;
       }
 
       const card = document.createElement("div");
-      card.className="card";
-
+      card.className = "card";
       card.innerHTML = `
         <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
         <p><strong>Total:</strong> ₡${venta.total}</p>
@@ -209,24 +215,24 @@ function cargarPedidos() {
 
         <label>Estado Pedido:</label>
         <select id="estado-${pedidoId}">
-          <option value="entrante" ${venta.estado==='entrante'?'selected':''}>Entrante</option>
-          <option value="en proceso" ${venta.estado==='en proceso'?'selected':''}>En Proceso</option>
-          <option value="listo" ${venta.estado==='listo'?'selected':''}>Listo</option>
-          <option value="atrasado" ${venta.estado==='atrasado'?'selected':''}>Atrasado</option>
-          <option value="entregado" ${venta.estado==='entregado'?'selected':''}>Entregado</option>
+          <option value="entrante" ${venta.estado === 'entrante' ? 'selected' : ''}>Entrante</option>
+          <option value="en proceso" ${venta.estado === 'en proceso' ? 'selected' : ''}>En Proceso</option>
+          <option value="listo" ${venta.estado === 'listo' ? 'selected' : ''}>Listo</option>
+          <option value="atrasado" ${venta.estado === 'atrasado' ? 'selected' : ''}>Atrasado</option>
+          <option value="entregado" ${venta.estado === 'entregado' ? 'selected' : ''}>Entregado</option>
         </select>
 
         <label>Estado Pago:</label>
         <select id="estadoPago-${pedidoId}">
-          <option value="pendiente" ${venta.estadoPago==='pendiente'?'selected':''}>Pendiente</option>
-          <option value="pagado" ${venta.estadoPago==='pagado'?'selected':''}>Pagado</option>
+          <option value="pendiente" ${venta.estadoPago === 'pendiente' ? 'selected' : ''}>Pendiente</option>
+          <option value="pagado" ${venta.estadoPago === 'pagado' ? 'selected' : ''}>Pagado</option>
         </select>
 
         ${consignacionHTML}
 
         <button onclick="actualizarEstadoVendedor('${pedidoId}')">Actualizar</button>
         <button onclick="eliminarPedido('${pedidoId}')">Eliminar pedido</button>
-        <button onclick="imprimirTicket({ ...${JSON.stringify(venta)}, id:'${pedidoId}' })">Imprimir Ticket</button>
+        <button onclick='imprimirTicket(${JSON.stringify({ ...venta, id: pedidoId })})'>Imprimir Ticket</button>
       `;
       pedidosContainer.appendChild(card);
     });
@@ -234,31 +240,31 @@ function cargarPedidos() {
 }
 
 // ================== ACTUALIZAR ESTADO ==================
-window.actualizarEstadoVendedor = async (pedidoId)=>{
+window.actualizarEstadoVendedor = async (pedidoId) => {
   const estadoSelect = document.getElementById(`estado-${pedidoId}`);
   const estadoPagoSelect = document.getElementById(`estadoPago-${pedidoId}`);
   const nuevoEstado = estadoSelect.value;
   const nuevoEstadoPago = estadoPagoSelect.value;
-  const docRef = doc(db,"ventas",pedidoId);
+  const docRef = doc(db, "ventas", pedidoId);
   const docSnap = await getDoc(docRef);
   const pedido = docSnap.data();
 
-  if(pedido.estado==='listo' && nuevoEstado==='entregado'){
-    await updateDoc(docRef,{estado:'entregado', estadoPago:nuevoEstadoPago});
+  if (pedido.estado === 'listo' && nuevoEstado === 'entregado') {
+    await updateDoc(docRef, { estado: 'entregado', estadoPago: nuevoEstadoPago });
     alert("Pedido marcado como ENTREGADO y estado de pago actualizado");
-  } else if(nuevoEstado!=='entregado'){
-    await updateDoc(docRef,{estado:nuevoEstado, estadoPago:nuevoEstadoPago});
+  } else if (nuevoEstado !== 'entregado') {
+    await updateDoc(docRef, { estado: nuevoEstado, estadoPago: nuevoEstadoPago });
     alert("Estado del pedido y de pago actualizado");
   } else {
     alert("Solo puede marcar como ENTREGADO un pedido que esté LISTO, pero el estado de pago sí se puede cambiar");
-    await updateDoc(docRef,{estadoPago:nuevoEstadoPago});
+    await updateDoc(docRef, { estadoPago: nuevoEstadoPago });
   }
 };
 
 // ================== ELIMINAR PEDIDO ==================
-window.eliminarPedido = async (pedidoId)=>{
-  if(confirm("¿Desea eliminar este pedido?")){
-    await deleteDoc(doc(db,"ventas",pedidoId));
+window.eliminarPedido = async (pedidoId) => {
+  if (confirm("¿Desea eliminar este pedido?")) {
+    await deleteDoc(doc(db, "ventas", pedidoId));
     alert("Pedido eliminado");
   }
 };
@@ -276,17 +282,17 @@ btnBuscarPedidos.onclick = async () => {
     const venta = docSnap.data();
     const pedidoId = docSnap.id;
 
-    if(clienteId && venta.cliente.id !== clienteId) return;
+    if (clienteId && venta.cliente.id !== clienteId) return;
 
     const fechaVenta = venta.fecha.toDate ? venta.fecha.toDate() : new Date(venta.fecha);
-    if(inicio && fechaVenta < new Date(inicio)) return;
-    if(fin){
+    if (inicio && fechaVenta < new Date(inicio)) return;
+    if (fin) {
       const fechaFinObj = new Date(fin);
-      fechaFinObj.setHours(23,59,59,999);
-      if(fechaVenta > fechaFinObj) return;
+      fechaFinObj.setHours(23, 59, 59, 999);
+      if (fechaVenta > fechaFinObj) return;
     }
 
-    const lineasHTML = venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
+    const lineasHTML = venta.lineas.map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
 
     const card = document.createElement("div");
     card.className = "card";
@@ -297,7 +303,7 @@ btnBuscarPedidos.onclick = async () => {
       <ul>${lineasHTML}</ul>
       <p><strong>Estado Pedido:</strong> ${venta.estado}</p>
       <p><strong>Estado Pago:</strong> ${venta.estadoPago || "pendiente"}</p>
-      <button onclick="imprimirTicket({ ...${JSON.stringify(venta)}, id:'${pedidoId}' })">Imprimir Ticket</button>
+      <button onclick='imprimirTicket(${JSON.stringify({ ...venta, id: pedidoId })})'>Imprimir Ticket</button>
     `;
     resultadosPedidos.appendChild(card);
   });
@@ -322,7 +328,7 @@ window.imprimirTicket = (venta) => {
       <p>Fecha: ${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}</p>
       <p>Cliente: ${venta.cliente.nombre}</p>
       <ul>
-        ${venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join('')}
+        ${venta.lineas.map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join('')}
       </ul>
       <hr>
       <p><strong>Total:</strong> ₡${venta.total}</p>
@@ -334,7 +340,7 @@ window.imprimirTicket = (venta) => {
     </div>
   `;
 
-  const ventana = window.open('', 'PRINT', 'height=400,width=300');
+  const ventana = window.open('', '_blank', 'height=400,width=300');
   ventana.document.write('<html><head><title>Ticket</title>');
   ventana.document.write('<style>@page{size:100mm 150mm;margin:0;} body{margin:0;}</style>');
   ventana.document.write('</head><body>');
@@ -342,10 +348,6 @@ window.imprimirTicket = (venta) => {
   ventana.document.write('</body></html>');
   ventana.document.close();
   ventana.focus();
-
-  // Retraso para que cargue antes de imprimir
-  setTimeout(() => {
-    ventana.print();
-    // ventana.close(); // opcional, mejor dejar que el usuario cierre
-  }, 500);
+  // Solo imprime si se desea
+  // ventana.print(); // comentar si quieres revisar primero
 };
