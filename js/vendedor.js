@@ -208,38 +208,32 @@ function cargarPedidos() {
 
       const card = document.createElement("div");
       card.className = "card";
-     card.innerHTML = `
-  <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
-  <p><strong>Total:</strong> ₡${venta.total}</p>
-  <ul>${lineasHTML}</ul>
+      card.innerHTML = `
+        <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
+        <p><strong>Total:</strong> ₡${venta.total}</p>
+        <ul>${lineasHTML}</ul>
 
-  <label>Estado Pedido:</label>
-  <select id="estado-${pedidoId}">
-    <option value="entrante" ${venta.estado === 'entrante' ? 'selected' : ''}>Entrante</option>
-    <option value="en proceso" ${venta.estado === 'en proceso' ? 'selected' : ''}>En Proceso</option>
-    <option value="listo" ${venta.estado === 'listo' ? 'selected' : ''}>Listo</option>
-    <option value="atrasado" ${venta.estado === 'atrasado' ? 'selected' : ''}>Atrasado</option>
-    <option value="entregado" ${venta.estado === 'entregado' ? 'selected' : ''}>Entregado</option>
-  </select>
+        <label>Estado Pedido:</label>
+        <select id="estado-${pedidoId}">
+          <option value="entrante" ${venta.estado === 'entrante' ? 'selected' : ''}>Entrante</option>
+          <option value="en proceso" ${venta.estado === 'en proceso' ? 'selected' : ''}>En Proceso</option>
+          <option value="listo" ${venta.estado === 'listo' ? 'selected' : ''}>Listo</option>
+          <option value="atrasado" ${venta.estado === 'atrasado' ? 'selected' : ''}>Atrasado</option>
+          <option value="entregado" ${venta.estado === 'entregado' ? 'selected' : ''}>Entregado</option>
+        </select>
 
-  <label>Estado Pago:</label>
-  <select id="estadoPago-${pedidoId}">
-    <option value="pendiente" ${venta.estadoPago === 'pendiente' ? 'selected' : ''}>Pendiente</option>
-    <option value="pagado" ${venta.estadoPago === 'pagado' ? 'selected' : ''}>Pagado</option>
-  </select>
+        <label>Estado Pago:</label>
+        <select id="estadoPago-${pedidoId}">
+          <option value="pendiente" ${venta.estadoPago === 'pendiente' ? 'selected' : ''}>Pendiente</option>
+          <option value="pagado" ${venta.estadoPago === 'pagado' ? 'selected' : ''}>Pagado</option>
+        </select>
 
-  ${consignacionHTML}
+        ${consignacionHTML}
 
-  <button onclick="actualizarEstadoVendedor('${pedidoId}')">Actualizar</button>
-  <button onclick="eliminarPedido('${pedidoId}')">Eliminar pedido</button>
-  <button onclick='imprimirTicket(${JSON.stringify({ ...venta, id: pedidoId })})'>Imprimir Ticket</button>
-
-  ${venta.cliente.lat && venta.cliente.lng ? `
-    <button onclick="abrirMaps(${venta.cliente.lat}, ${venta.cliente.lng})">Ver en Maps</button>
-    <button onclick="abrirWaze(${venta.cliente.lat}, ${venta.cliente.lng})">Ver en Waze</button>
-  ` : ''}
-`;
-
+        <button onclick="actualizarEstadoVendedor('${pedidoId}')">Actualizar</button>
+        <button onclick="eliminarPedido('${pedidoId}')">Eliminar pedido</button>
+        <button onclick='imprimirTicket(${JSON.stringify({ ...venta, id: pedidoId })})'>Imprimir Ticket</button>
+      `;
       pedidosContainer.appendChild(card);
     });
   });
@@ -357,18 +351,4 @@ window.imprimirTicket = (venta) => {
   // Esta línea abre directamente la ventana de impresión
   ventana.print();
   // NO cerramos la ventana automáticamente, así puedes revisarla
-};
-
-// Abrir en Google Maps
-window.abrirMaps = (lat, lng) => {
-  if (!lat || !lng) return alert("Coordenadas no disponibles");
-  const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-  window.open(url, "_blank");
-};
-
-// Abrir en Waze
-window.abrirWaze = (lat, lng) => {
-  if (!lat || !lng) return alert("Coordenadas no disponibles");
-  const url = `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
-  window.open(url, "_blank");
 };
