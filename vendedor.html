@@ -5,84 +5,89 @@
   <title>Vendedor – Pródigo Suelo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- CSS principal -->
   <link rel="stylesheet" href="css/styles.css">
+
+  <!-- Iconos -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 </head>
 <body>
 
-<h1>Vendedor – Pródigo Suelo</h1>
-<button id="logoutBtn">Cerrar sesión</button>
+  <h1>Vendedor – Pródigo Suelo</h1>
+  <button id="logoutBtn">Cerrar sesión</button>
 
-<!-- AGREGAR AL CARRITO -->
-<section>
-  <h2>Agregar al carrito</h2>
+  <!-- AGREGAR AL CARRITO -->
+  <section>
+    <h2>Agregar al carrito</h2>
 
-  <label>Cliente:</label>
-  <select id="clienteSelect"></select>
+    <label>Cliente:</label>
+    <select id="clienteSelect"></select>
 
-  <label>Producto:</label>
-  <select id="productoSelect"></select>
+    <label>Producto:</label>
+    <select id="productoSelect"></select>
 
-  <label>Cantidad:</label>
-  <input type="number" id="cantidadInput" placeholder="Cantidad">
+    <label>Cantidad:</label>
+    <input type="number" id="cantidadInput" placeholder="Cantidad">
 
-  <label>Días de consignación (opcional):</label>
-  <input type="number" id="diasConsignacion" placeholder="Ej: 3" min="0">
+    <label>Días de consignación (opcional):</label>
+    <input type="number" id="diasConsignacion" placeholder="Ej: 3" min="0">
 
-  <button id="agregarLineaBtn">Agregar al carrito</button>
-</section>
+    <button id="agregarLineaBtn">Agregar al carrito</button>
+  </section>
 
-<!-- CARRITO -->
-<section>
-  <h2>Carrito</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Producto</th>
-        <th>Cantidad</th>
-        <th>Subtotal</th>
-        <th>Acción</th>
-      </tr>
-    </thead>
-    <tbody id="carritoBody"></tbody>
-  </table>
-  <p>Total: ₡<span id="totalPedido">0</span></p>
-  <button id="confirmarVentaBtn">Confirmar pedido</button>
-</section>
+  <!-- CARRITO -->
+  <section>
+    <h2>Carrito</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Subtotal</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="carritoBody"></tbody>
+    </table>
+    <p>Total: ₡<span id="totalPedido">0</span></p>
+    <button id="confirmarVentaBtn">Confirmar pedido</button>
+  </section>
 
-<!-- PEDIDOS REGISTRADOS -->
-<section>
-  <h2>Pedidos Registrados</h2>
-  <div id="pedidosContainer" class="cards-container"></div>
-</section>
+  <!-- PEDIDOS REGISTRADOS -->
+  <section>
+    <h2>Pedidos Registrados</h2>
+    <div id="pedidosContainer" class="cards-container"></div>
+  </section>
 
-<!-- PEDIDOS REGISTRADOS ANTIGUOS -->
-<section>
-  <h2>Buscar Pedidos Antiguos</h2>
+  <!-- PEDIDOS REGISTRADOS ANTIGUOS -->
+  <section>
+    <h2>Buscar Pedidos Antiguos</h2>
 
-  <label>Cliente:</label>
-  <select id="filtroCliente">
-    <option value="">Todos los clientes</option>
-  </select>
+    <label>Cliente:</label>
+    <select id="filtroCliente">
+      <option value="">Todos los clientes</option>
+    </select>
 
-  <label>Fecha inicio:</label>
-  <input type="date" id="fechaInicioFiltro">
+    <label>Fecha inicio:</label>
+    <input type="date" id="fechaInicioFiltro">
 
-  <label>Fecha fin:</label>
-  <input type="date" id="fechaFinFiltro">
+    <label>Fecha fin:</label>
+    <input type="date" id="fechaFinFiltro">
 
-  <button id="btnBuscarPedidos">Buscar</button>
+    <button id="btnBuscarPedidos">Buscar</button>
 
-  <div id="resultadosPedidos" class="cards-container"></div>
-</section>
+    <div id="resultadosPedidos" class="cards-container"></div>
+  </section>
 
-<!-- CONTENEDOR DE TICKET (NO VISIBLE) -->
-<div id="ticketContainer" style="display:none;">
-  <div id="ticket" class="ticket"></div>
-  <button id="imprimirTicketBtn" style="display:none;">Imprimir Ticket</button>
-</div>
+  <!-- CONTENEDOR DE TICKET -->
+  <div id="ticketContainer" style="display:none;">
+    <div id="ticket" class="ticket">
+      <!-- Aquí se generará el contenido dinámicamente -->
+    </div>
+    <button id="imprimirTicketBtn" style="display:none;">Imprimir Ticket</button>
+  </div>
 
-<!-- SCRIPT -->
-<script type="module" src="js/vendedor.js"></script>
+  <!-- JS -->
+  <script type="module" src="js/vendedor.js"></script>
 </body>
 </html>
