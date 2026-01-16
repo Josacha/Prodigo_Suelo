@@ -316,7 +316,6 @@ window.imprimirTicket = (venta) => {
   const htmlTicket = `
     <div style="
       width: 100mm;
-      height: 150mm;
       font-family: 'Courier New', monospace;
       font-size: 12px;
       line-height: 1.2;
@@ -340,14 +339,17 @@ window.imprimirTicket = (venta) => {
     </div>
   `;
 
-  const ventana = window.open('', '_blank', 'height=400,width=300');
+  const ventana = window.open('', '_blank', 'height=600,width=400');
   ventana.document.write('<html><head><title>Ticket</title>');
-  ventana.document.write('<style>@page{size:100mm 150mm;margin:0;} body{margin:0;}</style>');
+  ventana.document.write('<style>@page{size:100mm auto;margin:0;} body{margin:0;font-family: monospace;}</style>');
   ventana.document.write('</head><body>');
   ventana.document.write(htmlTicket);
   ventana.document.write('</body></html>');
   ventana.document.close();
   ventana.focus();
-  // Solo imprime si se desea
-  // ventana.print(); // comentar si quieres revisar primero
+  
+  // Esta línea abre directamente la ventana de impresión
+  ventana.print();
+  // NO cerramos la ventana automáticamente, así puedes revisarla
 };
+
