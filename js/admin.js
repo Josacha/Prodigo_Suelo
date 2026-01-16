@@ -287,9 +287,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       estados[v.estado] = (estados[v.estado] || 0) + 1;
 
-      if(Array.isArray(v.lineas)) {
-        v.lineas.forEach(l => totalKg += (Number(l.peso||0) * Number(l.cantidad||0))/1000);
-      }
+     if (Array.isArray(v.lineas)) {
+  v.lineas.forEach(l => {
+    const peso = Number(l.peso);
+    const cantidad = Number(l.cantidad);
+    if (!isNaN(peso) && !isNaN(cantidad)) {
+      totalKg += (peso * cantidad) / 1000;
+    }
+  });
+}
+
     });
 
     document.getElementById("kpiVentas").textContent = `₡${totalVentas.toLocaleString()}`;
@@ -322,9 +329,14 @@ document.addEventListener("DOMContentLoaded", () => {
       pedidosPorMes[mes]++;
       ventasPorMes[mes] += Number(v.total||0);
 
-      if(Array.isArray(v.lineas)) {
-        v.lineas.forEach(l => kgPorMes[mes] += (Number(l.peso||0)*Number(l.cantidad||0))/1000 );
-      }
+      v.lineas.forEach(l => {
+  const peso = Number(l.peso);
+  const cantidad = Number(l.cantidad);
+  if (!isNaN(peso) && !isNaN(cantidad)) {
+    kgPorMes[mes] += (peso * cantidad) / 1000;
+  }
+});
+
     });
 
     const ctx = document.getElementById("graficaVentasMensuales")?.getContext("2d");
@@ -439,3 +451,4 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
 }); // DOMContentLoaded
+
