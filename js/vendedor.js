@@ -184,7 +184,6 @@ function cargarPedidos() {
       const venta = docSnap.data();
       const pedidoId = docSnap.id;
 
-      // FILTRO: ignorar pedidos ENTREGADOS y PAGADOS
       if(venta.estado==='entregado' && venta.estadoPago==='pagado') return;
       if(venta.vendedorId !== vendedorId) return;
 
@@ -224,11 +223,20 @@ function cargarPedidos() {
 
         ${consignacionHTML}
 
-        <button onclick="actualizarEstadoVendedor('${pedidoId}')">Actualizar</button>
-        <button onclick="eliminarPedido('${pedidoId}')">Eliminar pedido</button>
-        <button onclick="imprimirTicket({ ...${JSON.stringify(venta)}, id:'${pedidoId}' })">Imprimir Ticket</button>
+        <button id="actualizar-${pedidoId}">Actualizar</button>
+        <button id="eliminar-${pedidoId}">Eliminar pedido</button>
       `;
+
       pedidosContainer.appendChild(card);
+
+      // Event listeners
+      document.getElementById(`actualizar-${pedidoId}`).addEventListener("click", () => actualizarEstadoVendedor(pedidoId));
+      document.getElementById(`eliminar-${pedidoId}`).addEventListener("click", () => eliminarPedido(pedidoId));
+
+      const imprimirBtn = document.createElement("button");
+      imprimirBtn.textContent = "Imprimir Ticket";
+      imprimirBtn.addEventListener("click", () => imprimirTicket({ ...venta, id: pedidoId }));
+      card.appendChild(imprimirBtn);
     });
   });
 }
@@ -297,9 +305,13 @@ btnBuscarPedidos.onclick = async () => {
       <ul>${lineasHTML}</ul>
       <p><strong>Estado Pedido:</strong> ${venta.estado}</p>
       <p><strong>Estado Pago:</strong> ${venta.estadoPago || "pendiente"}</p>
-      <button onclick="imprimirTicket({ ...${JSON.stringify(venta)}, id:'${pedidoId}' })">Imprimir Ticket</button>
     `;
     resultadosPedidos.appendChild(card);
+
+    const imprimirBtn = document.createElement("button");
+    imprimirBtn.textContent = "Imprimir Ticket";
+    imprimirBtn.addEventListener("click", () => imprimirTicket({ ...venta, id: pedidoId }));
+    card.appendChild(imprimirBtn);
   });
 };
 
