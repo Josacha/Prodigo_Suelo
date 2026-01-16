@@ -46,7 +46,7 @@ async function cargarProductos() {
     if (p.activo) {
       const opt = document.createElement("option");
       opt.value = d.id;
-      opt.textContent = `${p.nombre} - ₡${p.precio}`;
+      opt.textContent = `${p.peso}g-${p.nombre} - ₡${p.precio}`;
       opt.dataset.precio = p.precio;
       opt.dataset.nombre = p.nombre;
       opt.dataset.peso = p.peso;
@@ -352,3 +352,4 @@ window.imprimirTicket = (venta) => {
   ventana.print();
   // NO cerramos la ventana automáticamente, así puedes revisarla
 };
+
