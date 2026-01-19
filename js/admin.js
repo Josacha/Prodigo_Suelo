@@ -1,225 +1,207 @@
-/********************************
- * FIREBASE
- ********************************/
-import { db } from "./firebase.js";
+import { auth, db } from "./firebase.js";
 import {
-  collection,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc
+  collection, getDocs, addDoc, doc, getDoc,
+  updateDoc, deleteDoc, query, where, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-/********************************
- * VARIABLES EDICIÓN
- ********************************/
-let editIdProducto = null;
-let editIdCliente = null;
+let editProductoId = null;
+let editClienteId = null;
+let productosCache = [];
+let clientesCache = [];
 
-/********************************
- * FORMULARIOS PRODUCTOS
- ********************************/
-const prodNombre = document.getElementById("prodNombre");
-const prodVariedad = document.getElementById("prodVariedad");
-const prodPeso = document.getElementById("prodPeso");
-const prodPrecio = document.getElementById("prodPrecio");
-const btnGuardarProducto = document.getElementById("btnGuardarProducto");
-
-/********************************
- * FORMULARIOS CLIENTES
- ********************************/
-const cliNombre = document.getElementById("cliNombre");
-const cliTelefono = document.getElementById("cliTelefono");
-const cliDireccion = document.getElementById("cliDireccion");
-const cliLat = document.getElementById("cliLat");
-const cliLng = document.getElementById("cliLng");
-const btnGuardarCliente = document.getElementById("btnGuardarCliente");
-
-/********************************
- * TABLAS
- ********************************/
-const productosBody = document.getElementById("productosContainer");
-const clientesBody = document.getElementById("clientesContainer");
-
-/********************************
- * GUARDAR / ACTUALIZAR PRODUCTO
- ********************************/
-btnGuardarProducto.addEventListener("click", async () => {
-  const data = {
-    nombre: prodNombre.value,
-    variedad: prodVariedad.value,
-    peso: Number(prodPeso.value),
-    precio: Number(prodPrecio.value)
-  };
-
-  if (!data.nombre || !data.precio) {
-    alert("Complete los datos");
-    return;
-  }
-
-  if (editIdProducto) {
-    await updateDoc(doc(db, "productos", editIdProducto), data);
-    editIdProducto = null;
-    btnGuardarProducto.textContent = "Guardar Producto";
-  } else {
-    await addDoc(collection(db, "productos"), data);
-  }
-
-  limpiarProducto();
-  cargarProductos();
-});
-
-/********************************
- * GUARDAR / ACTUALIZAR CLIENTE
- ********************************/
-btnGuardarCliente.addEventListener("click", async () => {
-  const data = {
-    nombre: cliNombre.value,
-    telefono: cliTelefono.value,
-    direccion: cliDireccion.value,
-    lat: cliLat.value ? Number(cliLat.value) : null,
-    lng: cliLng.value ? Number(cliLng.value) : null
-  };
-
-  if (!data.nombre) {
-    alert("Nombre requerido");
-    return;
-  }
-
-  if (editIdCliente) {
-    await updateDoc(doc(db, "clientes", editIdCliente), data);
-    editIdCliente = null;
-    btnGuardarCliente.textContent = "Guardar Cliente";
-  } else {
-    await addDoc(collection(db, "clientes"), data);
-  }
-
-  limpiarCliente();
-  cargarClientes();
-});
-
-/********************************
- * CARGAR PRODUCTOS
- ********************************/
-async function cargarProductos() {
-  productosBody.innerHTML = "";
-  const snap = await getDocs(collection(db, "productos"));
-
-  snap.forEach(d => {
-    const p = d.data();
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${p.nombre}</td>
-      <td>${p.variedad}</td>
-      <td>${p.peso} g</td>
-      <td>₡${p.precio}</td>
-      <td>
-        <button onclick="editarProducto('${d.id}', ${JSON.stringify(p).replace(/"/g, '&quot;')})">✏️</button>
-        <button onclick="eliminarProducto('${d.id}')">🗑️</button>
-      </td>
-    `;
-    productosBody.appendChild(tr);
-  });
-}
-
-/********************************
- * CARGAR CLIENTES
- ********************************/
-async function cargarClientes() {
-  clientesBody.innerHTML = "";
-  const snap = await getDocs(collection(db, "clientes"));
-
-  snap.forEach(d => {
-    const c = d.data();
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${c.nombre}</td>
-      <td>${c.telefono || "-"}</td>
-      <td>${c.direccion || "-"}</td>
-      <td>
-        ${c.lat && c.lng ? `<button onclick="abrirMapa(${c.lat},${c.lng})">📍</button>` : "-"}
-      </td>
-      <td>
-        <button onclick="editarCliente('${d.id}', ${JSON.stringify(c).replace(/"/g, '&quot;')})">✏️</button>
-        <button onclick="eliminarCliente('${d.id}')">🗑️</button>
-      </td>
-    `;
-    clientesBody.appendChild(tr);
-  });
-}
-
-/********************************
- * EDITAR PRODUCTO (CARGA FORM)
- ********************************/
-window.editarProducto = (id, p) => {
-  editIdProducto = id;
-  prodNombre.value = p.nombre;
-  prodVariedad.value = p.variedad;
-  prodPeso.value = p.peso;
-  prodPrecio.value = p.precio;
-  btnGuardarProducto.textContent = "Actualizar Producto";
-};
-
-/********************************
- * EDITAR CLIENTE (CARGA FORM)
- ********************************/
-window.editarCliente = (id, c) => {
-  editIdCliente = id;
-  cliNombre.value = c.nombre;
-  cliTelefono.value = c.telefono || "";
-  cliDireccion.value = c.direccion || "";
-  cliLat.value = c.lat || "";
-  cliLng.value = c.lng || "";
-  btnGuardarCliente.textContent = "Actualizar Cliente";
-};
-
-/********************************
- * ELIMINAR
- ********************************/
-window.eliminarProducto = async id => {
-  if (confirm("¿Eliminar producto?")) {
-    await deleteDoc(doc(db, "productos", id));
-    cargarProductos();
-  }
-};
-
-window.eliminarCliente = async id => {
-  if (confirm("¿Eliminar cliente?")) {
-    await deleteDoc(doc(db, "clientes", id));
-    cargarClientes();
-  }
-};
-
-/********************************
- * MAPA
- ********************************/
-window.abrirMapa = (lat, lng) => {
-  window.open(`https://www.google.com/maps?q=${lat},${lng}`, "_blank");
-};
-
-/********************************
- * LIMPIAR FORMULARIOS
- ********************************/
-function limpiarProducto() {
-  prodNombre.value = "";
-  prodVariedad.value = "";
-  prodPeso.value = "";
-  prodPrecio.value = "";
-}
-
-function limpiarCliente() {
-  cliNombre.value = "";
-  cliTelefono.value = "";
-  cliDireccion.value = "";
-  cliLat.value = "";
-  cliLng.value = "";
-}
-
-/********************************
- * INIT
- ********************************/
 document.addEventListener("DOMContentLoaded", () => {
+
+  const productosBody = document.getElementById("productosBody");
+  const clientesBody = document.getElementById("clientesContainer");
+
+  const buscarProducto = document.getElementById("buscarProducto");
+  const buscarCliente = document.getElementById("buscarCliente");
+
+  const codigo = document.getElementById("codigo");
+  const nombre = document.getElementById("nombre");
+  const variedad = document.getElementById("variedad");
+  const peso = document.getElementById("peso");
+  const precio = document.getElementById("precio");
+  const precioIVA = document.getElementById("precioIVA");
+
+  const btnAgregar = document.getElementById("btnAgregar");
+
+  const clienteNombre = document.getElementById("clienteNombre");
+  const clienteTelefono = document.getElementById("clienteTelefono");
+  const clienteDireccion = document.getElementById("clienteDireccion");
+  const clienteUbicacion = document.getElementById("clienteUbicacion");
+  const vendedorSelect = document.getElementById("vendedorSelect");
+  const btnAgregarCliente = document.getElementById("btnAgregarCliente");
+
+  /* ================== IVA ================== */
+  precio.addEventListener("input", () => {
+    precioIVA.value = (Number(precio.value || 0) * 1.01).toFixed(2);
+  });
+
+  /* ================== PRODUCTOS ================== */
+  btnAgregar.onclick = async () => {
+    const data = {
+      codigo: codigo.value,
+      nombre: nombre.value,
+      variedad: variedad.value,
+      peso: Number(peso.value),
+      precio: Number(precio.value),
+      precioIVA: Number(precioIVA.value)
+    };
+
+    if (editProductoId) {
+      await updateDoc(doc(db, "productos", editProductoId), data);
+      editProductoId = null;
+    } else {
+      await addDoc(collection(db, "productos"), data);
+    }
+
+    limpiarProducto();
+    cargarProductos();
+  };
+
+  async function cargarProductos() {
+    const snap = await getDocs(collection(db, "productos"));
+    productosCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    pintarProductos(productosCache);
+  }
+
+  function pintarProductos(lista) {
+    productosBody.innerHTML = "";
+    lista.forEach(p => {
+      const kg = (p.peso / 1000).toFixed(2);
+      productosBody.innerHTML += `
+        <tr>
+          <td>${p.codigo}</td>
+          <td>${p.nombre}</td>
+          <td>${p.variedad || "-"}</td>
+          <td>${p.peso}</td>
+          <td>${kg}</td>
+          <td>₡${p.precio}</td>
+          <td>₡${p.precioIVA}</td>
+          <td>
+            <button onclick="editarProducto('${p.id}')">✏️</button>
+            <button onclick="eliminarProducto('${p.id}')">🗑️</button>
+          </td>
+        </tr>`;
+    });
+  }
+
+  buscarProducto.oninput = () => {
+    const t = buscarProducto.value.toLowerCase();
+    pintarProductos(productosCache.filter(p =>
+      p.nombre.toLowerCase().includes(t) ||
+      (p.variedad || "").toLowerCase().includes(t)
+    ));
+  };
+
+  window.editarProducto = async (id) => {
+    const p = productosCache.find(p => p.id === id);
+    codigo.value = p.codigo;
+    nombre.value = p.nombre;
+    variedad.value = p.variedad;
+    peso.value = p.peso;
+    precio.value = p.precio;
+    precioIVA.value = p.precioIVA;
+    editProductoId = id;
+  };
+
+  window.eliminarProducto = async (id) => {
+    if (confirm("¿Eliminar producto?")) {
+      await deleteDoc(doc(db, "productos", id));
+      cargarProductos();
+    }
+  };
+
+  function limpiarProducto() {
+    codigo.value = nombre.value = variedad.value = peso.value = precio.value = precioIVA.value = "";
+  }
+
+  /* ================== CLIENTES ================== */
+  window.obtenerUbicacion = () => {
+    navigator.geolocation.getCurrentPosition(pos => {
+      clienteUbicacion.value = `${pos.coords.latitude}, ${pos.coords.longitude}`;
+    });
+  };
+
+  btnAgregarCliente.onclick = async () => {
+    const data = {
+      nombre: clienteNombre.value,
+      telefono: clienteTelefono.value,
+      direccion: clienteDireccion.value,
+      ubicacion: clienteUbicacion.value,
+      vendedorId: vendedorSelect.value
+    };
+
+    if (editClienteId) {
+      await updateDoc(doc(db, "clientes", editClienteId), data);
+      editClienteId = null;
+    } else {
+      await addDoc(collection(db, "clientes"), data);
+    }
+
+    limpiarCliente();
+    cargarClientes();
+  };
+
+  async function cargarClientes() {
+    const snap = await getDocs(collection(db, "clientes"));
+    clientesCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    pintarClientes(clientesCache);
+  }
+
+  function pintarClientes(lista) {
+    clientesBody.innerHTML = "";
+    lista.forEach(c => {
+      const link = c.ubicacion
+        ? `<a href="https://www.google.com/maps?q=${c.ubicacion}" target="_blank">📍</a>`
+        : "-";
+
+      clientesBody.innerHTML += `
+        <tr>
+          <td>${c.nombre}</td>
+          <td>${c.telefono || "-"}</td>
+          <td>${c.direccion || "-"}</td>
+          <td>${link}</td>
+          <td>${c.vendedorId || "-"}</td>
+          <td>
+            <button onclick="editarCliente('${c.id}')">✏️</button>
+            <button onclick="eliminarCliente('${c.id}')">🗑️</button>
+          </td>
+        </tr>`;
+    });
+  }
+
+  buscarCliente.oninput = () => {
+    const t = buscarCliente.value.toLowerCase();
+    pintarClientes(clientesCache.filter(c =>
+      c.nombre.toLowerCase().includes(t) ||
+      (c.telefono || "").includes(t)
+    ));
+  };
+
+  window.editarCliente = (id) => {
+    const c = clientesCache.find(c => c.id === id);
+    clienteNombre.value = c.nombre;
+    clienteTelefono.value = c.telefono;
+    clienteDireccion.value = c.direccion;
+    clienteUbicacion.value = c.ubicacion;
+    vendedorSelect.value = c.vendedorId;
+    editClienteId = id;
+  };
+
+  window.eliminarCliente = async (id) => {
+    if (confirm("¿Eliminar cliente?")) {
+      await deleteDoc(doc(db, "clientes", id));
+      cargarClientes();
+    }
+  };
+
+  function limpiarCliente() {
+    clienteNombre.value = clienteTelefono.value = clienteDireccion.value = clienteUbicacion.value = "";
+  }
+
   cargarProductos();
   cargarClientes();
 });
