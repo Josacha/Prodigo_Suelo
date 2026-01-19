@@ -4,25 +4,24 @@
   <meta charset="UTF-8">
   <title>Panel Admin – Pródigo Suelo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
-  <!-- CSS -->
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
-
-  <!-- Chart -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- Excel -->
-  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
-<h1>Panel Administrador – Pródigo Suelo</h1>
-<button id="btnLogout">Cerrar sesión</button>
+  
 
-<!-- DASHBOARD -->
-<section class="dashboard">
+  <h1>Panel Administrador</h1>
+  <button id="btnLogout">Cerrar sesión</button>
 
+
+
+
+  <section class="dashboard">
+
+  <!-- KPIs -->
   <div class="kpis">
     <div class="kpi-card">
       <h4>Total Ventas</h4>
@@ -45,11 +44,13 @@
     </div>
   </div>
 
+  <!-- GRÁFICA -->
   <div class="card">
     <h3>📊 Ventas Mensuales</h3>
     <canvas id="graficaVentasMensuales"></canvas>
   </div>
 
+  <!-- PRODUCCIÓN -->
   <div class="card">
     <h3>📦 Estado de Producción</h3>
     <div id="estadoProduccion" class="estado-grid"></div>
@@ -57,51 +58,37 @@
 
 </section>
 
-<!-- PRODUCTOS -->
-<section>
-  <h2>Agregar / Editar Producto</h2>
 
-  <input id="codigo" placeholder="Código">
-  <input id="nombre" placeholder="Nombre">
-  <input id="variedad" placeholder="Variedad">
-  <input id="peso" type="number" placeholder="Peso (gramos)">
-  <input id="precio" type="number" placeholder="Precio base">
-  <input id="precioIVA" type="number" placeholder="Precio IVA" readonly>
+  <!-- AGREGAR / EDITAR PRODUCTO -->
+  <section>
+    <h2>Agregar / Editar Producto</h2>
+    <input id="codigo" placeholder="Código">
+    <input id="nombre" placeholder="Nombre">
+    <input id="variedad" placeholder="Variedad (opcional)">
+    <input id="peso" type="number" placeholder="Peso en gramos">
+    <input id="precio" type="number" placeholder="Precio base">
+    <input id="precioIVA" type="number" placeholder="Precio con IVA 1%" readonly>
+    <button id="btnAgregar">Guardar</button>
+  </section>
 
-  <button id="btnAgregar">Guardar</button>
-</section>
+  <!-- LISTA DE PRODUCTOS -->
+  <section>
+    <h2>Productos</h2>
+    <div id="productosContainer" class="cards-container"></div>
+  </section>
 
-<section>
-  <h2>Productos</h2>
-
-  <table class="tabla-productos">
-    <thead>
-      <tr>
-        <th>Código</th>
-        <th>Nombre</th>
-        <th>Variedad</th>
-        <th>Gramos</th>
-        <th>Kilos</th>
-        <th>Precio</th>
-        <th>Precio IVA</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody id="productosBody"></tbody>
-  </table>
-</section>
-
-<!-- CLIENTES -->
+  <!-- AGREGAR CLIENTE -->
 <section>
   <h2>Agregar Cliente</h2>
 
-  <input id="clienteNombre" placeholder="Nombre">
+  <input id="clienteNombre" placeholder="Nombre del cliente">
   <input id="clienteTelefono" placeholder="Teléfono">
-  <input id="clienteDireccion" placeholder="Dirección">
 
-  <div>
+  <input id="clienteDireccion" placeholder="Dirección exacta">
+
+  <div class="ubicacion-box">
     <input id="clienteUbicacion" placeholder="Lat, Lng" readonly>
-    <button type="button" onclick="obtenerUbicacion()">📍 Usar ubicación</button>
+    <button type="button" onclick="obtenerUbicacion()">📍 Usar mi ubicación</button>
   </div>
 
   <select id="vendedorSelect"></select>
@@ -109,37 +96,44 @@
   <button id="btnAgregarCliente">Guardar Cliente</button>
 </section>
 
-<section>
-  <h2>Clientes</h2>
 
-  <table class="tabla-clientes">
-    <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>Teléfono</th>
-        <th>Dirección</th>
-        <th>Mapa</th>
-        <th>Vendedor</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody id="clientesContainer"></tbody>
-  </table>
-</section>
+  <!-- LISTA DE CLIENTES -->
+  <section>
+    <h2>Clientes</h2>
+    <div id="clientesContainer" class="cards-container"></div>
+  </section>
 
-<!-- ESTADÍSTICAS -->
-<section>
-  <h2>Estadísticas por rango</h2>
+  <!-- ESTADÍSTICAS POR RANGO DE FECHAS -->
+  <section>
+    <h2>Estadísticas por rango de fechas</h2>
+    <label>Fecha inicio:</label>
+    <input type="date" id="fechaInicio">
+    <label>Fecha fin:</label>
+    <input type="date" id="fechaFin">
+    <button id="btnExportExcel">Exportar a Excel</button>
+    <button id="btnFiltrarEstadisticas">Filtrar</button>
 
-  <input type="date" id="fechaInicio">
-  <input type="date" id="fechaFin">
+    <div id="estadisticasContainer">
+      <p><strong>Total pedidos:</strong> 0</p>
+      <p><strong>Total gramos de café vendidos:</strong> 0</p>
+      <p><strong>Total en dinero:</strong> ₡0</p>
+    </div>
 
-  <button id="btnFiltrarEstadisticas">Filtrar</button>
-  <button id="btnExportExcel">Exportar Excel</button>
 
-  <div id="estadisticasContainer"></div>
-</section>
 
-<script type="module" src="js/admin.js"></script>
+  
+
+  <script type="module" src="js/admin.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </body>
 </html>
+
+
+
+
+
+
+
+
+
