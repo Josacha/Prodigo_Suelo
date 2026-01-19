@@ -72,10 +72,31 @@
   </section>
 
   <!-- LISTA DE PRODUCTOS -->
-  <section>
-    <h2>Productos</h2>
-    <div id="productosContainer" class="cards-container"></div>
-  </section>
+ <section>
+  <h2>Productos</h2>
+
+  <input
+    type="text"
+    id="buscarProducto"
+    placeholder="Buscar por nombre, variedad o peso..."
+    style="margin-bottom:10px; width:100%; padding:8px;"
+  />
+
+  <table id="tablaProductos">
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Variedad</th>
+        <th>Peso</th>
+        <th>Precio</th>
+        <th>Precio IVA</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="productosBody"></tbody>
+  </table>
+</section>
+
 
   <!-- AGREGAR CLIENTE -->
 <section>
@@ -128,6 +149,7 @@
 
 </body>
 </html>
+
 
 
 
