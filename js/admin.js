@@ -27,6 +27,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!user) location.href = "index.html";
     await cargarDashboard();
     await cargarGraficaMensual();
+
+
+  // TABLAS
+  await cargarProductos();
+  await cargarClientes();
+  await cargarVentas();
+
+    
   });
 
   // =======================
@@ -164,3 +172,4 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 });
+
