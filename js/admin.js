@@ -1,256 +1,231 @@
-// ================================
-// FIREBASE IMPORTS
-// ================================
 import { auth, db } from "./firebase.js";
 import {
-  collection,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  getDoc,
-  query,
-  where,
-  Timestamp
+  collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, query, where, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// ================================
-// AUTH
-// ================================
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    window.location.href = "login.html";
-  }
-});
+document.addEventListener("DOMContentLoaded", () => {
 
-document.getElementById("btnLogout").addEventListener("click", async () => {
-  await signOut(auth);
-  window.location.href = "login.html";
-});
+  let editId = null;
+  let editClienteId = null;
 
-// ================================
-// VARIABLES
-// ================================
-let editProductoId = null;
-let editClienteId = null;
+  const codigo = document.getElementById("codigo");
+  const nombre = document.getElementById("nombre");
+  const variedad = document.getElementById("variedad");
+  const peso = document.getElementById("peso");
+  const precio = document.getElementById("precio");
+  const precioIVA = document.getElementById("precioIVA");
 
-const productosBody = document.getElementById("productosBody");
-const clientesContainer = document.getElementById("clientesContainer");
+  const productosBody = document.getElementById("productosBody");
 
-// ================================
-// PRODUCTOS
-// ================================
-async function cargarProductos(filtro = "") {
-  productosBody.innerHTML = "";
+  const clienteNombre = document.getElementById("clienteNombre");
+  const clienteTelefono = document.getElementById("clienteTelefono");
+  const clienteDireccion = document.getElementById("clienteDireccion");
+  const clienteUbicacion = document.getElementById("clienteUbicacion");
+  const vendedorSelect = document.getElementById("vendedorSelect");
+  const clientesContainer = document.getElementById("clientesContainer");
 
-  const snap = await getDocs(collection(db, "productos"));
+  const btnAgregar = document.getElementById("btnAgregar");
+  const btnAgregarCliente = document.getElementById("btnAgregarCliente");
+  const btnLogout = document.getElementById("btnLogout");
 
-  snap.forEach((docu) => {
-    const p = docu.data();
-    const texto = `${p.nombre} ${p.variedad} ${p.peso}`.toLowerCase();
-    if (!texto.includes(filtro.toLowerCase())) return;
-
-    const kilos = (p.peso / 1000).toFixed(2);
-
-    productosBody.innerHTML += `
-      <tr>
-        <td>${p.codigo}</td>
-        <td>${p.nombre}</td>
-        <td>${p.variedad || ""}</td>
-        <td>${p.peso}</td>
-        <td>${kilos}</td>
-        <td>₡${p.precio}</td>
-        <td>₡${p.precioIVA}</td>
-        <td>
-          <button onclick="editarProducto('${docu.id}')">✏️</button>
-          <button onclick="eliminarProducto('${docu.id}')">🗑️</button>
-        </td>
-      </tr>
-    `;
-  });
-}
-
-window.editarProducto = async (id) => {
-  const ref = doc(db, "productos", id);
-  const snap = await getDoc(ref);
-  const p = snap.data();
-
-  editProductoId = id;
-  codigo.value = p.codigo;
-  nombre.value = p.nombre;
-  variedad.value = p.variedad;
-  peso.value = p.peso;
-  precio.value = p.precio;
-  precioIVA.value = p.precioIVA;
-};
-
-window.eliminarProducto = async (id) => {
-  if (confirm("¿Eliminar producto?")) {
-    await deleteDoc(doc(db, "productos", id));
-    cargarProductos();
-    cargarDashboard();
-  }
-};
-
-btnAgregar.addEventListener("click", async () => {
-  const data = {
-    codigo: codigo.value,
-    nombre: nombre.value,
-    variedad: variedad.value,
-    peso: Number(peso.value),
-    precio: Number(precio.value),
-    precioIVA: Number(precioIVA.value)
-  };
-
-  if (editProductoId) {
-    await updateDoc(doc(db, "productos", editProductoId), data);
-    editProductoId = null;
-  } else {
-    await addDoc(collection(db, "productos"), data);
-  }
-
-  cargarProductos();
-  cargarDashboard();
-});
-
-// precio IVA automático
-precio.addEventListener("input", () => {
-  precioIVA.value = Math.round(precio.value * 1.01);
-});
-
-// buscador productos
-buscarProducto.addEventListener("input", e => cargarProductos(e.target.value));
-
-// ================================
-// CLIENTES
-// ================================
-async function cargarClientes(filtro = "") {
-  clientesContainer.innerHTML = "";
-  const snap = await getDocs(collection(db, "clientes"));
-
-  snap.forEach(docu => {
-    const c = docu.data();
-    const texto = `${c.nombre} ${c.telefono} ${c.vendedor}`.toLowerCase();
-    if (!texto.includes(filtro.toLowerCase())) return;
-
-    const maps = `https://www.google.com/maps?q=${c.ubicacion}`;
-
-    clientesContainer.innerHTML += `
-      <tr>
-        <td>${c.nombre}</td>
-        <td>${c.telefono}</td>
-        <td>${c.direccion}</td>
-        <td><a href="${maps}" target="_blank">🗺</a></td>
-        <td>${c.vendedor}</td>
-        <td>
-          <button onclick="editarCliente('${docu.id}')">✏️</button>
-          <button onclick="eliminarCliente('${docu.id}')">🗑️</button>
-        </td>
-      </tr>
-    `;
-  });
-}
-
-window.editarCliente = async (id) => {
-  const snap = await getDoc(doc(db, "clientes", id));
-  const c = snap.data();
-
-  editClienteId = id;
-  clienteNombre.value = c.nombre;
-  clienteTelefono.value = c.telefono;
-  clienteDireccion.value = c.direccion;
-  clienteUbicacion.value = c.ubicacion;
-  vendedorSelect.value = c.vendedor;
-};
-
-window.eliminarCliente = async (id) => {
-  if (confirm("¿Eliminar cliente?")) {
-    await deleteDoc(doc(db, "clientes", id));
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) location.href = "index.html";
+    await cargarVendedores();
+    listarProductos();
     cargarClientes();
-  }
-};
+    cargarDashboard();
+    cargarGraficaMensual();
+  });
 
-btnAgregarCliente.addEventListener("click", async () => {
-  const data = {
-    nombre: clienteNombre.value,
-    telefono: clienteTelefono.value,
-    direccion: clienteDireccion.value,
-    ubicacion: clienteUbicacion.value,
-    vendedor: vendedorSelect.value
+  btnLogout.onclick = async () => {
+    await signOut(auth);
+    location.href = "index.html";
   };
 
-  if (editClienteId) {
-    await updateDoc(doc(db, "clientes", editClienteId), data);
-    editClienteId = null;
-  } else {
-    await addDoc(collection(db, "clientes"), data);
+  precio.addEventListener("input", () => {
+    precioIVA.value = (precio.value * 1.01).toFixed(2);
+  });
+
+  btnAgregar.onclick = async () => {
+    const data = {
+      codigo: codigo.value,
+      nombre: nombre.value,
+      variedad: variedad.value,
+      peso: Number(peso.value),
+      precio: Number(precio.value),
+      precioIVA: Number(precioIVA.value)
+    };
+
+    if (editId) {
+      await updateDoc(doc(db, "productos", editId), data);
+      editId = null;
+    } else {
+      await addDoc(collection(db, "productos"), data);
+    }
+
+    codigo.value = nombre.value = variedad.value = peso.value = precio.value = precioIVA.value = "";
+    listarProductos();
+  };
+
+  async function listarProductos() {
+    productosBody.innerHTML = "";
+    const snap = await getDocs(collection(db, "productos"));
+
+    snap.forEach(d => {
+      const p = d.data();
+      productosBody.innerHTML += `
+        <tr>
+          <td>${p.codigo}</td>
+          <td>${p.nombre}</td>
+          <td>${p.variedad || "-"}</td>
+          <td>${p.peso}</td>
+          <td>${(p.peso / 1000).toFixed(2)}</td>
+          <td>₡${p.precio}</td>
+          <td>₡${p.precioIVA}</td>
+          <td>
+            <button onclick="editarProducto('${d.id}')">✏️</button>
+            <button onclick="eliminarProducto('${d.id}')">🗑️</button>
+          </td>
+        </tr>
+      `;
+    });
   }
 
-  cargarClientes();
-});
+  window.editarProducto = async (id) => {
+    const d = await getDoc(doc(db, "productos", id));
+    const p = d.data();
+    codigo.value = p.codigo;
+    nombre.value = p.nombre;
+    variedad.value = p.variedad;
+    peso.value = p.peso;
+    precio.value = p.precio;
+    precioIVA.value = p.precioIVA;
+    editId = id;
+  };
 
-buscarCliente.addEventListener("input", e => cargarClientes(e.target.value));
-
-// ================================
-// GEOLOCALIZACIÓN
-// ================================
-window.obtenerUbicacion = () => {
-  navigator.geolocation.getCurrentPosition(pos => {
-    clienteUbicacion.value = `${pos.coords.latitude},${pos.coords.longitude}`;
-  });
-};
-
-// ================================
-// DASHBOARD
-// ================================
-let chart;
-
-async function cargarDashboard() {
-  let totalVentas = 0;
-  let totalKg = 0;
-  let pedidosMes = 0;
-  let entrantes = 0;
-  const ventasPorMes = {};
-
-  const snap = await getDocs(collection(db, "ventas"));
-
-  snap.forEach(docu => {
-    const v = docu.data();
-    totalVentas += v.total;
-    totalKg += v.kilos;
-    pedidosMes++;
-    if (v.estado === "pendiente") entrantes++;
-
-    const mes = v.fecha.toDate().toLocaleString("es-CR", { month: "short" });
-    ventasPorMes[mes] = (ventasPorMes[mes] || 0) + v.total;
-  });
-
-  kpiVentas.textContent = `₡${totalVentas.toLocaleString()}`;
-  kpiKg.textContent = `${totalKg.toFixed(2)} kg`;
-  kpiPedidos.textContent = pedidosMes;
-  kpiEntrantes.textContent = entrantes;
-
-  const labels = Object.keys(ventasPorMes);
-  const data = Object.values(ventasPorMes);
-
-  if (chart) chart.destroy();
-  chart = new Chart(graficaVentasMensuales, {
-    type: "bar",
-    data: {
-      labels,
-      datasets: [{
-        label: "Ventas",
-        data
-      }]
+  window.eliminarProducto = async (id) => {
+    if (confirm("Eliminar producto?")) {
+      await deleteDoc(doc(db, "productos", id));
+      listarProductos();
     }
-  });
-}
+  };
 
-// ================================
-// INIT
-// ================================
-cargarProductos();
-cargarClientes();
-cargarDashboard();
+  async function cargarVendedores() {
+    vendedorSelect.innerHTML = "<option value=''>Vendedor</option>";
+    const snap = await getDocs(collection(db, "usuarios"));
+    snap.forEach(d => {
+      vendedorSelect.innerHTML += `<option value="${d.id}">${d.data().nombre}</option>`;
+    });
+  }
+
+  btnAgregarCliente.onclick = async () => {
+    const data = {
+      nombre: clienteNombre.value,
+      telefono: clienteTelefono.value,
+      direccion: clienteDireccion.value,
+      ubicacion: clienteUbicacion.value,
+      vendedorId: vendedorSelect.value,
+      fecha: Timestamp.now()
+    };
+
+    if (editClienteId) {
+      await updateDoc(doc(db, "clientes", editClienteId), data);
+      editClienteId = null;
+    } else {
+      await addDoc(collection(db, "clientes"), data);
+    }
+
+    clienteNombre.value = clienteTelefono.value = clienteDireccion.value = clienteUbicacion.value = "";
+    cargarClientes();
+  };
+
+  async function cargarClientes() {
+    clientesContainer.innerHTML = "";
+    const snap = await getDocs(collection(db, "clientes"));
+
+    snap.forEach(d => {
+      const c = d.data();
+      const vendedor =
+        vendedorSelect.querySelector(`option[value="${c.vendedorId}"]`)?.text || "-";
+
+      const mapa = c.ubicacion
+        ? `<a href="https://www.google.com/maps?q=${c.ubicacion}" target="_blank">📍</a>`
+        : "-";
+
+      clientesContainer.innerHTML += `
+        <tr>
+          <td>${c.nombre}</td>
+          <td>${c.telefono || "-"}</td>
+          <td>${c.direccion || "-"}</td>
+          <td>${mapa}</td>
+          <td>${vendedor}</td>
+          <td>
+            <button onclick="editarCliente('${d.id}')">✏️</button>
+            <button onclick="eliminarCliente('${d.id}')">🗑️</button>
+          </td>
+        </tr>
+      `;
+    });
+  }
+
+  window.editarCliente = async (id) => {
+    const d = await getDoc(doc(db, "clientes", id));
+    const c = d.data();
+    clienteNombre.value = c.nombre;
+    clienteTelefono.value = c.telefono;
+    clienteDireccion.value = c.direccion;
+    clienteUbicacion.value = c.ubicacion;
+    vendedorSelect.value = c.vendedorId;
+    editClienteId = id;
+  };
+
+  window.eliminarCliente = async (id) => {
+    if (confirm("Eliminar cliente?")) {
+      await deleteDoc(doc(db, "clientes", id));
+      cargarClientes();
+    }
+  };
+
+  window.obtenerUbicacion = () => {
+    navigator.geolocation.getCurrentPosition(pos => {
+      clienteUbicacion.value =
+        `${pos.coords.latitude}, ${pos.coords.longitude}`;
+    });
+  };
+
+  async function cargarDashboard() {
+    const snap = await getDocs(collection(db, "ventas"));
+    let total = 0, kg = 0, pedidos = 0, entrantes = 0;
+
+    snap.forEach(d => {
+      const v = d.data();
+      total += v.total || 0;
+      pedidos++;
+      if (v.estado === "entrante") entrantes++;
+
+      v.lineas?.forEach(l => {
+        kg += (l.peso * l.cantidad) / 1000;
+      });
+    });
+
+    document.getElementById("kpiVentas").textContent = `₡${total.toLocaleString()}`;
+    document.getElementById("kpiKg").textContent = `${kg.toFixed(2)} kg`;
+    document.getElementById("kpiPedidos").textContent = pedidos;
+    document.getElementById("kpiEntrantes").textContent = entrantes;
+  }
+
+  async function cargarGraficaMensual() {
+    const ctx = document.getElementById("graficaVentasMensuales");
+    if (!ctx) return;
+
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
+        datasets: [{ label: "Ventas", data: Array(12).fill(0) }]
+      }
+    });
+  }
+
+});
