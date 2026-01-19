@@ -118,6 +118,66 @@ document.addEventListener("DOMContentLoaded", () => {
     codigo.value = nombre.value = variedad.value = peso.value = precio.value = precioIVA.value = "";
   }
 
+
+ /* ================== GRAFICA ================== */
+
+async function cargarGraficaMensual() {
+  if (typeof Chart === "undefined") {
+    console.warn("Chart.js no cargó todavía");
+    return;
+  }
+
+  const snap = await getDocs(collection(db, "ventas"));
+
+  const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  let ventas = Array(12).fill(0);
+  let kilos = Array(12).fill(0);
+
+  snap.forEach(docSnap => {
+    const v = docSnap.data();
+    if (!v.fecha) return;
+
+    const fecha = v.fecha.toDate ? v.fecha.toDate() : new Date(v.fecha);
+    const mes = fecha.getMonth();
+
+    ventas[mes] += Number(v.total || 0);
+
+    if (Array.isArray(v.lineas)) {
+      v.lineas.forEach(l => {
+        const peso = Number(l.peso);
+        const cantidad = Number(l.cantidad);
+        if (!isNaN(peso) && !isNaN(cantidad)) {
+          kilos[mes] += (peso * cantidad) / 1000;
+        }
+      });
+    }
+  });
+
+  const ctx = document.getElementById("graficaVentasMensuales")?.getContext("2d");
+  if (!ctx) return;
+
+  if (graficaMensual) graficaMensual.destroy();
+
+  graficaMensual = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: meses,
+      datasets: [
+        { label: "₡ Ventas", data: ventas },
+        { label: "Kg vendidos", data: kilos }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+
+
+
+  
   /* ================== CLIENTES ================== */
   window.obtenerUbicacion = () => {
     navigator.geolocation.getCurrentPosition(pos => {
@@ -205,3 +265,4 @@ document.addEventListener("DOMContentLoaded", () => {
   cargarProductos();
   cargarClientes();
 });
+
