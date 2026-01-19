@@ -956,6 +956,98 @@ td {
   transform: scale(1.2);
 }
 
+/* ============================
+   📱 VISTA MÓVIL
+============================ */
+@media (max-width: 768px) {
+
+  body {
+    padding: 10px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
+  /* ============================
+     DASHBOARD
+  ============================ */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .kpi-card {
+    padding: 12px;
+    font-size: 0.9rem;
+  }
+
+  .dashboard {
+    gap: 15px;
+  }
+
+  canvas {
+    max-height: 260px;
+  }
+
+  /* ============================
+     TABLAS → TARJETAS
+  ============================ */
+  table {
+    border: 0;
+  }
+
+  table thead {
+    display: none;
+  }
+
+  table tr {
+    display: block;
+    margin-bottom: 15px;
+    border-radius: 12px;
+    padding: 10px;
+    background: #fff;
+    box-shadow: 0 5px 15px rgba(0,0,0,.08);
+  }
+
+  table td {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 0.9rem;
+    border: none;
+  }
+
+  table td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    color: #555;
+  }
+
+  /* ============================
+     BOTONES
+  ============================ */
+  button {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  button i {
+    margin-right: 5px;
+  }
+
+  /* ============================
+     FORMULARIOS
+  ============================ */
+  input, select {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+}
+
 
 
 
