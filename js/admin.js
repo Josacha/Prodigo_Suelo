@@ -232,23 +232,48 @@ document.addEventListener("DOMContentLoaded", () => {
   // =====================
   // LISTAR CLIENTES
   // =====================
-  async function cargarClientes() {
-    if (!clientesContainer) return;
+ async function cargarClientes() {
+  if(!clientesContainer) return;
 
-    clientesContainer.innerHTML = "";
-    const snap = await getDocs(collection(db, "clientes"));
+  const snap = await getDocs(collection(db, "clientes"));
+  clientesContainer.innerHTML = "";
 
-    snap.forEach(docSnap => {
-      const c = docSnap.data();
-      const div = document.createElement("div");
-      div.className = "card";
-      div.innerHTML = `
-        <strong>${c.nombre}</strong><br>
-        ${c.telefono || ""}<br>
-        ${c.direccion || ""}
-      `;
-      clientesContainer.appendChild(div);
+  snap.forEach(docSnap => {
+    const c = docSnap.data();
+    const vendedorName =
+      vendedorSelect.querySelector(`option[value="${c.vendedorId}"]`)?.text ||
+      "N/A";
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${c.nombre}</td>
+      <td>${c.telefono || "-"}</td>
+      <td>${c.direccion || "-"}</td>
+      <td>${c.ubicacion || "-"}</td>
+      <td>${vendedorName}</td>
+      <td>
+        <button onclick="editarCliente('${docSnap.id}')">✏️</button>
+        <button onclick="eliminarCliente('${docSnap.id}')">🗑️</button>
+      </td>
+    `;
+    clientesContainer.appendChild(tr);
+  });
+
+  activarBuscadorClientes();
+}
+
+  function activarBuscadorClientes() {
+  const input = document.getElementById("buscarCliente");
+  if (!input) return;
+
+  input.addEventListener("input", () => {
+    const filtro = input.value.toLowerCase();
+    document.querySelectorAll("#clientesContainer tr").forEach(tr => {
+      tr.style.display = tr.innerText.toLowerCase().includes(filtro)
+        ? ""
+        : "none";
     });
-  }
+  });
+}
 
-});
+
