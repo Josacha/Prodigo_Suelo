@@ -1,273 +1,208 @@
 import { auth, db } from "./firebase.js";
 import {
-  collection, getDocs, addDoc, doc, updateDoc, deleteDoc, Timestamp
+  collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, query, where, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+// =====================
+// EJECUTAR CUANDO EL DOM ESTÁ LISTO
+// =====================
 document.addEventListener("DOMContentLoaded", () => {
 
-  let editProductoId = null;
+  // =====================
+  // VARIABLES
+  // =====================
+  let editId = null;
   let editClienteId = null;
-  let chartInstance = null;
+  let carrito = []; // Opcional
 
-  // =======================
-  // ELEMENTOS PRODUCTOS
-  // =======================
   const codigo = document.getElementById("codigo");
   const nombre = document.getElementById("nombre");
   const variedad = document.getElementById("variedad");
   const peso = document.getElementById("peso");
   const precio = document.getElementById("precio");
   const precioIVA = document.getElementById("precioIVA");
-  const tablaProductos = document.getElementById("tablaProductos");
+  const productosContainer = document.getElementById("productosContainer");
 
-  // =======================
-  // ELEMENTOS CLIENTES
-  // =======================
   const clienteNombre = document.getElementById("clienteNombre");
   const clienteTelefono = document.getElementById("clienteTelefono");
   const clienteDireccion = document.getElementById("clienteDireccion");
   const clienteUbicacion = document.getElementById("clienteUbicacion");
   const vendedorSelect = document.getElementById("vendedorSelect");
-  const tablaClientes = document.getElementById("tablaClientes");
+  const clientesContainer = document.getElementById("clientesContainer");
 
-  // =======================
-  // DASHBOARD
-  // =======================
-  const kpiVentas = document.getElementById("kpiVentas");
-  const kpiKg = document.getElementById("kpiKg");
-  const kpiPedidos = document.getElementById("kpiPedidos");
-  const kpiEntrantes = document.getElementById("kpiEntrantes");
-  const estadoProduccion = document.getElementById("estadoProduccion");
+  const fechaInicioInput = document.getElementById("fechaInicio");
+  const fechaFinInput = document.getElementById("fechaFin");
+  const estadisticasContainer = document.getElementById("estadisticasContainer");
 
-  // =======================
-  // AUTH
-  // =======================
+  const btnLogout = document.getElementById("btnLogout");
+  const btnRegistro = document.getElementById("btnRegistro");
+  const btnAgregar = document.getElementById("btnAgregar");
+  const btnAgregarCliente = document.getElementById("btnAgregarCliente");
+  const btnFiltrarEstadisticas = document.getElementById("btnFiltrarEstadisticas");
+  const btnExportExcel = document.getElementById("btnExportExcel");
+
+  // =====================
+  // PROTECCIÓN Y CARGA INICIAL
+  // =====================
   onAuthStateChanged(auth, async (user) => {
     if (!user) location.href = "index.html";
 
-    await cargarDashboard();
-    await cargarGraficaMensual();
-    await cargarProductos();
-    await cargarClientes();
+    await cargarVendedores();
+    cargarClientes();
+    listarProductos();
+
+    cargarDashboard();
+    cargarGraficaMensual();
   });
 
-  // =======================
-  // DASHBOARD
-  // =======================
-  async function cargarDashboard() {
-    const snap = await getDocs(collection(db, "ventas"));
-
-    let totalVentas = 0;
-    let totalKg = 0;
-    let pedidosMes = 0;
-
-    let estados = { entrante: 0, "en proceso": 0, listo: 0, atrasado: 0 };
-
-    const hoy = new Date();
-    const mes = hoy.getMonth();
-    const anio = hoy.getFullYear();
-
-    snap.forEach(d => {
-      const v = d.data();
-      const fecha = v.fecha?.toDate ? v.fecha.toDate() : new Date(v.fecha);
-
-      totalVentas += Number(v.total || 0);
-
-      if (fecha.getMonth() === mes && fecha.getFullYear() === anio) {
-        pedidosMes++;
-      }
-
-      if (estados[v.estado] !== undefined) estados[v.estado]++;
-
-      if (Array.isArray(v.lineas)) {
-        v.lineas.forEach(l => {
-          totalKg += ((Number(l.peso) || 0) * (Number(l.cantidad) || 0)) / 1000;
-        });
-      }
-    });
-
-    kpiVentas.textContent = `₡${totalVentas.toLocaleString()}`;
-    kpiKg.textContent = `${totalKg.toFixed(2)} kg`;
-    kpiPedidos.textContent = pedidosMes;
-    kpiEntrantes.textContent = estados.entrante;
-
-    estadoProduccion.innerHTML = `
-      <div class="estado-box entrante">Entrantes<br>${estados.entrante}</div>
-      <div class="estado-box proceso">En Proceso<br>${estados["en proceso"]}</div>
-      <div class="estado-box listo">Listos<br>${estados.listo}</div>
-      <div class="estado-box atrasado">Atrasados<br>${estados.atrasado}</div>
-    `;
-  }
-
-  // =======================
-  // GRAFICA
-  // =======================
-  async function cargarGraficaMensual() {
-    const snap = await getDocs(collection(db, "ventas"));
-
-    const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-    let ventas = Array(12).fill(0);
-    let kilos = Array(12).fill(0);
-    let pedidos = Array(12).fill(0);
-
-    snap.forEach(d => {
-      const v = d.data();
-      if (!v.fecha) return;
-
-      const f = v.fecha.toDate ? v.fecha.toDate() : new Date(v.fecha);
-      const m = f.getMonth();
-
-      ventas[m] += Number(v.total || 0);
-      pedidos[m]++;
-
-      if (Array.isArray(v.lineas)) {
-        v.lineas.forEach(l => {
-          kilos[m] += ((Number(l.peso)||0) * (Number(l.cantidad)||0)) / 1000;
-        });
-      }
-    });
-
-    const ctx = document.getElementById("graficaVentasMensuales");
-    if (chartInstance) chartInstance.destroy();
-
-    chartInstance = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: meses,
-        datasets: [
-          { label: "₡ Ventas", data: ventas },
-          { label: "Kg", data: kilos },
-          { label: "Pedidos", data: pedidos }
-        ]
-      }
-    });
-  }
-
-  // =======================
-  // PRODUCTOS
-  // =======================
-  async function cargarProductos() {
-    const snap = await getDocs(collection(db, "productos"));
-    tablaProductos.innerHTML = "";
-
-    snap.forEach(d => {
-      const p = d.data();
-      tablaProductos.innerHTML += `
-        <tr>
-          <td>${p.codigo || ""}</td>
-          <td>${p.nombre}</td>
-          <td>${p.variedad || ""}</td>
-          <td>${p.peso}</td>
-          <td>₡${p.precio}</td>
-          <td>
-            <button onclick="editarProducto('${d.id}')">✏</button>
-            <button onclick="eliminarProducto('${d.id}')">🗑</button>
-          </td>
-        </tr>
-      `;
-    });
-  }
-
-  window.editarProducto = async (id) => {
-    const snap = await getDocs(collection(db, "productos"));
-    snap.forEach(d => {
-      if (d.id === id) {
-        const p = d.data();
-        codigo.value = p.codigo || "";
-        nombre.value = p.nombre;
-        variedad.value = p.variedad || "";
-        peso.value = p.peso;
-        precio.value = p.precio;
-        precioIVA.value = p.precioIVA || 0;
-        editProductoId = id;
-      }
-    });
+  // =====================
+  // LOGOUT
+  // =====================
+  if(btnLogout) btnLogout.onclick = async () => {
+    await signOut(auth);
+    location.href = "index.html";
   };
 
-  window.eliminarProducto = async (id) => {
-    if (confirm("Eliminar producto?")) {
-      await deleteDoc(doc(db, "productos", id));
-      cargarProductos();
-    }
+  // =====================
+  // REGISTRO
+  // =====================
+  if(btnRegistro) btnRegistro.onclick = async () => {
+    await signOut(auth);
+    location.href = "registro.html";
   };
 
-  document.getElementById("btnAgregar").addEventListener("click", async () => {
+  // =====================
+  // UBICACIÓN
+  // =====================
+  window.obtenerUbicacion = () => {
+    if (!navigator.geolocation) return alert("La geolocalización no está disponible");
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude.toFixed(6);
+        const lng = pos.coords.longitude.toFixed(6);
+        if(clienteUbicacion) clienteUbicacion.value = `${lat}, ${lng}`;
+      },
+      () => alert("No se pudo obtener la ubicación")
+    );
+  };
+
+  // =====================
+  // CALCULAR IVA
+  // =====================
+  if(precio && precioIVA) {
+    precio.addEventListener("input", () => {
+      precioIVA.value = (Number(precio.value) * 1.01).toFixed(2);
+    });
+  }
+
+  // =====================
+  // AGREGAR / EDITAR PRODUCTO
+  // =====================
+  if(btnAgregar) btnAgregar.onclick = async () => {
+    if (!codigo.value || !nombre.value || !peso.value || !precio.value) return alert("Complete todos los campos");
+
     const data = {
       codigo: codigo.value,
       nombre: nombre.value,
-      variedad: variedad.value,
+      variedad: variedad.value || null,
       peso: Number(peso.value),
       precio: Number(precio.value),
-      precioIVA: Number(precioIVA.value)
+      precioIVA: Number(precioIVA.value),
+      activo: true
     };
 
-    if (editProductoId) {
-      await updateDoc(doc(db, "productos", editProductoId), data);
-      editProductoId = null;
+    if (editId) {
+      await updateDoc(doc(db, "productos", editId), data);
+      editId = null;
     } else {
       await addDoc(collection(db, "productos"), data);
     }
 
+    // Limpiar campos
     codigo.value = nombre.value = variedad.value = peso.value = precio.value = precioIVA.value = "";
-    cargarProductos();
-  });
+    listarProductos();
+  };
 
-  // =======================
-  // CLIENTES
-  // =======================
-  async function cargarClientes() {
-    const snap = await getDocs(collection(db, "clientes"));
-    tablaClientes.innerHTML = "";
+  // =====================
+  // LISTAR PRODUCTOS
+  // =====================
+  async function listarProductos() {
+    if(!productosContainer) return;
 
-    snap.forEach(d => {
-      const c = d.data();
-      tablaClientes.innerHTML += `
-        <tr>
-          <td>${c.nombre}</td>
-          <td>${c.telefono || ""}</td>
-          <td>${c.direccion || ""}</td>
-          <td>
-            <button onclick="editarCliente('${d.id}')">✏</button>
-            <button onclick="eliminarCliente('${d.id}')">🗑</button>
-          </td>
-        </tr>
+    const snap = await getDocs(collection(db, "productos"));
+    productosContainer.innerHTML = "";
+    snap.forEach(docSnap => {
+      const p = docSnap.data();
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <p><strong>Código:</strong> ${p.codigo}</p>
+        <p><strong>Nombre:</strong> ${p.nombre}</p>
+        <p><strong>Variedad:</strong> ${p.variedad || "-"}</p>
+        <p><strong>Peso:</strong> ${p.peso} g</p>
+        <p><strong>Precio:</strong> ₡${p.precio}</p>
+        <p><strong>Precio c/IVA:</strong> ₡${p.precioIVA}</p>
+        <div class="acciones">
+          <button class="btn-editar" onclick="editarProducto('${docSnap.id}')"><i class="fa fa-edit"></i></button>
+          <button class="btn-eliminar" onclick="eliminarProducto('${docSnap.id}')"><i class="fa fa-trash"></i></button>
+        </div>
       `;
+      productosContainer.appendChild(card);
     });
   }
 
-  window.editarCliente = async (id) => {
-    const snap = await getDocs(collection(db, "clientes"));
-    snap.forEach(d => {
-      if (d.id === id) {
-        const c = d.data();
-        clienteNombre.value = c.nombre;
-        clienteTelefono.value = c.telefono || "";
-        clienteDireccion.value = c.direccion || "";
-        clienteUbicacion.value = c.ubicacion || "";
-        vendedorSelect.value = c.vendedor || "";
-        editClienteId = id;
-      }
-    });
+  window.editarProducto = async (id) => {
+    const docSnap = await getDoc(doc(db, "productos", id));
+    if(!docSnap.exists()) return;
+
+    const p = docSnap.data();
+    codigo.value = p.codigo;
+    nombre.value = p.nombre;
+    variedad.value = p.variedad || "";
+    peso.value = p.peso;
+    precio.value = p.precio;
+    precioIVA.value = p.precioIVA;
+    editId = id;
   };
 
-  window.eliminarCliente = async (id) => {
-    if (confirm("Eliminar cliente?")) {
-      await deleteDoc(doc(db, "clientes", id));
-      cargarClientes();
+  window.eliminarProducto = async (id) => {
+    if(confirm("¿Eliminar este producto?")) {
+      await deleteDoc(doc(db, "productos", id));
+      listarProductos();
     }
   };
 
-  document.getElementById("btnAgregarCliente").addEventListener("click", async () => {
+  // =====================
+  // CARGAR VENDEDORES
+  // =====================
+  async function cargarVendedores() {
+    if(!vendedorSelect) return;
+
+    const snap = await getDocs(collection(db, "usuarios"));
+    vendedorSelect.innerHTML = "<option value=''>Seleccione vendedor</option>";
+    snap.forEach(docSnap => {
+      const u = docSnap.data();
+      vendedorSelect.innerHTML += `<option value="${docSnap.id}">${u.nombre}</option>`;
+    });
+  }
+
+  // =====================
+  // AGREGAR CLIENTE
+  // =====================
+  if(btnAgregarCliente) btnAgregarCliente.onclick = async () => {
+    if (!clienteNombre.value || !vendedorSelect.value) return alert("Complete los campos obligatorios");
+
     const data = {
       nombre: clienteNombre.value,
-      telefono: clienteTelefono.value,
-      direccion: clienteDireccion.value,
-      ubicacion: clienteUbicacion.value,
-      vendedor: vendedorSelect.value
+      telefono: clienteTelefono.value || null,
+      direccion: clienteDireccion.value || null,
+      ubicacion: clienteUbicacion.value || null,
+      vendedorId: vendedorSelect.value
     };
 
-    if (editClienteId) {
+    if(editClienteId) {
       await updateDoc(doc(db, "clientes", editClienteId), data);
       editClienteId = null;
     } else {
@@ -275,7 +210,244 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     clienteNombre.value = clienteTelefono.value = clienteDireccion.value = clienteUbicacion.value = "";
-    cargarClientes();
-  });
+    vendedorSelect.value = "";
 
+    cargarClientes();
+  };
+
+  // =====================
+  // LISTAR CLIENTES
+  // =====================
+  async function cargarClientes() {
+    if(!clientesContainer) return;
+
+    const snap = await getDocs(collection(db, "clientes"));
+    clientesContainer.innerHTML = "";
+
+    snap.forEach(docSnap => {
+      const c = docSnap.data();
+      const vendedorName = vendedorSelect.querySelector(`option[value="${c.vendedorId}"]`)?.text || "N/A";
+
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <p><strong>Nombre:</strong> ${c.nombre}</p>
+        <p><strong>Teléfono:</strong> ${c.telefono || "-"}</p>
+        <p><strong>Dirección:</strong> ${c.direccion || "-"}</p>
+        <p><strong>Ubicación:</strong> ${c.ubicacion || "-"}</p>
+        <p><strong>Vendedor:</strong> ${vendedorName}</p>
+        <div class="acciones">
+          <button class="btn-editar" onclick="editarCliente('${docSnap.id}')"><i class="fa fa-edit"></i></button>
+          <button class="btn-eliminar" onclick="eliminarCliente('${docSnap.id}')"><i class="fa fa-trash"></i></button>
+        </div>
+      `;
+      clientesContainer.appendChild(card);
+    });
+  }
+
+  window.editarCliente = async (id) => {
+    const docSnap = await getDoc(doc(db, "clientes", id));
+    if(!docSnap.exists()) return;
+
+    const c = docSnap.data();
+    clienteNombre.value = c.nombre || "";
+    clienteTelefono.value = c.telefono || "";
+    clienteDireccion.value = c.direccion || "";
+    clienteUbicacion.value = c.ubicacion || "";
+    vendedorSelect.value = c.vendedorId || "";
+
+    editClienteId = id;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  window.eliminarCliente = async (id) => {
+    if(!confirm("¿Eliminar este cliente?")) return;
+    await deleteDoc(doc(db, "clientes", id));
+    cargarClientes();
+  };
+
+  // =====================
+  // DASHBOARD
+  // =====================
+  async function cargarDashboard() {
+    const snap = await getDocs(collection(db, "ventas"));
+
+    let totalVentas = 0, totalKg = 0, pedidosMes = 0;
+    let estados = { entrante: 0, "en proceso": 0, listo: 0, atrasado: 0 };
+    const hoy = new Date();
+    const mesActual = hoy.getMonth(), anioActual = hoy.getFullYear();
+
+    snap.forEach(docSnap => {
+      const v = docSnap.data();
+      const fecha = v.fecha?.toDate ? v.fecha.toDate() : new Date(v.fecha);
+
+      totalVentas += Number(v.total || 0);
+
+      if(fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual) pedidosMes++;
+
+      estados[v.estado] = (estados[v.estado] || 0) + 1;
+
+     if (Array.isArray(v.lineas)) {
+  v.lineas.forEach(l => {
+    const peso = Number(l.peso);
+    const cantidad = Number(l.cantidad);
+    if (!isNaN(peso) && !isNaN(cantidad)) {
+      totalKg += (peso * cantidad) / 1000;
+    }
+  });
+}
+
+    });
+
+    document.getElementById("kpiVentas").textContent = `₡${totalVentas.toLocaleString()}`;
+    document.getElementById("kpiKg").textContent = `${totalKg.toFixed(2)} kg`;
+    document.getElementById("kpiPedidos").textContent = pedidosMes;
+    document.getElementById("kpiEntrantes").textContent = estados.entrante || 0;
+
+    document.getElementById("estadoProduccion").innerHTML = `
+      <div class="estado-box entrante">Entrantes<br>${estados.entrante}</div>
+      <div class="estado-box proceso">En Proceso<br>${estados["en proceso"]}</div>
+      <div class="estado-box listo">Listos<br>${estados.listo}</div>
+      <div class="estado-box atrasado">Atrasados<br>${estados.atrasado}</div>
+    `;
+  }
+
+  // =====================
+  // GRÁFICA MENSUAL
+  // =====================
+  async function cargarGraficaMensual() {
+    const snap = await getDocs(collection(db, "ventas"));
+    const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+    let ventasPorMes = Array(12).fill(0), kgPorMes = Array(12).fill(0), pedidosPorMes = Array(12).fill(0);
+
+    snap.forEach(docSnap => {
+      const v = docSnap.data();
+      if(!v.fecha) return;
+      const fecha = v.fecha.toDate ? v.fecha.toDate() : new Date(v.fecha);
+      const mes = fecha.getMonth();
+
+      pedidosPorMes[mes]++;
+      ventasPorMes[mes] += Number(v.total||0);
+
+      v.lineas.forEach(l => {
+  const peso = Number(l.peso);
+  const cantidad = Number(l.cantidad);
+  if (!isNaN(peso) && !isNaN(cantidad)) {
+    kgPorMes[mes] += (peso * cantidad) / 1000;
+  }
 });
+
+    });
+
+    const ctx = document.getElementById("graficaVentasMensuales")?.getContext("2d");
+    if(!ctx) return;
+
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: meses,
+        datasets: [
+          { label:"₡ Ventas", data: ventasPorMes, backgroundColor:"rgba(75,192,192,0.6)" },
+          { label:"Kg vendidos", data: kgPorMes, backgroundColor:"rgba(255,159,64,0.6)" },
+          { label:"Pedidos", data: pedidosPorMes, backgroundColor:"rgba(153,102,255,0.6)" }
+        ]
+      },
+      options: { responsive:true, scales:{y:{beginAtZero:true}} }
+    });
+  }
+
+  // =====================
+  // ESTADÍSTICAS POR RANGO DE FECHAS
+  // =====================
+  if(btnFiltrarEstadisticas) btnFiltrarEstadisticas.onclick = async () => {
+    const inicio = fechaInicioInput.value;
+    const fin = fechaFinInput.value;
+    if(!inicio || !fin) return alert("Seleccione ambas fechas");
+
+    const q = query(
+      collection(db, "ventas"),
+      where("fecha", ">=", Timestamp.fromDate(new Date(inicio))),
+      where("fecha", "<=", Timestamp.fromDate(new Date(new Date(fin).setHours(23,59,59))))
+    );
+
+    const snap = await getDocs(q);
+
+    let totalPedidos = snap.size, totalKg = 0, totalDinero = 0;
+
+    snap.forEach(docSnap => {
+      const v = docSnap.data();
+      if(Array.isArray(v.lineas)) {
+        v.lineas.forEach(l => {
+          const cantidad = Number(l.cantidad);
+          const peso = Number(l.peso||0);
+          if(!isNaN(cantidad) && peso>0) totalKg += (peso*cantidad)/1000;
+        });
+      }
+      const totalVenta = Number(v.total);
+      if(!isNaN(totalVenta)) totalDinero += totalVenta;
+    });
+
+    estadisticasContainer.innerHTML = `
+      <p><strong>Total pedidos:</strong> ${totalPedidos}</p>
+      <p><strong>Total Kilogramos de café vendidos:</strong> ${totalKg.toFixed(2)} kg</p>
+      <p><strong>Total en dinero:</strong> ₡${totalDinero.toLocaleString()}</p>
+    `;
+  };
+
+  // =====================
+  // EXPORTAR EXCEL
+  // =====================
+  if(btnExportExcel) btnExportExcel.onclick = async () => {
+    const inicio = fechaInicioInput.value;
+    const fin = fechaFinInput.value;
+    if(!inicio || !fin) return alert("Seleccione ambas fechas");
+
+    const q = query(
+      collection(db, "ventas"),
+      where("fecha", ">=", Timestamp.fromDate(new Date(inicio))),
+      where("fecha", "<=", Timestamp.fromDate(new Date(new Date(fin).setHours(23,59,59))))
+    );
+
+    const snap = await getDocs(q);
+    if(snap.empty) return alert("No hay ventas en ese rango de fechas");
+
+    const datos = [];
+    snap.forEach(docSnap => {
+      const v = docSnap.data();
+      const fecha = v.fecha?.toDate ? v.fecha.toDate() : new Date(v.fecha);
+      if(Array.isArray(v.lineas)) {
+        v.lineas.forEach(l => datos.push({
+          Fecha: fecha.toLocaleDateString(),
+          Cliente: v.clienteNombre || "-",
+          Vendedor: v.vendedorNombre || "-",
+          Producto: l.nombre || "-",
+          Variedad: l.variedad || "-",
+          Cantidad: l.cantidad || 0,
+          PesoGramos: l.peso || 0,
+          TotalVenta: v.total || 0,
+          Estado: v.estado || "-"
+        }));
+      }
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(datos);
+
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for(let C = range.s.c; C <= range.e.c; ++C){
+      const cell = ws[XLSX.utils.encode_cell({r:0,c:C})];
+      if(!cell.s) cell.s={};
+      cell.s.font={bold:true,color:{rgb:"FFFFFF"}};
+      cell.s.fill={fgColor:{rgb:"4F81BD"}};
+      cell.s.alignment={horizontal:"center"};
+    }
+
+    ws['!cols'] = [
+      {wch:12},{wch:20},{wch:20},{wch:25},{wch:15},{wch:10},{wch:12},{wch:15},{wch:15}
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+    XLSX.writeFile(wb, `Ventas_${inicio}_a_${fin}.xlsx`);
+  };
+
+}); // DOMContentLoaded
