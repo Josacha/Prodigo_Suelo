@@ -123,8 +123,28 @@
 
   <!-- LISTA DE CLIENTES -->
   <section>
-    <h2>Clientes</h2>
-    <div id="clientesContainer" class="cards-container"></div>
+  <input
+  type="text"
+  id="buscarCliente"
+  placeholder="Buscar cliente por nombre, teléfono o vendedor..."
+>
+
+<div class="tabla-wrapper">
+  <table class="tabla-clientes">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Teléfono</th>
+        <th>Dirección</th>
+        <th>Ubicación</th>
+        <th>Vendedor</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="clientesContainer"></tbody>
+  </table>
+</div>
+
   </section>
 
   <!-- ESTADÍSTICAS POR RANGO DE FECHAS -->
@@ -152,6 +172,7 @@
 
 </body>
 </html>
+
 
 
 
