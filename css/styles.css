@@ -1169,3 +1169,70 @@ td {
 
 
 
+/* ================= Carrito Móvil Mejorado ================= */
+@media (max-width: 768px) {
+
+  /* Contenedor del carrito */
+  #carritoBody {
+    display: block;
+    overflow-x: auto;
+    border-radius: 8px;
+    padding: 8px;
+    background: #1c1c1c;  /* fondo oscuro */
+  }
+
+  /* Tabla y filas como bloques */
+  #carritoBody table,
+  #carritoBody tr {
+    display: block;
+    width: 100%;
+    background: #1c1c1c; /* fondo oscuro */
+    margin-bottom: 12px;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  }
+
+  /* Celdas */
+  #carritoBody td {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border: none;
+    font-size: 0.9rem;
+    color: #fff;
+  }
+
+  #carritoBody td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    color: #ffd700;
+  }
+
+  /* Botones de eliminar */
+  #carritoBody button {
+    width: 100%;
+    margin-top: 6px;
+    background: #e86a2a;
+    color: #fff;
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 14px;
+    border: none;
+  }
+
+  #carritoBody button:hover {
+    background: #c8571f;
+  }
+
+  /* Total del pedido */
+  #totalPedido {
+    display: block;
+    text-align: right;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #ffd700;
+    margin-top: 8px;
+  }
+}
+
