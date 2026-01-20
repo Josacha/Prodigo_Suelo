@@ -61,7 +61,7 @@ function cargarPedidos() {
       card.className = `card estado-${pedido.estado || 'entrante'}`;
 
       const lineasHTML = pedido.lineas
-        .map(l => `<li>${l.peso}-${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`)
+        .map(l => `<li>${l.peso}g -${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`)
         .join("");
 
       card.innerHTML = `
@@ -149,7 +149,7 @@ function mostrarPopupPedido(pedido) {
 
   pedido.lineas.forEach(l => {
     const li = document.createElement("li");
-    li.textContent = `${l.nombre} - ${l.peso} x ${l.cantidad}`;
+    li.textContent = `${l.nombre} - ${l.peso}g x ${l.cantidad}`;
     ul.appendChild(li);
   });
 
@@ -173,6 +173,7 @@ window.actualizarEstadoPlanta = async (pedidoId) => {
     comentario: nuevoEstado === 'atrasado' ? comentarioInput.value : ''
   });
 };
+
 
 
 
