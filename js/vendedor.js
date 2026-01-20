@@ -8,7 +8,10 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 let carrito = [];
 let vendedorId = null;
 
-const productoSelect = document.getElementById("productoSelect");
+const productoInput = document.getElementById("productoInput");
+const listaSugerencias = document.getElementById("listaSugerencias");
+let productosCache = [];
+
 const cantidadInput = document.getElementById("cantidadInput");
 const carritoBody = document.getElementById("carritoBody");
 const totalPedido = document.getElementById("totalPedido");
@@ -38,23 +41,30 @@ document.getElementById("logoutBtn")?.addEventListener("click", async () => {
 });
 
 // ================== CARGAR PRODUCTOS ==================
-async function cargarProductos() {
-  productoSelect.innerHTML = "";
-  const snap = await getDocs(collection(db, "productos"));
-  snap.forEach(d => {
-    const p = d.data();
-    if (p.activo) {
-      const opt = document.createElement("option");
-      opt.value = d.id;
-      opt.textContent = `${p.peso}g - ${p.nombre} (${p.variedad}) - ₡${p.precio}`;
-      opt.dataset.precio = p.precio;
-      opt.dataset.nombre = p.nombre;
-      opt.dataset.peso = p.peso;
-      opt.dataset.variedad = p.variedad;
-      productoSelect.appendChild(opt);
-    }
-  });
-}
+productoInput.addEventListener("input", () => {
+  const query = productoInput.value.toLowerCase();
+  listaSugerencias.innerHTML = "";
+  if (!query) return;
+
+  productosCache
+    .filter(p => p.nombre.toLowerCase().includes(query) || p.variedad.toLowerCase().includes(query))
+    .forEach(p => {
+      const li = document.createElement("li");
+      li.textContent = `${p.nombre} (${p.variedad}) ${p.peso}g - ₡${p.precio}`;
+      li.dataset.id = p.id;
+      li.dataset.nombre = p.nombre;
+      li.dataset.precio = p.precio;
+      li.dataset.peso = p.peso;
+      li.dataset.variedad = p.variedad;
+
+      li.onclick = () => {
+        productoInput.value = li.textContent;
+        productoInput.dataset.id = li.dataset.id; // guardamos id seleccionado
+        listaSugerencias.innerHTML = "";
+      };
+      listaSugerencias.appendChild(li);
+    });
+});
 
 // ================== CARGAR CLIENTES ==================
 async function cargarClientes() {
@@ -92,9 +102,13 @@ async function cargarClientesFiltro() {
 
 // ================== AGREGAR AL CARRITO ==================
 document.getElementById("agregarLineaBtn").onclick = () => {
-  const opt = productoSelect.selectedOptions[0];
-  const cantidad = Number(cantidadInput.value);
-  if (!opt || cantidad <= 0) return alert("Cantidad inválida");
+  const productoId = productoInput.dataset.id;
+const cantidad = Number(cantidadInput.value);
+if (!productoId) return alert("Seleccione un producto válido");
+if (cantidad <= 0) return alert("Cantidad inválida");
+
+const prod = productosCache.find(p => p.id === productoId);
+
 
   // Evitar duplicados
   const indexExistente = carrito.findIndex(l => l.productoId === opt.value);
@@ -102,12 +116,12 @@ document.getElementById("agregarLineaBtn").onclick = () => {
     carrito[indexExistente].cantidad += cantidad;
     carrito[indexExistente].subtotal = carrito[indexExistente].cantidad * carrito[indexExistente].precio;
   } else {
-    const subtotal = cantidad * Number(opt.dataset.precio);
+    const subtotal = cantidad * Number(prod.precio);
     carrito.push({
       productoId: opt.value,
-      nombre: opt.dataset.nombre,
-      precio: Number(opt.dataset.precio),
-      peso: Number(opt.dataset.peso),
+      nombre: prod.nombre,
+      precio: Number(prod.precio),
+      peso: Number(prod.peso),
       cantidad,
       subtotal
     });
@@ -332,3 +346,4 @@ window.imprimirTicket = (venta) => {
   ventana.focus();
   ventana.print();
 };
+
