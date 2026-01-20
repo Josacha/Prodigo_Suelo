@@ -46,7 +46,7 @@ async function cargarProductos() {
     if (p.activo) {
       const opt = document.createElement("option");
       opt.value = d.id;
-      opt.textContent = `${p.peso}g-${p.nombre} -${p.variedad} - ₡${p.precio}`;
+      opt.textContent = `${p.peso}g - ${p.nombre} (${p.variedad}) - ₡${p.precio}`;
       opt.dataset.precio = p.precio;
       opt.dataset.nombre = p.nombre;
       opt.dataset.peso = p.peso;
@@ -95,16 +95,23 @@ document.getElementById("agregarLineaBtn").onclick = () => {
   const opt = productoSelect.selectedOptions[0];
   const cantidad = Number(cantidadInput.value);
   if (!opt || cantidad <= 0) return alert("Cantidad inválida");
-  const subtotal = cantidad * Number(opt.dataset.precio);
 
-  carrito.push({
-    productoId: opt.value,
-    nombre: opt.dataset.nombre,
-    precio: Number(opt.dataset.precio),
-    peso: Number(opt.dataset.peso),
-    cantidad,
-    subtotal
-  });
+  // Evitar duplicados
+  const indexExistente = carrito.findIndex(l => l.productoId === opt.value);
+  if (indexExistente >= 0) {
+    carrito[indexExistente].cantidad += cantidad;
+    carrito[indexExistente].subtotal = carrito[indexExistente].cantidad * carrito[indexExistente].precio;
+  } else {
+    const subtotal = cantidad * Number(opt.dataset.precio);
+    carrito.push({
+      productoId: opt.value,
+      nombre: opt.dataset.nombre,
+      precio: Number(opt.dataset.precio),
+      peso: Number(opt.dataset.peso),
+      cantidad,
+      subtotal
+    });
+  }
 
   cantidadInput.value = "";
   renderCarrito();
@@ -160,7 +167,15 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
     comentario: ""
   });
 
-  const ventaData = {
+  carrito = [];
+  renderCarrito();
+  clienteSelect.value = "";
+  clienteSelect.disabled = false;
+  diasConsignacionInput.value = "";
+
+  alert("Pedido registrado");
+  cargarPedidos();
+  imprimirTicket({
     id: ventaRef.id,
     vendedorId,
     cliente: { id: clienteId, nombre: clienteData.nombre, telefono: clienteData.telefono || null },
@@ -170,17 +185,7 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
     estado: "entrante",
     estadoPago: "pendiente",
     consignacion: diasConsignacion > 0 ? { dias: diasConsignacion, vencimiento: fechaVencimiento, estado: "pendiente de pago" } : null
-  };
-
-  carrito = [];
-  renderCarrito();
-  clienteSelect.value = "";
-  clienteSelect.disabled = false;
-  diasConsignacionInput.value = "";
-
-  alert("Pedido registrado");
-  cargarPedidos();
-  imprimirTicket(ventaData);
+  });
 };
 
 // ================== CARGAR PEDIDOS ==================
@@ -197,18 +202,8 @@ function cargarPedidos() {
       if (venta.estado === 'entregado' && venta.estadoPago === 'pagado') return;
 
       const lineasHTML = venta.lineas.map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join('');
-
-      let consignacionHTML = "";
-      if (venta.consignacion) {
-        const venc = venta.consignacion.vencimiento ? new Date(venta.consignacion.vencimiento.toDate ? venta.consignacion.vencimiento.toDate() : venta.consignacion.vencimiento) : null;
-        const hoy = new Date();
-        let alerta = "";
-        if (venc && hoy > venc && venta.consignacion.estado === "pendiente de pago") alerta = " ⚠ PLAZO VENCIDO";
-        consignacionHTML = `<p><strong>Consignación:</strong> ${venta.consignacion.estado}${alerta}${venc ? `(Vence: ${venc.toLocaleDateString()})` : ""}</p>`;
-      }
-
       const card = document.createElement("div");
-      card.className = "card";
+      card.className = `card estado-${venta.estado.replace(' ', '-')}`;
       card.innerHTML = `
         <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
         <p><strong>Total:</strong> ₡${venta.total}</p>
@@ -216,20 +211,20 @@ function cargarPedidos() {
 
         <label>Estado Pedido:</label>
         <select id="estado-${pedidoId}">
-          <option value="entrante" ${venta.estado === 'entrante' ? 'selected' : ''}>Entrante</option>
-          <option value="en proceso" ${venta.estado === 'en proceso' ? 'selected' : ''}>En Proceso</option>
-          <option value="listo" ${venta.estado === 'listo' ? 'selected' : ''}>Listo</option>
-          <option value="atrasado" ${venta.estado === 'atrasado' ? 'selected' : ''}>Atrasado</option>
-          <option value="entregado" ${venta.estado === 'entregado' ? 'selected' : ''}>Entregado</option>
+          <option value="entrante" ${venta.estado==='entrante'?'selected':''}>Entrante</option>
+          <option value="en proceso" ${venta.estado==='en proceso'?'selected':''}>En Proceso</option>
+          <option value="listo" ${venta.estado==='listo'?'selected':''}>Listo</option>
+          <option value="atrasado" ${venta.estado==='atrasado'?'selected':''}>Atrasado</option>
+          <option value="entregado" ${venta.estado==='entregado'?'selected':''}>Entregado</option>
         </select>
 
         <label>Estado Pago:</label>
         <select id="estadoPago-${pedidoId}">
-          <option value="pendiente" ${venta.estadoPago === 'pendiente' ? 'selected' : ''}>Pendiente</option>
-          <option value="pagado" ${venta.estadoPago === 'pagado' ? 'selected' : ''}>Pagado</option>
+          <option value="pendiente" ${venta.estadoPago==='pendiente'?'selected':''}>Pendiente</option>
+          <option value="pagado" ${venta.estadoPago==='pagado'?'selected':''}>Pagado</option>
         </select>
 
-        ${consignacionHTML}
+        ${venta.consignacion?`<p><strong>Consignación:</strong> ${venta.consignacion.estado}${venta.consignacion.vencimiento && new Date() > new Date(venta.consignacion.vencimiento.toDate?venta.consignacion.vencimiento.toDate():venta.consignacion.vencimiento)?' ⚠ PLAZO VENCIDO':''}</p>`:''}
 
         <button onclick="actualizarEstadoVendedor('${pedidoId}')">Actualizar</button>
         <button onclick="eliminarPedido('${pedidoId}')">Eliminar pedido</button>
@@ -250,14 +245,14 @@ window.actualizarEstadoVendedor = async (pedidoId) => {
   const docSnap = await getDoc(docRef);
   const pedido = docSnap.data();
 
-  if (pedido.estado === 'listo' && nuevoEstado === 'entregado') {
-    await updateDoc(docRef, { estado: 'entregado', estadoPago: nuevoEstadoPago });
-    alert("Pedido marcado como ENTREGADO y estado de pago actualizado");
-  } else if (nuevoEstado !== 'entregado') {
-    await updateDoc(docRef, { estado: nuevoEstado, estadoPago: nuevoEstadoPago });
-    alert("Estado del pedido y de pago actualizado");
+  if (pedido.estado==='listo' && nuevoEstado==='entregado') {
+    await updateDoc(docRef, { estado:'entregado', estadoPago: nuevoEstadoPago });
+    alert("Pedido entregado y pago actualizado");
+  } else if (nuevoEstado!=='entregado') {
+    await updateDoc(docRef, { estado:nuevoEstado, estadoPago: nuevoEstadoPago });
+    alert("Estado actualizado");
   } else {
-    alert("Solo puede marcar como ENTREGADO un pedido que esté LISTO, pero el estado de pago sí se puede cambiar");
+    alert("Solo se puede marcar como ENTREGADO un pedido LISTO. Estado de pago sí se actualizó");
     await updateDoc(docRef, { estadoPago: nuevoEstadoPago });
   }
 };
@@ -265,94 +260,75 @@ window.actualizarEstadoVendedor = async (pedidoId) => {
 // ================== ELIMINAR PEDIDO ==================
 window.eliminarPedido = async (pedidoId) => {
   if (confirm("¿Desea eliminar este pedido?")) {
-    await deleteDoc(doc(db, "ventas", pedidoId));
+    await deleteDoc(doc(db,"ventas",pedidoId));
     alert("Pedido eliminado");
   }
 };
 
-// ================== BUSCAR PEDIDOS ANTIGUOS ==================
+// ================== BUSCAR PEDIDOS ==================
 btnBuscarPedidos.onclick = async () => {
   const clienteId = filtroCliente.value;
   const inicio = fechaInicioFiltro.value;
   const fin = fechaFinFiltro.value;
 
-  const snap = await getDocs(collection(db, "ventas"));
+  const snap = await getDocs(collection(db,"ventas"));
   resultadosPedidos.innerHTML = "";
 
   snap.forEach(docSnap => {
     const venta = docSnap.data();
     const pedidoId = docSnap.id;
 
-    if (clienteId && venta.cliente.id !== clienteId) return;
-
-    const fechaVenta = venta.fecha.toDate ? venta.fecha.toDate() : new Date(venta.fecha);
-    if (inicio && fechaVenta < new Date(inicio)) return;
-    if (fin) {
+    if(clienteId && venta.cliente.id!==clienteId) return;
+    const fechaVenta = venta.fecha.toDate?venta.fecha.toDate():new Date(venta.fecha);
+    if(inicio && fechaVenta<new Date(inicio)) return;
+    if(fin){
       const fechaFinObj = new Date(fin);
-      fechaFinObj.setHours(23, 59, 59, 999);
-      if (fechaVenta > fechaFinObj) return;
+      fechaFinObj.setHours(23,59,59,999);
+      if(fechaVenta>fechaFinObj) return;
     }
 
-    const lineasHTML = venta.lineas.map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join("");
-
+    const lineasHTML = venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join('');
     const card = document.createElement("div");
-    card.className = "card";
+    card.className = `card estado-${venta.estado.replace(' ','-')}`;
     card.innerHTML = `
       <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
       <p><strong>Fecha:</strong> ${fechaVenta.toLocaleDateString()}</p>
       <p><strong>Total:</strong> ₡${venta.total}</p>
       <ul>${lineasHTML}</ul>
       <p><strong>Estado Pedido:</strong> ${venta.estado}</p>
-      <p><strong>Estado Pago:</strong> ${venta.estadoPago || "pendiente"}</p>
-      <button onclick='imprimirTicket(${JSON.stringify({ ...venta, id: pedidoId })})'>Imprimir Ticket</button>
+      <p><strong>Estado Pago:</strong> ${venta.estadoPago||'pendiente'}</p>
+      <button onclick='imprimirTicket(${JSON.stringify({...venta,id:pedidoId})})'>Imprimir Ticket</button>
     `;
     resultadosPedidos.appendChild(card);
   });
 };
 
-// ================== FUNCION IMPRIMIR TICKET ==================
+// ================== IMPRIMIR TICKET ==================
 window.imprimirTicket = (venta) => {
-  const fecha = venta.fecha.toDate ? venta.fecha.toDate() : new Date(venta.fecha);
-
+  const fecha = venta.fecha.toDate?venta.fecha.toDate():new Date(venta.fecha);
   const htmlTicket = `
-    <div style="
-      width: 100mm;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      line-height: 1.2;
-      padding: 5px;
-      box-sizing: border-box;
-    ">
+    <div class="ticket">
       <h3 style="text-align:center;">Pródigo Suelo</h3>
       <hr>
       <p>Fecha: ${fecha.toLocaleDateString()} ${fecha.toLocaleTimeString()}</p>
       <p>Cliente: ${venta.cliente.nombre}</p>
-      <ul>
-        ${venta.lineas.map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join('')}
-      </ul>
+      <ul>${venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join('')}</ul>
       <hr>
-      <p><strong>Total:</strong> ₡${venta.total}</p>
-      <p>Estado Pedido: ${venta.estado}</p>
-      <p>Estado Pago: ${venta.estadoPago || "pendiente"}</p>
-      ${venta.consignacion ? `<p>Consignación: ${venta.consignacion.estado}</p>` : ''}
+      <p class="total"><strong>Total:</strong> ₡${venta.total}</p>
+      <p class="estado">Estado Pedido: ${venta.estado}</p>
+      <p>Estado Pago: ${venta.estadoPago||'pendiente'}</p>
+      ${venta.consignacion?`<p>Consignación: ${venta.consignacion.estado}</p>`:''}
       <hr>
       <p style="text-align:center;">¡Gracias por su compra!</p>
     </div>
   `;
-
   const ventana = window.open('', '_blank', 'height=600,width=400');
   ventana.document.write('<html><head><title>Ticket</title>');
-  ventana.document.write('<style>@page{size:100mm auto;margin:0;} body{margin:0;font-family: monospace;}</style>');
+  ventana.document.write('<style>@page{size:100mm auto;margin:0;} body{font-family: monospace;margin:0;} .ticket{width:100mm;padding:10px;}</style>');
   ventana.document.write('</head><body>');
   ventana.document.write(htmlTicket);
   ventana.document.write('</body></html>');
   ventana.document.close();
   ventana.focus();
-  
-  // Esta línea abre directamente la ventana de impresión
   ventana.print();
-  // NO cerramos la ventana automáticamente, así puedes revisarla
 };
-
-
-
