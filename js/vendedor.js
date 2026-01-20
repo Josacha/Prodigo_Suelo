@@ -8,8 +8,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 let carrito = [];
 let vendedorId = null;
 
-const productoInput = document.getElementById("productoInput");
-const listaSugerencias = document.getElementById("listaSugerencias");
+const productoSelect = document.getElementById("productoSelect");
 const cantidadInput = document.getElementById("cantidadInput");
 const carritoBody = document.getElementById("carritoBody");
 const totalPedido = document.getElementById("totalPedido");
@@ -22,8 +21,6 @@ const fechaInicioFiltro = document.getElementById("fechaInicioFiltro");
 const fechaFinFiltro = document.getElementById("fechaFinFiltro");
 const btnBuscarPedidos = document.getElementById("btnBuscarPedidos");
 const resultadosPedidos = document.getElementById("resultadosPedidos");
-
-let productosCache = [];
 
 // ================== AUTENTICACIÓN ==================
 onAuthStateChanged(auth, async user => {
@@ -42,41 +39,22 @@ document.getElementById("logoutBtn")?.addEventListener("click", async () => {
 
 // ================== CARGAR PRODUCTOS ==================
 async function cargarProductos() {
-  productosCache = [];
+  productoSelect.innerHTML = "";
   const snap = await getDocs(collection(db, "productos"));
   snap.forEach(d => {
     const p = d.data();
     if (p.activo) {
-      productosCache.push({ id: d.id, ...p });
+      const opt = document.createElement("option");
+      opt.value = d.id;
+      opt.textContent = `${p.peso}g - ${p.nombre} (${p.variedad}) - ₡${p.precio}`;
+      opt.dataset.precio = p.precio;
+      opt.dataset.nombre = p.nombre;
+      opt.dataset.peso = p.peso;
+      opt.dataset.variedad = p.variedad;
+      productoSelect.appendChild(opt);
     }
   });
 }
-
-// ================== FILTRO DE PRODUCTOS ==================
-productoInput.addEventListener("input", () => {
-  const query = productoInput.value.toLowerCase();
-  listaSugerencias.innerHTML = "";
-  if (!query) return;
-
-  productosCache
-    .filter(p => p.nombre.toLowerCase().includes(query) || p.variedad.toLowerCase().includes(query))
-    .forEach(p => {
-      const li = document.createElement("li");
-      li.textContent = `${p.nombre} (${p.variedad}) ${p.peso}g - ₡${p.precio}`;
-      li.dataset.id = p.id;
-      li.dataset.nombre = p.nombre;
-      li.dataset.precio = p.precio;
-      li.dataset.peso = p.peso;
-      li.dataset.variedad = p.variedad;
-
-      li.onclick = () => {
-        productoInput.value = li.textContent;
-        productoInput.dataset.id = li.dataset.id; // Guardamos el id seleccionado
-        listaSugerencias.innerHTML = "";
-      };
-      listaSugerencias.appendChild(li);
-    });
-});
 
 // ================== CARGAR CLIENTES ==================
 async function cargarClientes() {
@@ -114,35 +92,28 @@ async function cargarClientesFiltro() {
 
 // ================== AGREGAR AL CARRITO ==================
 document.getElementById("agregarLineaBtn").onclick = () => {
-  const productoId = productoInput.dataset.id;
+  const opt = productoSelect.selectedOptions[0];
   const cantidad = Number(cantidadInput.value);
-
-  if (!productoId) return alert("Seleccione un producto válido");
-  if (cantidad <= 0) return alert("Cantidad inválida");
-
-  const prod = productosCache.find(p => p.id === productoId);
+  if (!opt || cantidad <= 0) return alert("Cantidad inválida");
 
   // Evitar duplicados
-  const indexExistente = carrito.findIndex(l => l.productoId === productoId);
+  const indexExistente = carrito.findIndex(l => l.productoId === opt.value);
   if (indexExistente >= 0) {
     carrito[indexExistente].cantidad += cantidad;
-    carrito[indexExistente].subtotal = carrito[indexExistente].cantidad * prod.precio;
+    carrito[indexExistente].subtotal = carrito[indexExistente].cantidad * carrito[indexExistente].precio;
   } else {
+    const subtotal = cantidad * Number(opt.dataset.precio);
     carrito.push({
-      productoId,
-      nombre: prod.nombre,
-      precio: Number(prod.precio),
-      peso: Number(prod.peso),
+      productoId: opt.value,
+      nombre: opt.dataset.nombre,
+      precio: Number(opt.dataset.precio),
+      peso: Number(opt.dataset.peso),
       cantidad,
-      subtotal: cantidad * Number(prod.precio)
+      subtotal
     });
   }
 
-  // Limpiar campos
   cantidadInput.value = "";
-  productoInput.value = "";
-  delete productoInput.dataset.id;
-
   renderCarrito();
   clienteSelect.disabled = true;
 };
