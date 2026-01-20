@@ -1236,3 +1236,26 @@ td {
   }
 }
 
+.sugerencias {
+  border: 1px solid #ccc;
+  max-height: 150px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: absolute;
+  width: 100%;
+  background: white;
+  z-index: 1000;
+}
+
+.sugerencias li {
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.sugerencias li:hover {
+  background-color: #eee;
+}
+
+
