@@ -23,8 +23,12 @@
     <label>Cliente:</label>
     <select id="clienteSelect"></select>
 
-    <label>Producto:</label>
-    <select id="productoSelect"></select>
+   <label>Producto:</label>
+<div style="position: relative;">
+  <input type="text" id="productoInput" placeholder="Escriba el producto">
+  <ul id="listaSugerencias" class="sugerencias"></ul>
+</div>
+
 
     <label>Cantidad:</label>
     <input type="number" id="cantidadInput" placeholder="Cantidad">
@@ -91,3 +95,4 @@
   <script type="module" src="js/vendedor.js"></script>
 </body>
 </html>
+
