@@ -10,8 +10,6 @@ let vendedorId = null;
 
 const productoInput = document.getElementById("productoInput");
 const listaSugerencias = document.getElementById("listaSugerencias");
-let productosCache = [];
-
 const cantidadInput = document.getElementById("cantidadInput");
 const carritoBody = document.getElementById("carritoBody");
 const totalPedido = document.getElementById("totalPedido");
@@ -24,6 +22,8 @@ const fechaInicioFiltro = document.getElementById("fechaInicioFiltro");
 const fechaFinFiltro = document.getElementById("fechaFinFiltro");
 const btnBuscarPedidos = document.getElementById("btnBuscarPedidos");
 const resultadosPedidos = document.getElementById("resultadosPedidos");
+
+let productosCache = [];
 
 // ================== AUTENTICACIÓN ==================
 onAuthStateChanged(auth, async user => {
@@ -41,6 +41,18 @@ document.getElementById("logoutBtn")?.addEventListener("click", async () => {
 });
 
 // ================== CARGAR PRODUCTOS ==================
+async function cargarProductos() {
+  productosCache = [];
+  const snap = await getDocs(collection(db, "productos"));
+  snap.forEach(d => {
+    const p = d.data();
+    if (p.activo) {
+      productosCache.push({ id: d.id, ...p });
+    }
+  });
+}
+
+// ================== FILTRO DE PRODUCTOS ==================
 productoInput.addEventListener("input", () => {
   const query = productoInput.value.toLowerCase();
   listaSugerencias.innerHTML = "";
@@ -59,7 +71,7 @@ productoInput.addEventListener("input", () => {
 
       li.onclick = () => {
         productoInput.value = li.textContent;
-        productoInput.dataset.id = li.dataset.id; // guardamos id seleccionado
+        productoInput.dataset.id = li.dataset.id; // Guardamos el id seleccionado
         listaSugerencias.innerHTML = "";
       };
       listaSugerencias.appendChild(li);
@@ -103,31 +115,34 @@ async function cargarClientesFiltro() {
 // ================== AGREGAR AL CARRITO ==================
 document.getElementById("agregarLineaBtn").onclick = () => {
   const productoId = productoInput.dataset.id;
-const cantidad = Number(cantidadInput.value);
-if (!productoId) return alert("Seleccione un producto válido");
-if (cantidad <= 0) return alert("Cantidad inválida");
+  const cantidad = Number(cantidadInput.value);
 
-const prod = productosCache.find(p => p.id === productoId);
+  if (!productoId) return alert("Seleccione un producto válido");
+  if (cantidad <= 0) return alert("Cantidad inválida");
 
+  const prod = productosCache.find(p => p.id === productoId);
 
   // Evitar duplicados
-  const indexExistente = carrito.findIndex(l => l.productoId === opt.value);
+  const indexExistente = carrito.findIndex(l => l.productoId === productoId);
   if (indexExistente >= 0) {
     carrito[indexExistente].cantidad += cantidad;
-    carrito[indexExistente].subtotal = carrito[indexExistente].cantidad * carrito[indexExistente].precio;
+    carrito[indexExistente].subtotal = carrito[indexExistente].cantidad * prod.precio;
   } else {
-    const subtotal = cantidad * Number(prod.precio);
     carrito.push({
-      productoId: opt.value,
+      productoId,
       nombre: prod.nombre,
       precio: Number(prod.precio),
       peso: Number(prod.peso),
       cantidad,
-      subtotal
+      subtotal: cantidad * Number(prod.precio)
     });
   }
 
+  // Limpiar campos
   cantidadInput.value = "";
+  productoInput.value = "";
+  delete productoInput.dataset.id;
+
   renderCarrito();
   clienteSelect.disabled = true;
 };
@@ -346,4 +361,3 @@ window.imprimirTicket = (venta) => {
   ventana.focus();
   ventana.print();
 };
-
