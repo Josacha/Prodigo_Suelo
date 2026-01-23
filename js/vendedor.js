@@ -173,7 +173,7 @@ window.imprimirTicket = (venta) => {
   const htmlTicket = `
     <div id="ticketImprimible">
       <div class="header">
-        <img src="imagenes/empaque.jpg" style="width: 30mm; height: auto; filter: grayscale(100%);">
+        <img src="imagenes/GO PRODIGO SUELO-01.png" style="width: 30mm; height: auto; filter: grayscale(100%);">
         <h1 style="font-size: 16px; margin: 5px 0;">PRÓDIGO SUELO</h1>
         <p style="font-size: 10px; margin: 0;">Nutrición Orgánica</p>
       </div>
@@ -248,3 +248,4 @@ function cargarPedidos() {
     });
   });
 }
+
