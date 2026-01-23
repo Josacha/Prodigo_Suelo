@@ -154,21 +154,8 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
   const clienteData = clienteDoc.data();
   const total = carrito.reduce((s, l) => s + l.subtotal, 0);
 
-  const ventaRef = await addDoc(collection(db, "ventas"), {
-    vendedorId,
-    cliente: { id: clienteId, nombre: clienteData.nombre, telefono: clienteData.telefono || null },
-    fecha: new Date(),
-    total,
-    lineas: [...carrito], // USAMOS COPIA PARA EL TICKET
-    estado: "entrante",
-    estadoPago: "pendiente",
-    consignacion: diasConsignacion > 0 ? { dias: diasConsignacion, vencimiento: fechaVencimiento, estado: "pendiente de pago" } : null,
-    comentario: ""
-  });
-
-  // LLAMAMOS IMPRESION ANTES DE BORRAR EL CARRITO LOCAL
-  imprimirTicket({
-    id: ventaRef.id,
+  // Guardamos los datos antes de limpiar el carrito localmente
+  const datosVenta = {
     vendedorId,
     cliente: { id: clienteId, nombre: clienteData.nombre, telefono: clienteData.telefono || null },
     fecha: new Date(),
@@ -176,8 +163,14 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
     lineas: [...carrito], 
     estado: "entrante",
     estadoPago: "pendiente",
-    consignacion: diasConsignacion > 0 ? { dias: diasConsignacion, vencimiento: fechaVencimiento, estado: "pendiente de pago" } : null
-  });
+    consignacion: diasConsignacion > 0 ? { dias: diasConsignacion, vencimiento: fechaVencimiento, estado: "pendiente de pago" } : null,
+    comentario: ""
+  };
+
+  const ventaRef = await addDoc(collection(db, "ventas"), datosVenta);
+
+  // MANDAR A IMPRIMIR ANTES DE LIMPIAR UI
+  imprimirTicket({ ...datosVenta, id: ventaRef.id });
 
   carrito = [];
   renderCarrito();
@@ -185,7 +178,7 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
   clienteSelect.disabled = false;
   diasConsignacionInput.value = "";
 
-  alert("Pedido registrado");
+  alert("Pedido registrado e imprimiendo...");
   cargarPedidos();
 };
 
@@ -225,99 +218,65 @@ function cargarPedidos() {
           <option value="pagado" ${venta.estadoPago==='pagado'?'selected':''}>Pagado</option>
         </select>
 
-        ${venta.consignacion?`<p><strong>Consignación:</strong> ${venta.consignacion.estado}${venta.consignacion.vencimiento && new Date() > new Date(venta.consignacion.vencimiento.toDate?venta.consignacion.vencimiento.toDate():venta.consignacion.vencimiento)?' ⚠ PLAZO VENCIDO':''}</p>`:''}
-
         <button onclick="actualizarEstadoVendedor('${pedidoId}')">Actualizar</button>
-        <button onclick="eliminarPedido('${pedidoId}')">Eliminar pedido</button>
-        <button onclick='imprimirTicket(${JSON.stringify({ ...venta, id: pedidoId })})'>Imprimir Ticket</button>
+        <button onclick="eliminarPedido('${pedidoId}')">Eliminar</button>
+        <button onclick='imprimirTicket(${JSON.stringify({ ...venta, id: pedidoId })})'>Ticket</button>
       `;
       pedidosContainer.appendChild(card);
     });
   });
 }
 
-// ================== ACTUALIZAR ESTADO ==================
 window.actualizarEstadoVendedor = async (pedidoId) => {
   const estadoSelect = document.getElementById(`estado-${pedidoId}`);
   const estadoPagoSelect = document.getElementById(`estadoPago-${pedidoId}`);
   const nuevoEstado = estadoSelect.value;
   const nuevoEstadoPago = estadoPagoSelect.value;
   const docRef = doc(db, "ventas", pedidoId);
-  const docSnap = await getDoc(docRef);
-  const pedido = docSnap.data();
-
-  if (pedido.estado==='listo' && nuevoEstado==='entregado') {
-    await updateDoc(docRef, { estado:'entregado', estadoPago: nuevoEstadoPago });
-    alert("Pedido entregado y pago actualizado");
-  } else if (nuevoEstado!=='entregado') {
-    await updateDoc(docRef, { estado:nuevoEstado, estadoPago: nuevoEstadoPago });
-    alert("Estado actualizado");
-  } else {
-    alert("Solo se puede marcar como ENTREGADO un pedido LISTO. Estado de pago sí se actualizó");
-    await updateDoc(docRef, { estadoPago: nuevoEstadoPago });
-  }
+  await updateDoc(docRef, { estado: nuevoEstado, estadoPago: nuevoEstadoPago });
+  alert("Actualizado");
 };
 
-// ================== ELIMINAR PEDIDO ==================
 window.eliminarPedido = async (pedidoId) => {
-  if (confirm("¿Desea eliminar este pedido?")) {
+  if (confirm("¿Eliminar pedido?")) {
     await deleteDoc(doc(db,"ventas",pedidoId));
-    alert("Pedido eliminado");
   }
 };
 
-// ================== BUSCAR PEDIDOS ==================
 btnBuscarPedidos.onclick = async () => {
   const clienteId = filtroCliente.value;
   const inicio = fechaInicioFiltro.value;
   const fin = fechaFinFiltro.value;
-
   const snap = await getDocs(collection(db,"ventas"));
   resultadosPedidos.innerHTML = "";
 
   snap.forEach(docSnap => {
     const venta = docSnap.data();
-    const pedidoId = docSnap.id;
-
     if(clienteId && venta.cliente.id!==clienteId) return;
-    const fechaVenta = venta.fecha.toDate?venta.fecha.toDate():new Date(venta.fecha);
-    if(inicio && fechaVenta<new Date(inicio)) return;
-    if(fin){
-      const fechaFinObj = new Date(fin);
-      fechaFinObj.setHours(23,59,59,999);
-      if(fechaVenta>fechaFinObj) return;
-    }
-
-    const lineasHTML = venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join('');
     const card = document.createElement("div");
-    card.className = `card estado-${venta.estado.replace(' ','-')}`;
-    card.innerHTML = `
-      <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
-      <p><strong>Fecha:</strong> ${fechaVenta.toLocaleDateString()}</p>
-      <p><strong>Total:</strong> ₡${venta.total}</p>
-      <ul>${lineasHTML}</ul>
-      <p><strong>Estado Pedido:</strong> ${venta.estado}</p>
-      <p><strong>Estado Pago:</strong> ${venta.estadoPago||'pendiente'}</p>
-      <button onclick='imprimirTicket(${JSON.stringify({...venta,id:pedidoId})})'>Imprimir Ticket</button>
-    `;
+    card.className = `card`;
+    card.innerHTML = `<p>${venta.cliente.nombre} - ₡${venta.total}</p>
+      <button onclick='imprimirTicket(${JSON.stringify({...venta, id: docSnap.id})})'>Ticket</button>`;
     resultadosPedidos.appendChild(card);
   });
 };
 
-// ================== IMPRIMIR TICKET (CORREGIDO PARA 58MM) ==================
+// ================== IMPRIMIR TICKET (CELULAR Y PC) ==================
 window.imprimirTicket = (venta) => {
   const fecha = venta.fecha.toDate ? venta.fecha.toDate() : new Date(venta.fecha);
+  const statusPago = (venta.estadoPago || "pendiente").toUpperCase();
+
   const htmlTicket = `
-    <div class="ticket-58mm">
+    <div id="ticketImprimible">
       <div style="text-align:center;">
         <img src="imagenes/empaque.jpg" style="width: 35mm; height: auto; filter: grayscale(100%);">
-        <h3 style="margin: 5px 0;">PRÓDIGO SUELO</h3>
+        <h3 style="margin: 5px 0; font-size: 14px; color:#000;">PRÓDIGO SUELO</h3>
       </div>
-      <hr>
-      <p><b>Fecha:</b> ${fecha.toLocaleDateString()} ${fecha.getHours()}:${fecha.getMinutes()}</p>
-      <p><b>Cliente:</b> ${venta.cliente.nombre}</p>
-      <hr>
-      <table style="width:100%; border-collapse: collapse;">
+      <hr style="border:none; border-top:1px dashed #000;">
+      <p style="font-size:11px; color:#000; margin:2px 0;"><b>Fecha:</b> ${fecha.toLocaleDateString()} ${fecha.getHours()}:${fecha.getMinutes()}</p>
+      <p style="font-size:11px; color:#000; margin:2px 0;"><b>Cliente:</b> ${venta.cliente.nombre}</p>
+      <hr style="border:none; border-top:1px dashed #000;">
+      <table style="width:100%; border-collapse: collapse; color:#000;">
         ${venta.lineas.map(l => `
           <tr><td colspan="2" style="font-size:11px;">${l.nombre}</td></tr>
           <tr>
@@ -326,29 +285,26 @@ window.imprimirTicket = (venta) => {
           </tr>
         `).join('')}
       </table>
-      <hr>
-      <p style="font-size: 13px; display:flex; justify-content:space-between;">
+      <hr style="border:none; border-top:1px dashed #000;">
+      <p style="font-size: 13px; display:flex; justify-content:space-between; margin: 5px 0; color:#000;">
         <b>TOTAL:</b> <b>₡${venta.total}</b>
       </p>
-      <p style="font-size: 10px;">Estado: ${venta.estado} / ${venta.estadoPago || 'pendiente'}</p>
-      ${venta.consignacion ? `<p style="font-size: 10px;">Consignación: ${venta.consignacion.estado}</p>` : ''}
-      <hr>
-      <p style="text-align:center; font-size: 10px;">¡Gracias por su compra!</p>
+      <div style="text-align:center; border: 1px solid #000; padding: 3px; margin: 5px 0; color:#000;">
+        <b style="font-size: 12px;">PAGO: ${statusPago}</b>
+      </div>
+      <p style="text-align:center; font-size: 10px; color:#000; margin-top:10px;">¡Gracias por su compra!</p>
     </div>
   `;
 
-  const ventana = window.open('', '_blank', 'height=600,width=400');
-  ventana.document.write('<html><head><title>Ticket</title>');
-  ventana.document.write('<style>');
-  ventana.document.write('@page { size: 58mm auto; margin: 0; }');
-  ventana.document.write('body { font-family: "Courier New", monospace; margin: 0; padding: 2mm; width: 52mm; }');
-  ventana.document.write('.ticket-58mm { width: 52mm; color: #000; }');
-  ventana.document.write('p { margin: 2px 0; }');
-  ventana.document.write('hr { border: none; border-top: 1px dashed #000; margin: 5px 0; }');
-  ventana.document.write('</style></head><body>');
-  ventana.document.write(htmlTicket);
-  ventana.document.write('</body></html>');
-  ventana.document.close();
-  ventana.focus();
-  setTimeout(() => { ventana.print(); ventana.close(); }, 500);
+  let contenedor = document.getElementById("ticketContainer");
+  if (!contenedor) {
+    contenedor = document.createElement("div");
+    contenedor.id = "ticketContainer";
+    document.body.appendChild(contenedor);
+  }
+  contenedor.innerHTML = htmlTicket;
+
+  setTimeout(() => {
+    window.print();
+  }, 500);
 };
