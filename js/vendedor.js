@@ -168,7 +168,6 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
 
   const ventaRef = await addDoc(collection(db, "ventas"), nuevaVenta);
 
-  // Imprimir con los datos recién generados
   imprimirTicket({ ...nuevaVenta, id: ventaRef.id });
 
   carrito = [];
@@ -296,9 +295,8 @@ btnBuscarPedidos.onclick = async () => {
   });
 };
 
-// ================== IMPRIMIR TICKET PROFESIONAL 58MM ==================
+// ================== IMPRIMIR TICKET REFORZADO 58MM ==================
 window.imprimirTicket = (venta) => {
-  // Manejo robusto de fecha para evitar "Invalid Date"
   let fechaDoc;
   if (venta.fecha && venta.fecha.seconds) {
     fechaDoc = new Date(venta.fecha.seconds * 1000);
@@ -313,56 +311,55 @@ window.imprimirTicket = (venta) => {
 
   const htmlTicket = `
     <div id="ticketImprimible">
-      <div style="text-align:center; margin-bottom: 10px;">
-        <img src="imagenes/LOGO PRODIGO SUELO-01.png" style="width: 35mm; height: auto; filter: grayscale(100%) contrast(150%);">
-        <h2 style="margin: 5px 0 0 0; font-size: 18px; color: #000; text-transform: uppercase;">PRÓDIGO SUELO</h2>
-        <p style="margin: 0; font-size: 12px; font-weight: bold; color: #000;">Nutrición Orgánica</p>
+      <div style="text-align:center; margin-bottom: 10px; border-bottom: 1px solid #000; padding-bottom: 5px;">
+        <img src="imagenes/LOGO PRODIGO SUELO-01.png" style="width: 35mm; height: auto; filter: grayscale(100%) contrast(200%);">
+        <p style="margin: 0; font-size: 13px; font-weight: 900; color: #000;">Café de Costa Rica </p>
       </div>
 
-      <div style="font-size: 13px; border-top: 1px dashed #000; padding-top: 8px; color: #000;">
-        <p style="margin: 3px 0;"><b>FECHA:</b> ${fechaDoc.toLocaleDateString()} ${fechaDoc.getHours()}:${String(fechaDoc.getMinutes()).padStart(2, '0')}</p>
-        <p style="margin: 3px 0;"><b>DOC:</b> #${ticketID}</p>
-        <p style="margin: 3px 0;"><b>CLIENTE:</b> ${venta.cliente.nombre.toUpperCase()}</p>
+      <div style="font-size: 13px; color: #000; font-weight: 700;">
+        <p style="margin: 4px 0;"><b>FECHA:</b> ${fechaDoc.toLocaleDateString()} ${fechaDoc.getHours()}:${String(fechaDoc.getMinutes()).padStart(2, '0')}</p>
+        <p style="margin: 4px 0;"><b>DOC:</b> #${ticketID}</p>
+        <p style="margin: 4px 0;"><b>CLIENTE:</b> ${venta.cliente.nombre.toUpperCase()}</p>
       </div>
 
       <table style="width:100%; margin-top: 10px; border-collapse: collapse; color: #000;">
         <thead>
-          <tr style="border-bottom: 1px solid #000; font-size: 12px;">
-            <th style="text-align:left; padding-bottom: 5px;">DETALLE</th>
-            <th style="text-align:right; padding-bottom: 5px;">TOTAL</th>
+          <tr style="border-bottom: 2px solid #000; font-size: 13px;">
+            <th style="text-align:left; padding-bottom: 5px; font-weight: 900;">DETALLE</th>
+            <th style="text-align:right; padding-bottom: 5px; font-weight: 900;">TOTAL</th>
           </tr>
         </thead>
         <tbody style="font-size: 13px;">
           ${venta.lineas.map(l => `
             <tr>
-              <td style="padding-top: 8px; font-weight: bold; line-height: 1.1;">${l.nombre}</td>
-              <td style="text-align:right; vertical-align: top; padding-top: 8px;">₡${l.subtotal.toLocaleString()}</td>
+              <td style="padding-top: 8px; font-weight: 900; line-height: 1.1;">${l.nombre.toUpperCase()}</td>
+              <td style="text-align:right; vertical-align: top; padding-top: 8px; font-weight: 900;">₡${l.subtotal.toLocaleString()}</td>
             </tr>
-            <tr style="border-bottom: 1px dashed #eee;">
-              <td colspan="2" style="font-size: 11px; padding-bottom: 5px; color: #333;">
-                ${l.cantidad} unidad(es) x ₡${l.precio.toLocaleString()}
+            <tr style="border-bottom: 1px solid #000;">
+              <td colspan="2" style="font-size: 12px; padding-bottom: 5px; font-weight: 900;">
+                CANT: ${l.cantidad} x ₡${l.precio.toLocaleString()}
               </td>
             </tr>
           `).join('')}
         </tbody>
       </table>
 
-      <div style="margin-top: 15px; text-align: right; border-top: 1px solid #000; padding-top: 5px;">
-        <p style="font-size: 18px; margin: 0; color: #000;"><strong>TOTAL: ₡${venta.total.toLocaleString()}</strong></p>
+      <div style="margin-top: 15px; text-align: right; padding-top: 5px;">
+        <p style="font-size: 18px; margin: 0; color: #000; font-weight: 900;">TOTAL: ₡${venta.total.toLocaleString()}</p>
       </div>
 
-      <div style="text-align:center; border: 2px solid #000; margin-top: 15px; padding: 8px; background: #000; color: #fff;">
-        <b style="font-size: 15px; letter-spacing: 1px;">PAGO: ${statusPago}</b>
+      <div style="text-align:center; border: 2px solid #000; margin-top: 15px; padding: 10px; background: #000 !important; color: #fff !important; -webkit-print-color-adjust: exact;">
+        <b style="font-size: 16px; letter-spacing: 1px; font-weight: 900;">PAGO: ${statusPago}</b>
       </div>
 
       ${venta.consignacion ? `
-        <p style="text-align:center; font-size: 11px; margin-top: 8px; color: #000;">
-          <i>Condición: Consignación (${venta.consignacion.dias} días)</i>
+        <p style="text-align:center; font-size: 12px; margin-top: 10px; color: #000; font-weight: 900;">
+          CONSIGNACIÓN: ${venta.consignacion.dias} DÍAS
         </p>` : ''}
 
-      <div style="text-align:center; margin-top: 20px; font-size: 11px; color: #000;">
-        <p style="margin: 2px 0;">¡Gracias por apoyar lo orgánico!</p>
-        <p style="margin: 2px 0; font-weight: bold;">*** Copia de Cliente ***</p>
+      <div style="text-align:center; margin-top: 25px; font-size: 12px; color: #000; font-weight: 700; border-top: 1px dashed #000; padding-top: 10px;">
+        <p style="margin: 4px 0;">¡GRACIAS POR APOYAR LO ORGÁNICO!</p>
+        <p style="margin: 4px 0; font-weight: 900;">*** COPIA DE CLIENTE ***</p>
       </div>
     </div>
   `;
