@@ -1318,3 +1318,35 @@ td {
 
 
 
+/* Ocultar el contenedor de impresión en la app */
+#ticketContainer {
+  display: none;
+}
+
+@media print {
+  /* Ocultar todo lo que no sea el ticket */
+  body * {
+    visibility: hidden;
+  }
+  #ticketContainer, #ticketContainer * {
+    visibility: visible;
+  }
+  #ticketContainer {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 58mm;
+    background: white;
+  }
+  /* Estilos específicos del papel de 58mm */
+  #ticketImprimible {
+    width: 52mm;
+    padding: 2mm;
+    font-family: 'Courier New', monospace;
+  }
+  @page {
+    size: 58mm auto;
+    margin: 0;
+  }
+}
