@@ -197,7 +197,7 @@ window.imprimirTicket = (venta) => {
       </head>
       <body onload="window.print(); window.close();">
         <div class="center">
-          <img src="imagenes/empaque.jpg" style="width:35mm; filter: grayscale(100%);">
+          <img src="imagenes/LOGO PRODIGO SUELO-01.jpg" style="width:35mm; filter: grayscale(100%);">
           <h3 style="margin:5px 0;">PRÓDIGO SUELO</h3>
           <p>Nutrición Orgánica</p>
         </div>
@@ -251,3 +251,4 @@ window.actualizarEstadoVendedor = async (id) => {
   await updateDoc(doc(db, "ventas", id), { estado: e });
   alert("Actualizado");
 };
+
