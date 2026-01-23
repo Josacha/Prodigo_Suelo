@@ -1309,4 +1309,43 @@ td {
   }
 }
 
+@media print {
+  body * {
+    visibility: hidden;
+    -webkit-print-color-adjust: exact !important; /* Forza colores intensos */
+    print-color-adjust: exact !important;
+  }
+
+  #ticketContainer, #ticketContainer * {
+    visibility: visible;
+  }
+
+  #ticketContainer {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 58mm;
+    background: white;
+  }
+
+  #ticketImprimible {
+    width: 52mm; /* Deja 3mm de margen a cada lado */
+    margin: 0 auto;
+    padding: 3mm; /* Margen interno para que no quede pegado */
+    font-family: 'Courier New', Courier, monospace;
+    color: #000 !important; /* Negro puro e intenso */
+    background: #fff !important;
+  }
+
+  /* Mejora de intensidad para impresoras térmicas */
+  strong, b {
+    font-weight: 900 !important;
+  }
+
+  @page {
+    size: 58mm auto;
+    margin: 0;
+  }
+}
 
