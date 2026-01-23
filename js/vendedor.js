@@ -4,7 +4,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// ================== VARIABLES (Tus variables originales) ==================
+// ================== VARIABLES ==================
 let carrito = [];
 let vendedorId = null;
 
@@ -22,7 +22,7 @@ const fechaFinFiltro = document.getElementById("fechaFinFiltro");
 const btnBuscarPedidos = document.getElementById("btnBuscarPedidos");
 const resultadosPedidos = document.getElementById("resultadosPedidos");
 
-// ================== AUTENTICACIÓN (Tus funciones originales) ==================
+// ================== AUTENTICACIÓN ==================
 onAuthStateChanged(auth, async user => {
   if (!user) location.href = "index.html";
   vendedorId = user.uid;
@@ -37,6 +37,7 @@ document.getElementById("logoutBtn")?.addEventListener("click", async () => {
   location.href = "index.html";
 });
 
+// ================== CARGAR PRODUCTOS ==================
 async function cargarProductos() {
   productoSelect.innerHTML = "";
   const snap = await getDocs(collection(db, "productos"));
@@ -55,6 +56,7 @@ async function cargarProductos() {
   });
 }
 
+// ================== CARGAR CLIENTES ==================
 async function cargarClientes() {
   clienteSelect.innerHTML = "<option value=''>Seleccione cliente</option>";
   const snap = await getDocs(collection(db, "clientes"));
@@ -87,7 +89,7 @@ async function cargarClientesFiltro() {
   });
 }
 
-// ================== CARRITO (Tus funciones originales) ==================
+// ================== CARRITO ==================
 document.getElementById("agregarLineaBtn").onclick = () => {
   const opt = productoSelect.selectedOptions[0];
   const cantidad = Number(cantidadInput.value);
@@ -128,7 +130,7 @@ window.eliminarLinea = (i) => {
   if (carrito.length === 0) clienteSelect.disabled = false;
 };
 
-// ================== CONFIRMAR VENTA (Tu lógica original intacta) ==================
+// ================== CONFIRMAR VENTA ==================
 document.getElementById("confirmarVentaBtn").onclick = async () => {
   const clienteId = clienteSelect.value;
   if (!clienteId) return alert("Seleccione un cliente");
@@ -141,7 +143,7 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
   const clienteData = clienteDoc.data();
   const total = carrito.reduce((s, l) => s + l.subtotal, 0);
 
-  const ventaRef = await addDoc(collection(db, "ventas"), {
+  const datosVenta = {
     vendedorId,
     cliente: { id: clienteId, nombre: clienteData.nombre, telefono: clienteData.telefono || null },
     fecha: new Date(),
@@ -151,28 +153,23 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
     estadoPago: "pendiente",
     consignacion: diasConsignacion > 0 ? { dias: diasConsignacion, vencimiento: fechaVencimiento, estado: "pendiente de pago" } : null,
     comentario: ""
-  });
+  };
 
-  // Solo agregamos esta línea para imprimir antes de limpiar el carrito
-  imprimirTicket({
-    id: ventaRef.id,
-    cliente: { nombre: clienteData.nombre },
-    fecha: new Date(),
-    total,
-    lineas: [...carrito],
-    estadoPago: "pendiente"
-  });
+  const ventaRef = await addDoc(collection(db, "ventas"), datosVenta);
+
+  // IMPRESIÓN CON COPIA DE DATOS ANTES DE LIMPIAR
+  imprimirTicket({ ...datosVenta, id: ventaRef.id });
 
   carrito = [];
   renderCarrito();
   clienteSelect.value = "";
   clienteSelect.disabled = false;
   diasConsignacionInput.value = "";
-  alert("Pedido registrado");
+  alert("Pedido registrado e imprimiendo...");
   cargarPedidos();
 };
 
-// ================== CARGAR PEDIDOS (Tus funciones originales) ==================
+// ================== CARGAR PEDIDOS ==================
 function cargarPedidos() {
   onSnapshot(collection(db, "ventas"), snap => {
     pedidosContainer.innerHTML = "";
@@ -186,39 +183,43 @@ function cargarPedidos() {
       card.innerHTML = `
         <p><strong>${venta.cliente.nombre}</strong></p>
         <p>Total: ₡${venta.total}</p>
-        <button onclick='imprimirTicket(${JSON.stringify({ ...venta, id: docSnap.id })})'>Ticket</button>
+        <button onclick='imprimirTicket(${JSON.stringify({ ...venta, id: docSnap.id })})'>Re-imprimir Ticket</button>
       `;
       pedidosContainer.appendChild(card);
     });
   });
 }
 
-// ================== IMPRIMIR TICKET (Solo cambiamos el diseño visual) ==================
+// ================== IMPRESIÓN PROFESIONAL (ALTA VISIBILIDAD) ==================
 window.imprimirTicket = (venta) => {
   const fecha = venta.fecha.toDate ? venta.fecha.toDate() : new Date(venta.fecha);
-  const statusPago = (venta.estadoPago || "pendiente").toUpperCase();
+  const pagoStr = (venta.estadoPago || "pendiente").toUpperCase();
+  const estadoStr = (venta.estado || "entrante").toUpperCase();
 
   const htmlTicket = `
     <div id="ticketImprimible">
       <div style="text-align:center;">
-        <img src="imagenes/LOGO PRODIGO SUELO-01.png" style="width: 30mm; height: auto; filter: grayscale(100%);">
-        <h1 style="font-size: 16px; margin: 5px 0;">PRÓDIGO SUELO</h1>
-        <p style="font-size: 10px; margin: 0;">Nutrición Orgánica</p>
+        <img src="imagenes/empaque.jpg" style="width: 35mm; filter: grayscale(100%) contrast(200%);">
+        <h1 style="font-size: 18px; margin: 5px 0; color:#000; font-weight:bold;">PRÓDIGO SUELO</h1>
+        <p style="font-size: 11px; margin: 0; color:#000; font-weight:bold;">Nutrición Orgánica</p>
       </div>
 
-      <div class="sep">-------------------------------</div>
-      <div style="font-size: 11px;">
-        <p><b>FECHA:</b> ${fecha.toLocaleDateString()} ${fecha.getHours()}:${fecha.getMinutes()}</p>
-        <p><b>CLIENTE:</b> ${venta.cliente.nombre.toUpperCase()}</p>
-        <p><b>DOC:</b> ${venta.id.slice(-6).toUpperCase()}</p>
-      </div>
-      <div class="sep">-------------------------------</div>
+      <div class="divisor">*******************************</div>
       
-      <div class="items">
+      <div style="font-size: 12px; color:#000; font-family: 'Courier New', monospace;">
+        <p style="margin: 2px 0;"><b>FECHA:</b> ${fecha.toLocaleDateString()} ${fecha.getHours()}:${fecha.getMinutes()}</p>
+        <p style="margin: 2px 0;"><b>CLIENTE:</b> ${venta.cliente.nombre.toUpperCase()}</p>
+        <p style="margin: 2px 0;"><b>TICKET:</b> #${venta.id.slice(-6).toUpperCase()}</p>
+      </div>
+
+      <div class="divisor">*******************************</div>
+      <p style="text-align: center; font-size: 11px; font-weight:bold; margin: 3px 0;">DETALLE DE PRODUCTOS</p>
+      
+      <div class="productos">
         ${venta.lineas.map(l => `
-          <div style="margin-bottom: 5px;">
-            <span style="font-size:10px; font-weight:bold; display:block;">${l.nombre.toUpperCase()}</span>
-            <div style="display:flex; justify-content:space-between; font-size:11px;">
+          <div style="margin-bottom: 7px;">
+            <span style="font-size:12px; font-weight:bold; display:block;">${l.nombre.toUpperCase()}</span>
+            <div style="display:flex; justify-content:space-between; font-size:12px;">
               <span>${l.cantidad} x ₡${l.precio.toLocaleString()}</span>
               <span><b>₡${l.subtotal.toLocaleString()}</b></span>
             </div>
@@ -226,20 +227,29 @@ window.imprimirTicket = (venta) => {
         `).join('')}
       </div>
 
-      <div class="sep">-------------------------------</div>
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <b>TOTAL:</b>
-        <b style="font-size: 16px;">₡${venta.total.toLocaleString()}</b>
+      <div class="divisor">*******************************</div>
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; margin: 5px 0;">
+        <b style="font-size: 14px;">TOTAL:</b>
+        <b style="font-size: 20px; color:#000;">₡${venta.total.toLocaleString()}</b>
       </div>
 
-      <div style="margin-top:10px; border:1pt solid black; text-align:center; padding:4px; font-weight:bold; font-size:12px;">
-        PAGO: ${statusPago}
+      <div style="margin-top: 10px; border: 2pt solid #000; padding: 6px; text-align:center;">
+        <b style="font-size: 14px; display:block; margin-bottom: 2px;">PAGO: ${pagoStr}</b>
+        <span style="font-size: 11px; display:block;">ESTADO: ${estadoStr}</span>
       </div>
 
-      <div style="text-align:center; font-size:10px; margin-top:10px;">
-        <p>¡Gracias por su compra!</p>
+      ${venta.consignacion ? `
+        <p style="text-align:center; font-size: 11px; margin-top: 5px; font-weight:bold;">
+          CONSIGNACIÓN: ${venta.consignacion.dias} DÍAS
+        </p>
+      ` : ''}
+
+      <div style="text-align:center; font-size: 11px; margin-top: 20px; font-weight:bold; line-height: 1.2;">
+        <p>¡GRACIAS POR SU COMPRA!</p>
+        <p>PRÓDIGO SUELO COSTA RICA</p>
       </div>
-    </div>
+      <div style="height: 10mm;"></div> </div>
   `;
 
   let contenedor = document.getElementById("ticketContainer");
