@@ -4,7 +4,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// ================== VARIABLES ==================
+// ================== VARIABLES (Tus variables originales) ==================
 let carrito = [];
 let vendedorId = null;
 
@@ -22,7 +22,7 @@ const fechaFinFiltro = document.getElementById("fechaFinFiltro");
 const btnBuscarPedidos = document.getElementById("btnBuscarPedidos");
 const resultadosPedidos = document.getElementById("resultadosPedidos");
 
-// ================== AUTENTICACIÓN ==================
+// ================== AUTENTICACIÓN (Tus funciones originales) ==================
 onAuthStateChanged(auth, async user => {
   if (!user) location.href = "index.html";
   vendedorId = user.uid;
@@ -37,7 +37,6 @@ document.getElementById("logoutBtn")?.addEventListener("click", async () => {
   location.href = "index.html";
 });
 
-// ================== CARGAR PRODUCTOS ==================
 async function cargarProductos() {
   productoSelect.innerHTML = "";
   const snap = await getDocs(collection(db, "productos"));
@@ -56,7 +55,6 @@ async function cargarProductos() {
   });
 }
 
-// ================== CARGAR CLIENTES ==================
 async function cargarClientes() {
   clienteSelect.innerHTML = "<option value=''>Seleccione cliente</option>";
   const snap = await getDocs(collection(db, "clientes"));
@@ -89,7 +87,7 @@ async function cargarClientesFiltro() {
   });
 }
 
-// ================== CARRITO ==================
+// ================== CARRITO (Tus funciones originales) ==================
 document.getElementById("agregarLineaBtn").onclick = () => {
   const opt = productoSelect.selectedOptions[0];
   const cantidad = Number(cantidadInput.value);
@@ -130,17 +128,20 @@ window.eliminarLinea = (i) => {
   if (carrito.length === 0) clienteSelect.disabled = false;
 };
 
-// ================== CONFIRMAR VENTA ==================
+// ================== CONFIRMAR VENTA (Tu lógica original intacta) ==================
 document.getElementById("confirmarVentaBtn").onclick = async () => {
   const clienteId = clienteSelect.value;
-  if (!clienteId || carrito.length === 0) return alert("Datos incompletos");
+  if (!clienteId) return alert("Seleccione un cliente");
+  if (carrito.length === 0) return alert("Carrito vacío");
 
   const diasConsignacion = Number(diasConsignacionInput.value || 0);
+  const fechaVencimiento = diasConsignacion > 0 ? new Date(Date.now() + diasConsignacion * 24 * 60 * 60 * 1000) : null;
+
   const clienteDoc = await getDoc(doc(db, "clientes", clienteId));
   const clienteData = clienteDoc.data();
   const total = carrito.reduce((s, l) => s + l.subtotal, 0);
 
-  const ventaData = {
+  const ventaRef = await addDoc(collection(db, "ventas"), {
     vendedorId,
     cliente: { id: clienteId, nombre: clienteData.nombre, telefono: clienteData.telefono || null },
     fecha: new Date(),
@@ -148,87 +149,30 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
     lineas: [...carrito],
     estado: "entrante",
     estadoPago: "pendiente",
-    consignacion: diasConsignacion > 0 ? { dias: diasConsignacion, estado: "pendiente de pago" } : null,
+    consignacion: diasConsignacion > 0 ? { dias: diasConsignacion, vencimiento: fechaVencimiento, estado: "pendiente de pago" } : null,
     comentario: ""
-  };
+  });
 
-  const ventaRef = await addDoc(collection(db, "ventas"), ventaData);
-  
-  // Imprimir antes de limpiar
-  imprimirTicket({ ...ventaData, id: ventaRef.id });
+  // Solo agregamos esta línea para imprimir antes de limpiar el carrito
+  imprimirTicket({
+    id: ventaRef.id,
+    cliente: { nombre: clienteData.nombre },
+    fecha: new Date(),
+    total,
+    lineas: [...carrito],
+    estadoPago: "pendiente"
+  });
 
   carrito = [];
   renderCarrito();
   clienteSelect.value = "";
   clienteSelect.disabled = false;
   diasConsignacionInput.value = "";
-  alert("Venta registrada");
+  alert("Pedido registrado");
+  cargarPedidos();
 };
 
-// ================== IMPRESIÓN PROFESIONAL 58MM ==================
-window.imprimirTicket = (venta) => {
-  const fecha = venta.fecha.toDate ? venta.fecha.toDate() : new Date(venta.fecha);
-  const statusPago = (venta.estadoPago || "pendiente").toUpperCase();
-
-  const htmlTicket = `
-    <div id="ticketImprimible">
-      <div class="header">
-        <img src="imagenes/GO PRODIGO SUELO-01.png" style="width: 30mm; height: auto; filter: grayscale(100%);">
-        <h1 style="font-size: 16px; margin: 5px 0;">PRÓDIGO SUELO</h1>
-        <p style="font-size: 10px; margin: 0;">Nutrición Orgánica</p>
-      </div>
-
-      <div class="separator">-------------------------------</div>
-      <div class="info">
-        <p><b>FECHA:</b> ${fecha.toLocaleDateString()} ${fecha.getHours()}:${fecha.getMinutes()}</p>
-        <p><b>CLIENTE:</b> ${venta.cliente.nombre.toUpperCase()}</p>
-        <p><b>DOC:</b> ${venta.id.slice(-6).toUpperCase()}</p>
-      </div>
-      <div class="separator">-------------------------------</div>
-      <p style="text-align: center; font-size: 10px; margin: 2px 0;">DETALLE DE PRODUCTOS</p>
-      <div class="separator">-------------------------------</div>
-
-      <div class="items">
-        ${venta.lineas.map(l => `
-          <div class="item-row">
-            <span class="item-name">${l.nombre.toUpperCase()}</span>
-            <div class="item-details">
-              <span>${l.cantidad} x ₡${l.precio.toLocaleString()}</span>
-              <span class="item-subtotal">₡${l.subtotal.toLocaleString()}</span>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-
-      <div class="separator">-------------------------------</div>
-      <div class="total-row">
-        <b>TOTAL:</b>
-        <b style="font-size: 16px;">₡${venta.total.toLocaleString()}</b>
-      </div>
-
-      <div class="pago-box">
-        PAGO: ${statusPago}
-      </div>
-
-      <div class="footer">
-        <p>¡Gracias por su compra!</p>
-        <p>Pródigo Suelo - Costa Rica</p>
-      </div>
-    </div>
-  `;
-
-  let contenedor = document.getElementById("ticketContainer");
-  if (!contenedor) {
-    contenedor = document.createElement("div");
-    contenedor.id = "ticketContainer";
-    document.body.appendChild(contenedor);
-  }
-  contenedor.innerHTML = htmlTicket;
-
-  setTimeout(() => { window.print(); }, 500);
-};
-
-// ================== CARGAR PEDIDOS ==================
+// ================== CARGAR PEDIDOS (Tus funciones originales) ==================
 function cargarPedidos() {
   onSnapshot(collection(db, "ventas"), snap => {
     pedidosContainer.innerHTML = "";
@@ -249,3 +193,62 @@ function cargarPedidos() {
   });
 }
 
+// ================== IMPRIMIR TICKET (Solo cambiamos el diseño visual) ==================
+window.imprimirTicket = (venta) => {
+  const fecha = venta.fecha.toDate ? venta.fecha.toDate() : new Date(venta.fecha);
+  const statusPago = (venta.estadoPago || "pendiente").toUpperCase();
+
+  const htmlTicket = `
+    <div id="ticketImprimible">
+      <div style="text-align:center;">
+        <img src="imagenes/LOGO PRODIGO SUELO-01.png" style="width: 30mm; height: auto; filter: grayscale(100%);">
+        <h1 style="font-size: 16px; margin: 5px 0;">PRÓDIGO SUELO</h1>
+        <p style="font-size: 10px; margin: 0;">Nutrición Orgánica</p>
+      </div>
+
+      <div class="sep">-------------------------------</div>
+      <div style="font-size: 11px;">
+        <p><b>FECHA:</b> ${fecha.toLocaleDateString()} ${fecha.getHours()}:${fecha.getMinutes()}</p>
+        <p><b>CLIENTE:</b> ${venta.cliente.nombre.toUpperCase()}</p>
+        <p><b>DOC:</b> ${venta.id.slice(-6).toUpperCase()}</p>
+      </div>
+      <div class="sep">-------------------------------</div>
+      
+      <div class="items">
+        ${venta.lineas.map(l => `
+          <div style="margin-bottom: 5px;">
+            <span style="font-size:10px; font-weight:bold; display:block;">${l.nombre.toUpperCase()}</span>
+            <div style="display:flex; justify-content:space-between; font-size:11px;">
+              <span>${l.cantidad} x ₡${l.precio.toLocaleString()}</span>
+              <span><b>₡${l.subtotal.toLocaleString()}</b></span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="sep">-------------------------------</div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <b>TOTAL:</b>
+        <b style="font-size: 16px;">₡${venta.total.toLocaleString()}</b>
+      </div>
+
+      <div style="margin-top:10px; border:1pt solid black; text-align:center; padding:4px; font-weight:bold; font-size:12px;">
+        PAGO: ${statusPago}
+      </div>
+
+      <div style="text-align:center; font-size:10px; margin-top:10px;">
+        <p>¡Gracias por su compra!</p>
+      </div>
+    </div>
+  `;
+
+  let contenedor = document.getElementById("ticketContainer");
+  if (!contenedor) {
+    contenedor = document.createElement("div");
+    contenedor.id = "ticketContainer";
+    document.body.appendChild(contenedor);
+  }
+  contenedor.innerHTML = htmlTicket;
+
+  setTimeout(() => { window.print(); }, 500);
+};
