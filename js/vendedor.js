@@ -272,7 +272,7 @@ window.imprimirTicket = (venta) => {
   const htmlTicket = `
     <div id="ticketImprimible">
       <div style="text-align:center;">
-        <img src="imagenes/empaque.jpg" style="width: 35mm; filter: grayscale(100%) contrast(200%);">
+        <img src="imagenes/LOGO PRODIGO SUELO-01.png" style="width: 35mm; filter: grayscale(100%) contrast(200%);">
         <h1 style="font-size: 18px; margin: 5px 0; color:#000; font-weight:900;">PRÓDIGO SUELO</h1>
         <p style="font-size: 11px; margin: 0; color:#000; font-weight:bold;">Nutrición Orgánica</p>
       </div>
@@ -320,3 +320,4 @@ window.imprimirTicket = (venta) => {
 
   setTimeout(() => { window.print(); }, 500);
 };
+
