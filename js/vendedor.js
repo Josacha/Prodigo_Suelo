@@ -276,7 +276,7 @@ window.imprimirTicket = (venta) => {
     <div id="ticketImprimible" style="width: 48mm; margin: 0 auto; padding: 2mm; font-family: 'Arial Black', sans-serif; color: #000; background: #fff;">
       
       <div style="text-align:center; border-bottom: 4px solid #000; padding-bottom: 5px; margin-bottom: 8px;">
-        <img src="imagenes/LOGO PRODIGO SUELO.png" style="width: 30mm; height: auto; filter: grayscale(100%) contrast(200%);">
+        <img src="imagenes/LOGO PRODIGO SUELO-01.png" style="width: 30mm; height: auto; filter: grayscale(100%) contrast(200%);">
         <p style="margin: 4px 0 0 0; font-size: 10px; font-weight: 900; text-transform: uppercase; background: #000; color: #fff; display: inline-block; padding: 2px 6px;">Café de Costa Rica</p>
       </div>
 
@@ -328,4 +328,5 @@ window.imprimirTicket = (venta) => {
 
   setTimeout(() => { window.print(); }, 600);
 };
+
 
