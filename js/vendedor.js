@@ -127,12 +127,12 @@ function renderCarrito() {
       <tr>
         <td data-label="Producto">${l.nombre}</td>
         <td data-label="Cantidad">${l.cantidad}</td>
-        <td data-label="Subtotal">₡${l.subtotal}</td>
-        <td><button onclick="eliminarLinea(${i})">Eliminar</button></td>
+        <td data-label="Subtotal">₡${l.subtotal.toLocaleString()}</td>
+        <td><button class="btn-eliminar" onclick="eliminarLinea(${i})">✕</button></td>
       </tr>
     `;
   });
-  totalPedido.textContent = total;
+  totalPedido.textContent = total.toLocaleString();
 }
 
 window.eliminarLinea = (i) => {
@@ -191,32 +191,34 @@ function cargarPedidos() {
       if (venta.vendedorId !== vendedorId) return;
       if (venta.estado === 'entregado' && venta.estadoPago === 'pagado') return;
 
-      const lineasHTML = venta.lineas.map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join('');
+      const lineasHTML = venta.lineas.map(l => `<li>${l.nombre} x ${l.cantidad}</li>`).join('');
       const card = document.createElement("div");
       card.className = `card estado-${venta.estado.replace(' ', '-')}`;
       card.innerHTML = `
         <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
-        <p><strong>Total:</strong> ₡${venta.total}</p>
+        <p><strong>Total:</strong> ₡${venta.total.toLocaleString()}</p>
         <ul>${lineasHTML}</ul>
 
-        <label>Estado Pedido:</label>
-        <select id="estado-${pedidoId}">
-          <option value="entrante" ${venta.estado==='entrante'?'selected':''}>Entrante</option>
-          <option value="en proceso" ${venta.estado==='en proceso'?'selected':''}>En Proceso</option>
-          <option value="listo" ${venta.estado==='listo'?'selected':''}>Listo</option>
-          <option value="atrasado" ${venta.estado==='atrasado'?'selected':''}>Atrasado</option>
-          <option value="entregado" ${venta.estado==='entregado'?'selected':''}>Entregado</option>
-        </select>
+        <div style="margin-top:10px">
+          <label style="font-size:11px">Estado Pedido:</label>
+          <select id="estado-${pedidoId}" style="width:100%; margin-bottom:10px">
+            <option value="entrante" ${venta.estado==='entrante'?'selected':''}>Entrante</option>
+            <option value="en proceso" ${venta.estado==='en proceso'?'selected':''}>En Proceso</option>
+            <option value="listo" ${venta.estado==='listo'?'selected':''}>Listo</option>
+            <option value="atrasado" ${venta.estado==='atrasado'?'selected':''}>Atrasado</option>
+            <option value="entregado" ${venta.estado==='entregado'?'selected':''}>Entregado</option>
+          </select>
 
-        <label>Estado Pago:</label>
-        <select id="estadoPago-${pedidoId}">
-          <option value="pendiente" ${venta.estadoPago==='pendiente'?'selected':''}>Pendiente</option>
-          <option value="pagado" ${venta.estadoPago==='pagado'?'selected':''}>Pagado</option>
-        </select>
+          <label style="font-size:11px">Estado Pago:</label>
+          <select id="estadoPago-${pedidoId}" style="width:100%; margin-bottom:10px">
+            <option value="pendiente" ${venta.estadoPago==='pendiente'?'selected':''}>Pendiente</option>
+            <option value="pagado" ${venta.estadoPago==='pagado'?'selected':''}>Pagado</option>
+          </select>
+        </div>
 
         <button onclick="actualizarEstadoVendedor('${pedidoId}')">Actualizar</button>
-        <button onclick="eliminarPedido('${pedidoId}')">Eliminar pedido</button>
-        <button onclick='imprimirTicket(${JSON.stringify({ ...venta, id: pedidoId })})'>Imprimir Ticket</button>
+        <button style="background:#444" onclick='imprimirTicket(${JSON.stringify({ ...venta, id: pedidoId })})'>Reimprimir</button>
+        <button style="background:transparent; color:#ff4d4d; border:1px solid #ff4d4d" onclick="eliminarPedido('${pedidoId}')">Eliminar</button>
       `;
       pedidosContainer.appendChild(card);
     });
@@ -243,9 +245,6 @@ window.eliminarPedido = async (pedidoId) => {
 // ================== BUSCAR PEDIDOS ==================
 btnBuscarPedidos.onclick = async () => {
   const clienteId = filtroCliente.value;
-  const inicio = fechaInicioFiltro.value;
-  const fin = fechaFinFiltro.value;
-
   const snap = await getDocs(collection(db,"ventas"));
   resultadosPedidos.innerHTML = "";
 
@@ -254,80 +253,68 @@ btnBuscarPedidos.onclick = async () => {
     const pedidoId = docSnap.id;
 
     if(clienteId && venta.cliente.id!==clienteId) return;
-    const fechaVenta = venta.fecha.toDate?venta.fecha.toDate():new Date(venta.fecha);
     
     const card = document.createElement("div");
     card.className = `card estado-${venta.estado.replace(' ','-')}`;
     card.innerHTML = `
       <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
-      <p><strong>Total:</strong> ₡${venta.total}</p>
-      <button onclick='imprimirTicket(${JSON.stringify({...venta,id:pedidoId})})'>Imprimir Ticket</button>
+      <p><strong>Total:</strong> ₡${venta.total.toLocaleString()}</p>
+      <button onclick='imprimirTicket(${JSON.stringify({...venta,id:pedidoId})})'>Reimprimir</button>
     `;
     resultadosPedidos.appendChild(card);
   });
 };
 
-// ================== IMPRIMIR TICKET REFORZADO 58MM ==================
+// ================== IMPRIMIR TICKET REFORZADO 58MM (Density 5 / 12x24) ==================
 window.imprimirTicket = (venta) => {
-  let fechaDoc;
-  if (venta.fecha && venta.fecha.seconds) {
-    fechaDoc = new Date(venta.fecha.seconds * 1000);
-  } else if (venta.fecha instanceof Date) {
-    fechaDoc = venta.fecha;
-  } else {
-    fechaDoc = new Date();
-  }
+  let fechaDoc = (venta.fecha && venta.fecha.seconds) ? new Date(venta.fecha.seconds * 1000) : new Date();
 
   const statusPago = (venta.estadoPago || "PENDIENTE").toUpperCase();
   const ticketID = (venta.id || "N/A").slice(-6).toUpperCase();
 
   const htmlTicket = `
-    <div id="ticketImprimible" style="width: 52mm; margin: 0 auto; padding: 4mm 2mm; font-family: 'Courier New', Courier, monospace; color: #000; background: #fff;">
-      <div style="text-align:center; margin-bottom: 8px; border-bottom: 2px solid #000; padding-bottom: 5px;">
-        <img src="imagenes/LOGO PRODIGO SUELO-01.png" style="width: 30mm; height: auto; filter: grayscale(100%) contrast(200%);">
-        <p style="margin: 2px 0; font-size: 11px; font-weight: 900; color: #000;">Café de Costa Rica</p>
+    <div id="ticketImprimible" style="width: 48mm; margin: 0 auto; padding: 2mm; font-family: 'Arial Black', sans-serif; color: #000; background: #fff;">
+      
+      <div style="text-align:center; border-bottom: 4px solid #000; padding-bottom: 5px; margin-bottom: 8px;">
+        <img src="imagenes/GO PRODIGO SUELO.png" style="width: 30mm; height: auto; filter: grayscale(100%) contrast(200%);">
+        <p style="margin: 4px 0 0 0; font-size: 10px; font-weight: 900; text-transform: uppercase; background: #000; color: #fff; display: inline-block; padding: 2px 6px;">Café de Costa Rica</p>
       </div>
 
-      <div style="font-size: 12px; color: #000; font-weight: 800; line-height: 1.2;">
-        <p style="margin: 4px 0;"><b>FECHA:</b> ${fechaDoc.toLocaleDateString()} ${fechaDoc.getHours()}:${String(fechaDoc.getMinutes()).padStart(2, '0')}</p>
-        <p style="margin: 4px 0;"><b>DOC:</b> #${ticketID}</p>
-        <p style="margin: 4px 0;"><b>CLIENTE:</b> ${venta.cliente.nombre.toUpperCase()}</p>
+      <div style="font-size: 12px; font-weight: 900; line-height: 1.3; border-bottom: 2px dashed #000; padding-bottom: 6px;">
+        <p style="margin: 0;">FECHA: ${fechaDoc.toLocaleDateString()} ${fechaDoc.getHours()}:${String(fechaDoc.getMinutes()).padStart(2, '0')}</p>
+        <p style="margin: 0;">TICKET: #${ticketID}</p>
+        <p style="margin: 4px 0 0 0; font-size: 13px; text-transform: uppercase;">CLIENTE: ${venta.cliente.nombre}</p>
       </div>
 
-      <table style="width:100%; margin-top: 8px; border-collapse: collapse; color: #000;">
-        <thead>
-          <tr style="border-bottom: 2px solid #000; font-size: 12px;">
-            <th style="text-align:left; padding-bottom: 3px; font-weight: 900;">DETALLE</th>
-            <th style="text-align:right; padding-bottom: 3px; font-weight: 900;">TOTAL</th>
-          </tr>
-        </thead>
-        <tbody style="font-size: 12px;">
+      <table style="width:100%; margin-top: 8px; border-collapse: collapse;">
+        <tbody style="font-size: 12px; font-weight: 900;">
           ${venta.lineas.map(l => `
             <tr>
-              <td style="padding-top: 6px; font-weight: 900; line-height: 1.1;">${l.nombre.toUpperCase()}</td>
-              <td style="text-align:right; vertical-align: top; padding-top: 6px; font-weight: 900;">₡${l.subtotal.toLocaleString()}</td>
+              <td colspan="2" style="padding-top: 6px; text-transform: uppercase; line-height: 1.1;">${l.nombre}</td>
             </tr>
-            <tr style="border-bottom: 1px solid #000;">
-              <td colspan="2" style="font-size: 11px; padding-bottom: 4px; font-weight: 900; color: #000 !important;">
-                CANT: ${l.cantidad} x ₡${l.precio.toLocaleString()}
-              </td>
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="font-size: 11px; padding-bottom: 4px;">${l.cantidad} x ₡${l.precio.toLocaleString()}</td>
+              <td style="text-align:right; font-size: 13px;">₡${l.subtotal.toLocaleString()}</td>
             </tr>
           `).join('')}
         </tbody>
       </table>
 
-      <div style="margin-top: 10px; text-align: right;">
-        <p style="font-size: 16px; margin: 0; color: #000; font-weight: 900;">TOTAL: ₡${venta.total.toLocaleString()}</p>
+      <div style="margin-top: 10px; border-top: 3px solid #000; padding-top: 6px; text-align: right;">
+        <p style="margin: 0; font-size: 18px; font-weight: 900;">TOTAL: ₡${venta.total.toLocaleString()}</p>
       </div>
 
-      <div style="text-align:center; border: 2px solid #000; margin-top: 12px; padding: 8px; background: #000 !important; color: #fff !important; -webkit-print-color-adjust: exact;">
-        <b style="font-size: 14px; letter-spacing: 1px; font-weight: 900;">PAGO: ${statusPago}</b>
+      <div style="text-align:center; background: #000; color: #fff; margin-top: 15px; padding: 6px; -webkit-print-color-adjust: exact;">
+        <span style="font-size: 14px; font-weight: 900; letter-spacing: 1px;">PAGO: ${statusPago}</span>
       </div>
 
-      <div style="text-align:center; margin-top: 20px; font-size: 10px; color: #000; font-weight: 800; border-top: 1px dashed #000; padding-top: 8px;">
-        <p style="margin: 2px 0;">¡GRACIAS POR APOYAR LO ORGÁNICO!</p>
-        <p style="margin: 2px 0; font-weight: 900;">*** COPIA DE CLIENTE ***</p>
+      <div style="text-align:center; margin-top: 20px; font-size: 10px; font-weight: 900; line-height: 1.2;">
+        <p style="margin: 0;">¡GRACIAS POR APOYAR LO ORGÁNICO!</p>
+        <p style="margin: 4px 0;">PRODIGO SUELO - COSTA RICA</p>
+        <p style="margin: 0; font-size: 8px;">DENSITY 5 - FONT 12x24</p>
       </div>
+      
+      <div style="height: 40px;"></div>
     </div>
   `;
 
@@ -339,5 +326,5 @@ window.imprimirTicket = (venta) => {
   }
   contenedor.innerHTML = htmlTicket;
 
-  setTimeout(() => { window.print(); }, 400);
+  setTimeout(() => { window.print(); }, 600);
 };
