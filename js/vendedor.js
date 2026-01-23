@@ -309,9 +309,9 @@ window.imprimirTicket = (venta) => {
       </div>
 
       <div style="text-align:center; margin-top: 20px; font-size: 10px; font-weight: 900; line-height: 1.2;">
-        <p style="margin: 0;">¡GRACIAS POR APOYAR LO ORGÁNICO!</p>
+        <p style="margin: 0;">¡GRACIAS POR APOYAR LO NUESTRO!</p>
         <p style="margin: 4px 0;">PRODIGO SUELO - COSTA RICA</p>
-        <p style="margin: 0; font-size: 8px;">DENSITY 5 - FONT 12x24</p>
+       
       </div>
       
       <div style="height: 40px;"></div>
@@ -328,5 +328,6 @@ window.imprimirTicket = (venta) => {
 
   setTimeout(() => { window.print(); }, 600);
 };
+
 
 
