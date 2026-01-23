@@ -73,7 +73,6 @@ async function cargarClientes() {
   });
 }
 
-// ================== CARGAR CLIENTES FILTRO ==================
 async function cargarClientesFiltro() {
   filtroCliente.innerHTML = "<option value=''>Todos los clientes</option>";
   const snap = await getDocs(collection(db, "clientes"));
@@ -90,7 +89,7 @@ async function cargarClientesFiltro() {
   });
 }
 
-// ================== AGREGAR AL CARRITO ==================
+// ================== CARRITO ==================
 document.getElementById("agregarLineaBtn").onclick = () => {
   const opt = productoSelect.selectedOptions[0];
   const cantidad = Number(cantidadInput.value);
@@ -101,36 +100,26 @@ document.getElementById("agregarLineaBtn").onclick = () => {
     carrito[indexExistente].cantidad += cantidad;
     carrito[indexExistente].subtotal = carrito[indexExistente].cantidad * carrito[indexExistente].precio;
   } else {
-    const subtotal = cantidad * Number(opt.dataset.precio);
     carrito.push({
       productoId: opt.value,
       nombre: opt.dataset.nombre,
       precio: Number(opt.dataset.precio),
       peso: Number(opt.dataset.peso),
       cantidad,
-      subtotal
+      subtotal: cantidad * Number(opt.dataset.precio)
     });
   }
-
   cantidadInput.value = "";
   renderCarrito();
   clienteSelect.disabled = true;
 };
 
-// ================== RENDER CARRITO ==================
 function renderCarrito() {
   carritoBody.innerHTML = "";
   let total = 0;
   carrito.forEach((l, i) => {
     total += l.subtotal;
-    carritoBody.innerHTML += `
-      <tr>
-        <td>${l.nombre}</td>
-        <td>${l.cantidad}</td>
-        <td>₡${l.subtotal}</td>
-        <td><button onclick="eliminarLinea(${i})">Eliminar</button></td>
-      </tr>
-    `;
+    carritoBody.innerHTML += `<tr><td>${l.nombre}</td><td>${l.cantidad}</td><td>₡${l.subtotal}</td><td><button onclick="eliminarLinea(${i})">X</button></td></tr>`;
   });
   totalPedido.textContent = total;
 }
@@ -144,155 +133,87 @@ window.eliminarLinea = (i) => {
 // ================== CONFIRMAR VENTA ==================
 document.getElementById("confirmarVentaBtn").onclick = async () => {
   const clienteId = clienteSelect.value;
-  if (!clienteId) return alert("Seleccione un cliente");
-  if (carrito.length === 0) return alert("Carrito vacío");
+  if (!clienteId || carrito.length === 0) return alert("Datos incompletos");
 
   const diasConsignacion = Number(diasConsignacionInput.value || 0);
-  const fechaVencimiento = diasConsignacion > 0 ? new Date(Date.now() + diasConsignacion * 24 * 60 * 60 * 1000) : null;
-
   const clienteDoc = await getDoc(doc(db, "clientes", clienteId));
   const clienteData = clienteDoc.data();
   const total = carrito.reduce((s, l) => s + l.subtotal, 0);
 
-  // Guardamos los datos antes de limpiar el carrito localmente
-  const datosVenta = {
+  const ventaData = {
     vendedorId,
     cliente: { id: clienteId, nombre: clienteData.nombre, telefono: clienteData.telefono || null },
     fecha: new Date(),
     total,
-    lineas: [...carrito], 
+    lineas: [...carrito],
     estado: "entrante",
     estadoPago: "pendiente",
-    consignacion: diasConsignacion > 0 ? { dias: diasConsignacion, vencimiento: fechaVencimiento, estado: "pendiente de pago" } : null,
+    consignacion: diasConsignacion > 0 ? { dias: diasConsignacion, estado: "pendiente de pago" } : null,
     comentario: ""
   };
 
-  const ventaRef = await addDoc(collection(db, "ventas"), datosVenta);
-
-  // MANDAR A IMPRIMIR ANTES DE LIMPIAR UI
-  imprimirTicket({ ...datosVenta, id: ventaRef.id });
+  const ventaRef = await addDoc(collection(db, "ventas"), ventaData);
+  
+  // Imprimir antes de limpiar
+  imprimirTicket({ ...ventaData, id: ventaRef.id });
 
   carrito = [];
   renderCarrito();
   clienteSelect.value = "";
   clienteSelect.disabled = false;
   diasConsignacionInput.value = "";
-
-  alert("Pedido registrado e imprimiendo...");
-  cargarPedidos();
+  alert("Venta registrada");
 };
 
-// ================== CARGAR PEDIDOS ==================
-function cargarPedidos() {
-  pedidosContainer.innerHTML = "";
-  onSnapshot(collection(db, "ventas"), snap => {
-    pedidosContainer.innerHTML = "";
-
-    snap.forEach(docSnap => {
-      const venta = docSnap.data();
-      const pedidoId = docSnap.id;
-
-      if (venta.vendedorId !== vendedorId) return;
-      if (venta.estado === 'entregado' && venta.estadoPago === 'pagado') return;
-
-      const lineasHTML = venta.lineas.map(l => `<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join('');
-      const card = document.createElement("div");
-      card.className = `card estado-${venta.estado.replace(' ', '-')}`;
-      card.innerHTML = `
-        <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
-        <p><strong>Total:</strong> ₡${venta.total}</p>
-        <ul>${lineasHTML}</ul>
-
-        <label>Estado Pedido:</label>
-        <select id="estado-${pedidoId}">
-          <option value="entrante" ${venta.estado==='entrante'?'selected':''}>Entrante</option>
-          <option value="en proceso" ${venta.estado==='en proceso'?'selected':''}>En Proceso</option>
-          <option value="listo" ${venta.estado==='listo'?'selected':''}>Listo</option>
-          <option value="atrasado" ${venta.estado==='atrasado'?'selected':''}>Atrasado</option>
-          <option value="entregado" ${venta.estado==='entregado'?'selected':''}>Entregado</option>
-        </select>
-
-        <label>Estado Pago:</label>
-        <select id="estadoPago-${pedidoId}">
-          <option value="pendiente" ${venta.estadoPago==='pendiente'?'selected':''}>Pendiente</option>
-          <option value="pagado" ${venta.estadoPago==='pagado'?'selected':''}>Pagado</option>
-        </select>
-
-        <button onclick="actualizarEstadoVendedor('${pedidoId}')">Actualizar</button>
-        <button onclick="eliminarPedido('${pedidoId}')">Eliminar</button>
-        <button onclick='imprimirTicket(${JSON.stringify({ ...venta, id: pedidoId })})'>Ticket</button>
-      `;
-      pedidosContainer.appendChild(card);
-    });
-  });
-}
-
-window.actualizarEstadoVendedor = async (pedidoId) => {
-  const estadoSelect = document.getElementById(`estado-${pedidoId}`);
-  const estadoPagoSelect = document.getElementById(`estadoPago-${pedidoId}`);
-  const nuevoEstado = estadoSelect.value;
-  const nuevoEstadoPago = estadoPagoSelect.value;
-  const docRef = doc(db, "ventas", pedidoId);
-  await updateDoc(docRef, { estado: nuevoEstado, estadoPago: nuevoEstadoPago });
-  alert("Actualizado");
-};
-
-window.eliminarPedido = async (pedidoId) => {
-  if (confirm("¿Eliminar pedido?")) {
-    await deleteDoc(doc(db,"ventas",pedidoId));
-  }
-};
-
-btnBuscarPedidos.onclick = async () => {
-  const clienteId = filtroCliente.value;
-  const inicio = fechaInicioFiltro.value;
-  const fin = fechaFinFiltro.value;
-  const snap = await getDocs(collection(db,"ventas"));
-  resultadosPedidos.innerHTML = "";
-
-  snap.forEach(docSnap => {
-    const venta = docSnap.data();
-    if(clienteId && venta.cliente.id!==clienteId) return;
-    const card = document.createElement("div");
-    card.className = `card`;
-    card.innerHTML = `<p>${venta.cliente.nombre} - ₡${venta.total}</p>
-      <button onclick='imprimirTicket(${JSON.stringify({...venta, id: docSnap.id})})'>Ticket</button>`;
-    resultadosPedidos.appendChild(card);
-  });
-};
-
-// ================== IMPRIMIR TICKET (CELULAR Y PC) ==================
+// ================== IMPRESIÓN PROFESIONAL 58MM ==================
 window.imprimirTicket = (venta) => {
   const fecha = venta.fecha.toDate ? venta.fecha.toDate() : new Date(venta.fecha);
   const statusPago = (venta.estadoPago || "pendiente").toUpperCase();
 
   const htmlTicket = `
     <div id="ticketImprimible">
-      <div style="text-align:center;">
-        <img src="imagenes/empaque.jpg" style="width: 35mm; height: auto; filter: grayscale(100%);">
-        <h3 style="margin: 5px 0; font-size: 14px; color:#000;">PRÓDIGO SUELO</h3>
+      <div class="header">
+        <img src="imagenes/empaque.jpg" style="width: 30mm; height: auto; filter: grayscale(100%);">
+        <h1 style="font-size: 16px; margin: 5px 0;">PRÓDIGO SUELO</h1>
+        <p style="font-size: 10px; margin: 0;">Nutrición Orgánica</p>
       </div>
-      <hr style="border:none; border-top:1px dashed #000;">
-      <p style="font-size:11px; color:#000; margin:2px 0;"><b>Fecha:</b> ${fecha.toLocaleDateString()} ${fecha.getHours()}:${fecha.getMinutes()}</p>
-      <p style="font-size:11px; color:#000; margin:2px 0;"><b>Cliente:</b> ${venta.cliente.nombre}</p>
-      <hr style="border:none; border-top:1px dashed #000;">
-      <table style="width:100%; border-collapse: collapse; color:#000;">
+
+      <div class="separator">-------------------------------</div>
+      <div class="info">
+        <p><b>FECHA:</b> ${fecha.toLocaleDateString()} ${fecha.getHours()}:${fecha.getMinutes()}</p>
+        <p><b>CLIENTE:</b> ${venta.cliente.nombre.toUpperCase()}</p>
+        <p><b>DOC:</b> ${venta.id.slice(-6).toUpperCase()}</p>
+      </div>
+      <div class="separator">-------------------------------</div>
+      <p style="text-align: center; font-size: 10px; margin: 2px 0;">DETALLE DE PRODUCTOS</p>
+      <div class="separator">-------------------------------</div>
+
+      <div class="items">
         ${venta.lineas.map(l => `
-          <tr><td colspan="2" style="font-size:11px;">${l.nombre}</td></tr>
-          <tr>
-            <td style="font-size:11px;">${l.cantidad} x ₡${l.precio}</td>
-            <td style="text-align:right; font-size:11px;">₡${l.subtotal}</td>
-          </tr>
+          <div class="item-row">
+            <span class="item-name">${l.nombre.toUpperCase()}</span>
+            <div class="item-details">
+              <span>${l.cantidad} x ₡${l.precio.toLocaleString()}</span>
+              <span class="item-subtotal">₡${l.subtotal.toLocaleString()}</span>
+            </div>
+          </div>
         `).join('')}
-      </table>
-      <hr style="border:none; border-top:1px dashed #000;">
-      <p style="font-size: 13px; display:flex; justify-content:space-between; margin: 5px 0; color:#000;">
-        <b>TOTAL:</b> <b>₡${venta.total}</b>
-      </p>
-      <div style="text-align:center; border: 1px solid #000; padding: 3px; margin: 5px 0; color:#000;">
-        <b style="font-size: 12px;">PAGO: ${statusPago}</b>
       </div>
-      <p style="text-align:center; font-size: 10px; color:#000; margin-top:10px;">¡Gracias por su compra!</p>
+
+      <div class="separator">-------------------------------</div>
+      <div class="total-row">
+        <b>TOTAL:</b>
+        <b style="font-size: 16px;">₡${venta.total.toLocaleString()}</b>
+      </div>
+
+      <div class="pago-box">
+        PAGO: ${statusPago}
+      </div>
+
+      <div class="footer">
+        <p>¡Gracias por su compra!</p>
+        <p>Pródigo Suelo - Costa Rica</p>
+      </div>
     </div>
   `;
 
@@ -304,7 +225,26 @@ window.imprimirTicket = (venta) => {
   }
   contenedor.innerHTML = htmlTicket;
 
-  setTimeout(() => {
-    window.print();
-  }, 500);
+  setTimeout(() => { window.print(); }, 500);
 };
+
+// ================== CARGAR PEDIDOS ==================
+function cargarPedidos() {
+  onSnapshot(collection(db, "ventas"), snap => {
+    pedidosContainer.innerHTML = "";
+    snap.forEach(docSnap => {
+      const venta = docSnap.data();
+      if (venta.vendedorId !== vendedorId) return;
+      if (venta.estado === 'entregado' && venta.estadoPago === 'pagado') return;
+
+      const card = document.createElement("div");
+      card.className = `card estado-${venta.estado.replace(' ', '-')}`;
+      card.innerHTML = `
+        <p><strong>${venta.cliente.nombre}</strong></p>
+        <p>Total: ₡${venta.total}</p>
+        <button onclick='imprimirTicket(${JSON.stringify({ ...venta, id: docSnap.id })})'>Ticket</button>
+      `;
+      pedidosContainer.appendChild(card);
+    });
+  });
+}
