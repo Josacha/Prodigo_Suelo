@@ -1350,3 +1350,57 @@ td {
     margin: 0;
   }
 }
+
+/* Ocultar ticket en la pantalla del celular */
+#ticketContainer {
+  display: none;
+}
+
+@media print {
+  /* Forzar negro puro para que no salga opaco */
+  * {
+    color: #000 !important;
+    font-weight: bold !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Ocultar botones y formularios de la web */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Mostrar solo el ticket */
+  #ticketContainer, #ticketContainer * {
+    visibility: visible;
+  }
+
+  #ticketContainer {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 58mm; /* Ancho real de impresora pequeña */
+    background: #fff;
+  }
+
+  #ticketImprimible {
+    width: 52mm;
+    padding: 2mm;
+    font-family: 'Courier New', Courier, monospace; /* Fuente más legible en térmico */
+    line-height: 1.2;
+  }
+
+  .divisor {
+    text-align: center;
+    font-weight: bold;
+    margin: 4px 0;
+    font-size: 14px;
+  }
+
+  /* Quitar bordes y encabezados de página del navegador */
+  @page {
+    size: 58mm auto;
+    margin: 0;
+  }
+}
