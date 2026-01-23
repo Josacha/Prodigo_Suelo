@@ -125,9 +125,9 @@ function renderCarrito() {
     total += l.subtotal;
     carritoBody.innerHTML += `
       <tr>
-        <td>${l.nombre}</td>
-        <td>${l.cantidad}</td>
-        <td>₡${l.subtotal}</td>
+        <td data-label="Producto">${l.nombre}</td>
+        <td data-label="Cantidad">${l.cantidad}</td>
+        <td data-label="Subtotal">₡${l.subtotal}</td>
         <td><button onclick="eliminarLinea(${i})">Eliminar</button></td>
       </tr>
     `;
@@ -182,10 +182,8 @@ document.getElementById("confirmarVentaBtn").onclick = async () => {
 
 // ================== CARGAR PEDIDOS ==================
 function cargarPedidos() {
-  pedidosContainer.innerHTML = "";
   onSnapshot(collection(db, "ventas"), snap => {
     pedidosContainer.innerHTML = "";
-
     snap.forEach(docSnap => {
       const venta = docSnap.data();
       const pedidoId = docSnap.id;
@@ -216,8 +214,6 @@ function cargarPedidos() {
           <option value="pagado" ${venta.estadoPago==='pagado'?'selected':''}>Pagado</option>
         </select>
 
-        ${venta.consignacion?`<p><strong>Consignación:</strong> ${venta.consignacion.estado}${venta.consignacion.vencimiento && new Date() > new Date(venta.consignacion.vencimiento.toDate?venta.consignacion.vencimiento.toDate():venta.consignacion.vencimiento)?' ⚠ PLAZO VENCIDO':''}</p>`:''}
-
         <button onclick="actualizarEstadoVendedor('${pedidoId}')">Actualizar</button>
         <button onclick="eliminarPedido('${pedidoId}')">Eliminar pedido</button>
         <button onclick='imprimirTicket(${JSON.stringify({ ...venta, id: pedidoId })})'>Imprimir Ticket</button>
@@ -231,22 +227,9 @@ function cargarPedidos() {
 window.actualizarEstadoVendedor = async (pedidoId) => {
   const estadoSelect = document.getElementById(`estado-${pedidoId}`);
   const estadoPagoSelect = document.getElementById(`estadoPago-${pedidoId}`);
-  const nuevoEstado = estadoSelect.value;
-  const nuevoEstadoPago = estadoPagoSelect.value;
   const docRef = doc(db, "ventas", pedidoId);
-  const docSnap = await getDoc(docRef);
-  const pedido = docSnap.data();
-
-  if (pedido.estado==='listo' && nuevoEstado==='entregado') {
-    await updateDoc(docRef, { estado:'entregado', estadoPago: nuevoEstadoPago });
-    alert("Pedido entregado y pago actualizado");
-  } else if (nuevoEstado!=='entregado') {
-    await updateDoc(docRef, { estado:nuevoEstado, estadoPago: nuevoEstadoPago });
-    alert("Estado actualizado");
-  } else {
-    alert("Solo se puede marcar como ENTREGADO un pedido LISTO. Estado de pago sí se actualizó");
-    await updateDoc(docRef, { estadoPago: nuevoEstadoPago });
-  }
+  await updateDoc(docRef, { estado: estadoSelect.value, estadoPago: estadoPagoSelect.value });
+  alert("Estado actualizado");
 };
 
 // ================== ELIMINAR PEDIDO ==================
@@ -272,23 +255,12 @@ btnBuscarPedidos.onclick = async () => {
 
     if(clienteId && venta.cliente.id!==clienteId) return;
     const fechaVenta = venta.fecha.toDate?venta.fecha.toDate():new Date(venta.fecha);
-    if(inicio && fechaVenta<new Date(inicio)) return;
-    if(fin){
-      const fechaFinObj = new Date(fin);
-      fechaFinObj.setHours(23,59,59,999);
-      if(fechaVenta>fechaFinObj) return;
-    }
-
-    const lineasHTML = venta.lineas.map(l=>`<li>${l.nombre} x ${l.cantidad} = ₡${l.subtotal}</li>`).join('');
+    
     const card = document.createElement("div");
     card.className = `card estado-${venta.estado.replace(' ','-')}`;
     card.innerHTML = `
       <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
-      <p><strong>Fecha:</strong> ${fechaVenta.toLocaleDateString()}</p>
       <p><strong>Total:</strong> ₡${venta.total}</p>
-      <ul>${lineasHTML}</ul>
-      <p><strong>Estado Pedido:</strong> ${venta.estado}</p>
-      <p><strong>Estado Pago:</strong> ${venta.estadoPago||'pendiente'}</p>
       <button onclick='imprimirTicket(${JSON.stringify({...venta,id:pedidoId})})'>Imprimir Ticket</button>
     `;
     resultadosPedidos.appendChild(card);
@@ -310,33 +282,33 @@ window.imprimirTicket = (venta) => {
   const ticketID = (venta.id || "N/A").slice(-6).toUpperCase();
 
   const htmlTicket = `
-    <div id="ticketImprimible">
-      <div style="text-align:center; margin-bottom: 10px; border-bottom: 1px solid #000; padding-bottom: 5px;">
-        <img src="imagenes/LOGO PRODIGO SUELO-01.png" style="width: 35mm; height: auto; filter: grayscale(100%) contrast(200%);">
-        <p style="margin: 0; font-size: 13px; font-weight: 900; color: #000;">Café de Costa Rica </p>
+    <div id="ticketImprimible" style="width: 52mm; margin: 0 auto; padding: 4mm 2mm; font-family: 'Courier New', Courier, monospace; color: #000; background: #fff;">
+      <div style="text-align:center; margin-bottom: 8px; border-bottom: 2px solid #000; padding-bottom: 5px;">
+        <img src="imagenes/LOGO PRODIGO SUELO-01.png" style="width: 30mm; height: auto; filter: grayscale(100%) contrast(200%);">
+        <p style="margin: 2px 0; font-size: 11px; font-weight: 900; color: #000;">Café de Costa Rica</p>
       </div>
 
-      <div style="font-size: 13px; color: #000; font-weight: 700;">
+      <div style="font-size: 12px; color: #000; font-weight: 800; line-height: 1.2;">
         <p style="margin: 4px 0;"><b>FECHA:</b> ${fechaDoc.toLocaleDateString()} ${fechaDoc.getHours()}:${String(fechaDoc.getMinutes()).padStart(2, '0')}</p>
         <p style="margin: 4px 0;"><b>DOC:</b> #${ticketID}</p>
         <p style="margin: 4px 0;"><b>CLIENTE:</b> ${venta.cliente.nombre.toUpperCase()}</p>
       </div>
 
-      <table style="width:100%; margin-top: 10px; border-collapse: collapse; color: #000;">
+      <table style="width:100%; margin-top: 8px; border-collapse: collapse; color: #000;">
         <thead>
-          <tr style="border-bottom: 2px solid #000; font-size: 13px;">
-            <th style="text-align:left; padding-bottom: 5px; font-weight: 900;">DETALLE</th>
-            <th style="text-align:right; padding-bottom: 5px; font-weight: 900;">TOTAL</th>
+          <tr style="border-bottom: 2px solid #000; font-size: 12px;">
+            <th style="text-align:left; padding-bottom: 3px; font-weight: 900;">DETALLE</th>
+            <th style="text-align:right; padding-bottom: 3px; font-weight: 900;">TOTAL</th>
           </tr>
         </thead>
-        <tbody style="font-size: 13px;">
+        <tbody style="font-size: 12px;">
           ${venta.lineas.map(l => `
             <tr>
-              <td style="padding-top: 8px; font-weight: 900; line-height: 1.1;">${l.nombre.toUpperCase()}</td>
-              <td style="text-align:right; vertical-align: top; padding-top: 8px; font-weight: 900;">₡${l.subtotal.toLocaleString()}</td>
+              <td style="padding-top: 6px; font-weight: 900; line-height: 1.1;">${l.nombre.toUpperCase()}</td>
+              <td style="text-align:right; vertical-align: top; padding-top: 6px; font-weight: 900;">₡${l.subtotal.toLocaleString()}</td>
             </tr>
             <tr style="border-bottom: 1px solid #000;">
-              <td colspan="2" style="font-size: 12px; padding-bottom: 5px; font-weight: 900;">
+              <td colspan="2" style="font-size: 11px; padding-bottom: 4px; font-weight: 900; color: #000 !important;">
                 CANT: ${l.cantidad} x ₡${l.precio.toLocaleString()}
               </td>
             </tr>
@@ -344,22 +316,17 @@ window.imprimirTicket = (venta) => {
         </tbody>
       </table>
 
-      <div style="margin-top: 15px; text-align: right; padding-top: 5px;">
-        <p style="font-size: 18px; margin: 0; color: #000; font-weight: 900;">TOTAL: ₡${venta.total.toLocaleString()}</p>
+      <div style="margin-top: 10px; text-align: right;">
+        <p style="font-size: 16px; margin: 0; color: #000; font-weight: 900;">TOTAL: ₡${venta.total.toLocaleString()}</p>
       </div>
 
-      <div style="text-align:center; border: 2px solid #000; margin-top: 15px; padding: 10px; background: #000 !important; color: #fff !important; -webkit-print-color-adjust: exact;">
-        <b style="font-size: 16px; letter-spacing: 1px; font-weight: 900;">PAGO: ${statusPago}</b>
+      <div style="text-align:center; border: 2px solid #000; margin-top: 12px; padding: 8px; background: #000 !important; color: #fff !important; -webkit-print-color-adjust: exact;">
+        <b style="font-size: 14px; letter-spacing: 1px; font-weight: 900;">PAGO: ${statusPago}</b>
       </div>
 
-      ${venta.consignacion ? `
-        <p style="text-align:center; font-size: 12px; margin-top: 10px; color: #000; font-weight: 900;">
-          CONSIGNACIÓN: ${venta.consignacion.dias} DÍAS
-        </p>` : ''}
-
-      <div style="text-align:center; margin-top: 25px; font-size: 12px; color: #000; font-weight: 700; border-top: 1px dashed #000; padding-top: 10px;">
-        <p style="margin: 4px 0;">¡GRACIAS POR APOYAR LO ORGÁNICO!</p>
-        <p style="margin: 4px 0; font-weight: 900;">*** COPIA DE CLIENTE ***</p>
+      <div style="text-align:center; margin-top: 20px; font-size: 10px; color: #000; font-weight: 800; border-top: 1px dashed #000; padding-top: 8px;">
+        <p style="margin: 2px 0;">¡GRACIAS POR APOYAR LO ORGÁNICO!</p>
+        <p style="margin: 2px 0; font-weight: 900;">*** COPIA DE CLIENTE ***</p>
       </div>
     </div>
   `;
