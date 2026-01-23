@@ -1258,3 +1258,55 @@ td {
   background-color: #eee;
 }
 
+/* =========================================
+   ESTILOS DE IMPRESIÓN (POS 58MM)
+   ========================================= */
+
+#ticketContainer {
+  display: none; /* Oculto en la aplicación */
+}
+
+@media print {
+  /* Ocultar toda la web */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Mostrar solo el ticket */
+  #ticketContainer, #ticketContainer * {
+    visibility: visible;
+  }
+
+  #ticketContainer {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 58mm; /* Ancho de la impresora */
+    background: white;
+  }
+
+  #ticketImprimible {
+    width: 57mm; /* Ancho real imprimible para evitar cortes */
+    margin: 0;
+    padding: 0;
+    font-family: 'Courier New', Courier, monospace;
+    background: white;
+    color: black;
+  }
+
+  /* Forzar que el logo no salga negro o con fondo */
+  img {
+    filter: grayscale(100%) contrast(120%);
+    display: block;
+    margin: 0 auto;
+  }
+
+  /* Configuración de la "hoja" térmica */
+  @page {
+    size: 58mm auto;
+    margin: 0;
+  }
+}
+
+
