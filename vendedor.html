@@ -4,11 +4,7 @@
   <meta charset="UTF-8">
   <title>Vendedor – Pródigo Suelo</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- CSS principal -->
   <link rel="stylesheet" href="css/styles.css">
-
-  <!-- Iconos -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
 </head>
 <body>
@@ -16,14 +12,15 @@
   <h1>Vendedor – Pródigo Suelo</h1>
   <button id="logoutBtn">Cerrar sesión</button>
 
-  <!-- AGREGAR AL CARRITO -->
   <section>
     <h2>Agregar al carrito</h2>
 
-    <label>Cliente:</label>
+    <label>Buscar Cliente:</label>
+    <input type="text" id="buscarClienteInput" placeholder="🔎 Escriba nombre del cliente..." style="width:100%; margin-bottom: 8px;">
     <select id="clienteSelect"></select>
 
-    <label>Producto:</label>
+    <label style="margin-top:15px;">Buscar Producto:</label>
+    <input type="text" id="buscarProductoInput" placeholder="🔎 Escriba nombre, variedad o peso..." style="width:100%; margin-bottom: 8px;">
     <select id="productoSelect"></select>
 
     <label>Cantidad:</label>
@@ -35,7 +32,6 @@
     <button id="agregarLineaBtn">Agregar al carrito</button>
   </section>
 
-  <!-- CARRITO -->
   <section>
     <h2>Carrito</h2>
     <table>
@@ -53,41 +49,27 @@
     <button id="confirmarVentaBtn">Confirmar pedido</button>
   </section>
 
-  <!-- PEDIDOS REGISTRADOS -->
   <section>
     <h2>Pedidos Registrados</h2>
     <div id="pedidosContainer" class="cards-container"></div>
   </section>
 
-  <!-- PEDIDOS REGISTRADOS ANTIGUOS -->
   <section>
     <h2>Buscar Pedidos Antiguos</h2>
-
     <label>Cliente:</label>
     <select id="filtroCliente">
       <option value="">Todos los clientes</option>
     </select>
-
     <label>Fecha inicio:</label>
     <input type="date" id="fechaInicioFiltro">
-
     <label>Fecha fin:</label>
     <input type="date" id="fechaFinFiltro">
-
     <button id="btnBuscarPedidos">Buscar</button>
-
     <div id="resultadosPedidos" class="cards-container"></div>
   </section>
 
-  <!-- CONTENEDOR DE TICKET -->
-  <div id="ticketContainer" style="display:none;">
-    <div id="ticket" class="ticket">
-      <!-- Aquí se generará el contenido dinámicamente -->
-    </div>
-    <button id="imprimirTicketBtn" style="display:none;">Imprimir Ticket</button>
-  </div>
+  <div id="ticketContainer" style="display:none;"></div>
 
-  <!-- JS -->
   <script type="module" src="js/vendedor.js"></script>
 </body>
 </html>
