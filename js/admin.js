@@ -397,57 +397,65 @@ document.addEventListener("DOMContentLoaded", () => {
   // =====================
   // EXPORTAR EXCEL
   // =====================
-  if(btnExportExcel) btnExportExcel.onclick = async () => {
-    const inicio = fechaInicioInput.value;
-    const fin = fechaFinInput.value;
-    if(!inicio || !fin) return alert("Seleccione ambas fechas");
+// =====================
+// EXPORTAR EXCEL (CORREGIDO)
+// =====================
+if(btnExportExcel) btnExportExcel.onclick = async () => {
+  const inicio = fechaInicioInput.value;
+  const fin = fechaFinInput.value;
+  if(!inicio || !fin) return alert("Seleccione ambas fechas");
 
-    const q = query(
-      collection(db, "ventas"),
-      where("fecha", ">=", Timestamp.fromDate(new Date(inicio))),
-      where("fecha", "<=", Timestamp.fromDate(new Date(new Date(fin).setHours(23,59,59))))
-    );
+  const q = query(
+    collection(db, "ventas"),
+    where("fecha", ">=", Timestamp.fromDate(new Date(inicio))),
+    where("fecha", "<=", Timestamp.fromDate(new Date(new Date(fin).setHours(23,59,59))))
+  );
 
-    const snap = await getDocs(q);
-    if(snap.empty) return alert("No hay ventas en ese rango de fechas");
+  const snap = await getDocs(q);
+  if(snap.empty) return alert("No hay ventas en ese rango de fechas");
 
-    const datos = [];
-    snap.forEach(docSnap => {
-      const v = docSnap.data();
-      const fecha = v.fecha?.toDate ? v.fecha.toDate() : new Date(v.fecha);
-      if(Array.isArray(v.lineas)) {
-        v.lineas.forEach(l => datos.push({
-          Fecha: fecha.toLocaleDateString(),
-          Cliente: v.clienteNombre || "-",
-          Vendedor: v.vendedorNombre || "-",
-          Producto: l.nombre || "-",
-          Variedad: l.variedad || "-",
-          Cantidad: l.cantidad || 0,
-          PesoGramos: l.peso || 0,
-          TotalVenta: v.total || 0,
-          Estado: v.estado || "-"
-        }));
-      }
-    });
-
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(datos);
-
-    const range = XLSX.utils.decode_range(ws['!ref']);
-    for(let C = range.s.c; C <= range.e.c; ++C){
-      const cell = ws[XLSX.utils.encode_cell({r:0,c:C})];
-      if(!cell.s) cell.s={};
-      cell.s.font={bold:true,color:{rgb:"FFFFFF"}};
-      cell.s.fill={fgColor:{rgb:"4F81BD"}};
-      cell.s.alignment={horizontal:"center"};
+  const datos = [];
+  snap.forEach(docSnap => {
+    const v = docSnap.data();
+    const fecha = v.fecha?.toDate ? v.fecha.toDate() : new Date(v.fecha);
+    
+    // IMPORTANTE: Extraemos el nombre del cliente del objeto 'cliente'
+    const nombreCliente = v.cliente?.nombre || "Sin nombre";
+    
+    if(Array.isArray(v.lineas)) {
+      v.lineas.forEach((l, index) => {
+        datos.push({
+          "ID Pedido": docSnap.id,
+          "Fecha": fecha.toLocaleDateString(),
+          "Cliente": nombreCliente,
+          "Vendedor ID": v.vendedorId || "-",
+          "Producto": l.nombre || "-",
+          "Cantidad": l.cantidad || 0,
+          "Peso (g)": l.peso || 0,
+          "Precio Unit": l.precio || 0,
+          "Subtotal Línea": l.subtotal || 0,
+          // Solo mostramos el total general en la primera línea del pedido para no duplicar sumas
+          "TOTAL VENTA": index === 0 ? (v.total || 0) : "",
+          "Estado Pago": v.estadoPago || "-",
+          "Estado Prod": v.estado || "-"
+        });
+      });
     }
+  });
 
-    ws['!cols'] = [
-      {wch:12},{wch:20},{wch:20},{wch:25},{wch:15},{wch:10},{wch:12},{wch:15},{wch:15}
-    ];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(datos);
 
-    XLSX.utils.book_append_sheet(wb, ws, "Ventas");
-    XLSX.writeFile(wb, `Ventas_${inicio}_a_${fin}.xlsx`);
-  };
+  // Ajuste de anchos de columna para que se vea profesional
+  ws['!cols'] = [
+    {wch:20}, {wch:12}, {wch:20}, {wch:20}, {wch:25}, 
+    {wch:10}, {wch:10}, {wch:12}, {wch:12}, {wch:15}, {wch:15}, {wch:15}
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, "Ventas Detalladas");
+  // Nombre del archivo con la marca predominante
+  XLSX.writeFile(wb, `CAFÉ_PRÓDIGO_SUELO_Ventas_${inicio}.xlsx`);
+};
 
 }); // DOMContentLoaded
+
