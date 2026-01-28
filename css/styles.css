@@ -1349,3 +1349,31 @@ td {
   }
 }
 
+/* BUSCADORES DINÁMICOS */
+#buscarClienteInput, #buscarProductoInput {
+    background: #fff;
+    border: 2px solid var(--naranja);
+    color: var(--verde-profundo);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+#buscarClienteInput:focus, #buscarProductoInput:focus {
+    background: #fff;
+    box-shadow: 0 0 12px var(--naranja);
+    outline: none;
+}
+
+#buscarClienteInput::placeholder, #buscarProductoInput::placeholder {
+    color: #666;
+    font-size: 13px;
+}
+
+/* Deshabilitar visualmente cuando hay carrito */
+#buscarClienteInput:disabled {
+    background: rgba(255,255,255,0.1);
+    border-color: #555;
+    cursor: not-allowed;
+    color: #aaa;
+}
+
