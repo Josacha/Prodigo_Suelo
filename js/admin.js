@@ -125,6 +125,48 @@ document.addEventListener("DOMContentLoaded", () => {
     listarProductos();
   };
 
+// =====================
+// EXPORTAR CLIENTES A EXCEL
+// =====================
+async function exportarClientesExcel() {
+  const snap = await getDocs(collection(db, "clientes"));
+  if (snap.empty) return alert("No hay clientes para exportar");
+
+  const datos = [];
+
+  snap.forEach(docSnap => {
+    const c = docSnap.data();
+    datos.push({
+      "ID Cliente": docSnap.id,
+      "Nombre": c.nombre || "",
+      "Teléfono": c.telefono || "",
+      "Dirección": c.direccion || "",
+      "Ubicación": c.ubicacion || "",
+      "Vendedor ID": c.vendedorId || ""
+    });
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(datos);
+
+  ws['!cols'] = [
+    { wch: 20 },
+    { wch: 20 },
+    { wch: 15 },
+    { wch: 30 },
+    { wch: 25 },
+    { wch: 20 }
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, "Clientes");
+  XLSX.writeFile(wb, "CLIENTES_PRODIGO_SUELO.xlsx");
+}
+
+  window.exportarClientesExcel = exportarClientesExcel;
+
+
+  
+
   // =====================
   // LISTAR PRODUCTOS
   // =====================
@@ -458,3 +500,4 @@ if(btnExportExcel) btnExportExcel.onclick = async () => {
 };
 
 }); // DOMContentLoaded
+
