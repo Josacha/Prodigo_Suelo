@@ -76,9 +76,14 @@
 
   <section>
     <h2>Clientes</h2>
-    <button id="btnExportarClientes" style="background-color: #27ae60; color: white; padding: 10px; margin-bottom: 15px; cursor: pointer; border: none; border-radius: 5px;">
-      <i class="fas fa-file-excel"></i> Exportar Reporte Clientes
-    </button>
+   <button 
+  id="btnExportarClientes"
+  onclick="exportarClientesExcel()"
+  style="background-color: #27ae60; color: white; padding: 10px; margin-bottom: 15px; cursor: pointer; border: none; border-radius: 5px;">
+  
+  <i class="fas fa-file-excel"></i> Exportar Reporte Clientes
+</button>
+
     <div id="clientesContainer" class="cards-container"></div>
   </section>
 
@@ -102,3 +107,4 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
+
