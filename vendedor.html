@@ -6,12 +6,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  
 </head>
 <body>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <h1>Vendedor – Pródigo Suelo</h1>
   <button id="logoutBtn">Cerrar sesión</button>
 
+   <section>
+<h2>Ruta de Entregas</h2>
+<div id="mapaRuta" style="height:500px; margin-top:15px;"></div>
+ </section>
+
+  
   <section>
     <h2>Agregar al carrito</h2>
 
@@ -73,3 +83,4 @@
   <script type="module" src="js/vendedor.js"></script>
 </body>
 </html>
+
