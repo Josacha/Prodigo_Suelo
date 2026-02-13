@@ -28,7 +28,8 @@ onAuthStateChanged(auth, async user => {
   await cargarClientes();
   cargarPedidos();
   cargarClientesFiltro();
-  
+  iniciarSistemaRuta();
+
   // INICIALIZAR BUSCADORES
   configurarBuscadorCoincidencia("buscarClienteInput", "clienteSelect");
   configurarBuscadorCoincidencia("buscarProductoInput", "productoSelect");
@@ -535,6 +536,7 @@ btnBuscarPedidos.onclick = async () => {
     resultadosPedidos.appendChild(card);
   });
 };
+
 
 
 
