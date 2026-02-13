@@ -162,10 +162,49 @@ function optimizarRuta(miLat, miLng, clientes) {
 
 
 
+// ================== ACTUALIZACIÓN DIARIA CLIENTES ==================
+async function actualizarClientesSiEsNuevoDia() {
+
+  const hoy = new Date().toISOString().split("T")[0];
+  const ultimaActualizacion = localStorage.getItem("clientesFechaActualizacion");
+
+  if (ultimaActualizacion === hoy) {
+    console.log("Clientes ya actualizados hoy");
+    return;
+  }
+
+  console.log("Actualizando clientes del día...");
+
+  const snap = await getDocs(collection(db, "clientes"));
+
+  const clientes = snap.docs
+    .map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }))
+    .filter(c => c.vendedorId === vendedorId && c.ubicacion);
+
+  localStorage.setItem("clientesCache", JSON.stringify(clientes));
+  localStorage.setItem("clientesFechaActualizacion", hoy);
+
+  console.log("Clientes guardados en cache");
+}
+
+// ================== OBTENER CLIENTES DESDE CACHE ==================
+function obtenerClientesDesdeCache() {
+  const data = localStorage.getItem("clientesCache");
+  return data ? JSON.parse(data) : [];
+}
+
+
 // =====================
 // MAPA + RUTA INTELIGENTE
 // =====================
 async function iniciarSistemaRuta() {
+
+  await actualizarClientesSiEsNuevoDia();
+
+  const clientes = obtenerClientesDesdeCache();
 
   const mapa = L.map("mapaRuta");
 
@@ -181,22 +220,15 @@ async function iniciarSistemaRuta() {
 
   const panel = document.getElementById("panelRuta");
 
-  // ================= ICONO VAN =================
   const iconoVan = L.icon({
-    iconUrl: "./imagenes/van.png", // 👈 asegúrate que la ruta sea correcta
+    iconUrl: "./imagenes/van.png",
     iconSize: [45, 45],
     iconAnchor: [22, 45],
     popupAnchor: [0, -40]
   });
 
-  // ================= ICONOS SIMPLES =================
   const iconoAzul = L.icon({
     iconUrl: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-    iconSize: [32, 32]
-  });
-
-  const iconoVerde = L.icon({
-    iconUrl: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
     iconSize: [32, 32]
   });
 
@@ -263,40 +295,8 @@ async function iniciarSistemaRuta() {
     }
   }
 
-  // ================= CARGAR ESTADOS =================
-  const snapVentas = await getDocs(
-    query(collection(db, "ventas"), where("vendedorId", "==", vendedorId))
-  );
-
-  const mapaEstado = {};
-
-  snapVentas.forEach(docSnap => {
-    const v = docSnap.data();
-    if (!v.cliente?.id || !v.fecha) return;
-
-    const fechaVenta = v.fecha.seconds
-      ? new Date(v.fecha.seconds * 1000)
-      : new Date(v.fecha);
-
-    if (
-      !mapaEstado[v.cliente.id] ||
-      fechaVenta > mapaEstado[v.cliente.id].fecha
-    ) {
-      mapaEstado[v.cliente.id] = {
-        estado: v.estado,
-        fecha: fechaVenta
-      };
-    }
-  });
-
-  // ================= CARGAR CLIENTES =================
-  const snapClientes = await getDocs(collection(db, "clientes"));
-
-  snapClientes.forEach(docSnap => {
-
-    const c = docSnap.data();
-    if (c.vendedorId !== vendedorId) return;
-    if (!c.ubicacion) return;
+  // ================== CARGAR CLIENTES DESDE CACHE ==================
+  clientes.forEach(c => {
 
     let lat, lng;
 
@@ -312,25 +312,20 @@ async function iniciarSistemaRuta() {
 
     if (!lat || !lng || isNaN(lat) || isNaN(lng)) return;
 
-    const estado = mapaEstado[docSnap.id]?.estado || "entrante";
-
-    // 🟢 Solo LISTO es verde
-    const iconoCliente = estado === "listo" ? iconoVerde : iconoAzul;
-
     const cliente = {
-      id: docSnap.id,
+      id: c.id,
       nombre: c.nombre,
       lat,
       lng
     };
 
     const marcador = L.marker([lat, lng], {
-      icon: iconoCliente
+      icon: iconoAzul
     }).addTo(mapa);
 
     marcador.on("click", async () => {
 
-      const index = clientesSeleccionados.findIndex(c => c.id === cliente.id);
+      const index = clientesSeleccionados.findIndex(cl => cl.id === cliente.id);
 
       if (index === -1) {
         clientesSeleccionados.push(cliente);
@@ -345,7 +340,7 @@ async function iniciarSistemaRuta() {
 
   });
 
-  // ================= GPS EN TIEMPO REAL =================
+  // ================== GPS EN TIEMPO REAL ==================
   navigator.geolocation.watchPosition(async (pos) => {
 
     miLat = pos.coords.latitude;
@@ -369,9 +364,7 @@ async function iniciarSistemaRuta() {
     await dibujarRuta();
 
   }, () => {
-
     alert("Activa el GPS para usar la ruta");
-
   }, {
     enableHighAccuracy: true
   });
@@ -379,28 +372,7 @@ async function iniciarSistemaRuta() {
 }
 
 
-
-
-
-// ================== MARCAR CLIENTE ENTREGADO ==================
-window.marcarEntregado = async (ventaId) => {
-
-  try {
-
-    await updateDoc(doc(db, "ventas", ventaId), {
-      estado: "entregado"
-    });
-
-    alert("✅ Pedido marcado como entregado");
-
-  } catch (error) {
-
-    console.error("Error al marcar entrega:", error);
-    alert("❌ Error al marcar entrega");
-
-  }
-
-};
+;
 
 
 
@@ -682,6 +654,7 @@ btnBuscarPedidos.onclick = async () => {
     resultadosPedidos.appendChild(card);
   });
 };
+
 
 
 
