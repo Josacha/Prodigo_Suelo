@@ -58,6 +58,110 @@ async function cargarProductos() {
   });
 }
 
+// =====================
+// MAPA + RUTA INTELIGENTE
+// =====================
+async function iniciarSistemaRuta() {
+
+  const snap = await getDocs(collection(db, "clientes"));
+  if (snap.empty) return;
+
+  const mapa = L.map("mapaRuta").setView([9.9281, -84.0907], 8);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap contributors"
+  }).addTo(mapa);
+
+  let marcadorVendedor;
+  let lineaRuta;
+
+  function calcularDistancia(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+
+    const a =
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1*Math.PI/180) *
+      Math.cos(lat2*Math.PI/180) *
+      Math.sin(dLon/2) *
+      Math.sin(dLon/2);
+
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  navigator.geolocation.watchPosition(async (pos) => {
+
+    const latActual = pos.coords.latitude;
+    const lngActual = pos.coords.longitude;
+
+    if (!marcadorVendedor) {
+      marcadorVendedor = L.marker([latActual, lngActual], {title:"Tu ubicación"})
+        .addTo(mapa)
+        .bindPopup("📍 Estás aquí");
+      mapa.setView([latActual, lngActual], 13);
+    } else {
+      marcadorVendedor.setLatLng([latActual, lngActual]);
+    }
+
+    let clientes = [];
+
+    snap.forEach(docSnap => {
+      const c = docSnap.data();
+      if (!c.ubicacion) return;
+
+      const [lat, lng] = c.ubicacion.split(",").map(v => parseFloat(v.trim()));
+      if (isNaN(lat) || isNaN(lng)) return;
+
+      const distancia = calcularDistancia(latActual, lngActual, lat, lng);
+
+      clientes.push({
+        nombre: c.nombre,
+        direccion: c.direccion,
+        lat,
+        lng,
+        distancia
+      });
+    });
+
+    clientes.sort((a,b) => a.distancia - b.distancia);
+
+    if (lineaRuta) mapa.removeLayer(lineaRuta);
+
+    const puntosRuta = [[latActual, lngActual]];
+
+    clientes.forEach(cliente => {
+      L.marker([cliente.lat, cliente.lng])
+        .addTo(mapa)
+        .bindPopup(`<strong>${cliente.nombre}</strong><br>${cliente.direccion || ""}<br>Dist: ${cliente.distancia.toFixed(2)} km`);
+
+      puntosRuta.push([cliente.lat, cliente.lng]);
+    });
+
+    lineaRuta = L.polyline(puntosRuta, {color: "green"}).addTo(mapa);
+
+  }, (err) => {
+    alert("Activa el GPS para usar la ruta");
+  }, {
+    enableHighAccuracy: true
+  });
+
+}
+
+iniciarSistemaRuta();
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ================== CARGAR CLIENTES ==================
 async function cargarClientes() {
   clienteSelect.innerHTML = "<option value=''>Seleccione cliente</option>";
@@ -335,3 +439,4 @@ btnBuscarPedidos.onclick = async () => {
     resultadosPedidos.appendChild(card);
   });
 };
+
