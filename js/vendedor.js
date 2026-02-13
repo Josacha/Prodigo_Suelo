@@ -29,6 +29,7 @@ onAuthStateChanged(auth, async user => {
   cargarPedidos();
   cargarClientesFiltro();
   iniciarSistemaRuta();
+  await activarPantallaSiempreEncendida(); 
 
   // INICIALIZAR BUSCADORES
   configurarBuscadorCoincidencia("buscarClienteInput", "clienteSelect");
@@ -218,6 +219,39 @@ async function iniciarSistemaRuta() {
   let clientesSeleccionados = [];
 
   const panel = document.getElementById("panelRuta");
+
+
+  // ================= No bloquera pantalla =================
+let wakeLock = null;
+
+async function activarPantallaSiempreEncendida() {
+
+  try {
+
+    if ('wakeLock' in navigator) {
+
+      wakeLock = await navigator.wakeLock.request('screen');
+
+      console.log("Pantalla bloqueada (no se apagará)");
+
+      wakeLock.addEventListener('release', () => {
+        console.log("Wake Lock liberado");
+      });
+
+    } else {
+
+      console.log("Wake Lock no soportado en este dispositivo");
+
+    }
+
+  } catch (err) {
+
+    console.error("Error activando Wake Lock:", err);
+
+  }
+
+}
+  
 
   // ================= ICONOS =================
   const iconoVan = L.icon({
@@ -682,6 +716,7 @@ btnBuscarPedidos.onclick = async () => {
     resultadosPedidos.appendChild(card);
   });
 };
+
 
 
 
