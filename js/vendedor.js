@@ -59,6 +59,69 @@ async function cargarProductos() {
 }
 
 // =====================
+// Calcular Distancia
+// =====================
+
+function calcularDistancia(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) *
+    Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
+
+function optimizarRuta(miLat, miLng, clientes) {
+
+  let rutaOrdenada = [];
+  let pendientes = [...clientes];
+
+  let latActual = miLat;
+  let lngActual = miLng;
+
+  while (pendientes.length > 0) {
+
+    let menorDistancia = Infinity;
+    let indiceMasCercano = 0;
+
+    pendientes.forEach((cliente, index) => {
+
+      const distancia = calcularDistancia(
+        latActual,
+        lngActual,
+        cliente.lat,
+        cliente.lng
+      );
+
+      if (distancia < menorDistancia) {
+        menorDistancia = distancia;
+        indiceMasCercano = index;
+      }
+
+    });
+
+    const siguiente = pendientes.splice(indiceMasCercano, 1)[0];
+
+    rutaOrdenada.push(siguiente);
+
+    latActual = siguiente.lat;
+    lngActual = siguiente.lng;
+  }
+
+  return rutaOrdenada;
+}
+
+
+
+
+// =====================
 // MAPA + RUTA INTELIGENTE
 // =====================
 async function iniciarSistemaRuta() {
@@ -70,58 +133,8 @@ async function iniciarSistemaRuta() {
   }).addTo(mapa);
 
   let marcadorVendedor;
-  let lineaRuta;
   let marcadoresClientes = [];
-
-  function calcularDistancia(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-
-    const a =
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1*Math.PI/180) *
-      Math.cos(lat2*Math.PI/180) *
-      Math.sin(dLon/2) *
-      Math.sin(dLon/2);
-
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  }
-
-  function optimizarRuta(latInicial, lngInicial, clientes) {
-
-    let rutaOrdenada = [];
-    let actualLat = latInicial;
-    let actualLng = lngInicial;
-
-    while (clientes.length > 0) {
-
-      let masCercanoIndex = 0;
-      let menorDistancia = Infinity;
-
-      clientes.forEach((cliente, index) => {
-        const distancia = calcularDistancia(
-          actualLat,
-          actualLng,
-          cliente.lat,
-          cliente.lng
-        );
-
-        if (distancia < menorDistancia) {
-          menorDistancia = distancia;
-          masCercanoIndex = index;
-        }
-      });
-
-      const siguiente = clientes.splice(masCercanoIndex, 1)[0];
-
-      rutaOrdenada.push(siguiente);
-      actualLat = siguiente.lat;
-      actualLng = siguiente.lng;
-    }
-
-    return rutaOrdenada;
-  }
+  let lineaRuta;
 
   navigator.geolocation.watchPosition(async (pos) => {
 
@@ -129,7 +142,7 @@ async function iniciarSistemaRuta() {
     const lngActual = pos.coords.longitude;
 
     if (!marcadorVendedor) {
-      marcadorVendedor = L.marker([latActual, lngActual], { title: "Tu ubicación" })
+      marcadorVendedor = L.marker([latActual, lngActual])
         .addTo(mapa)
         .bindPopup("📍 Estás aquí");
       mapa.setView([latActual, lngActual], 13);
@@ -137,13 +150,19 @@ async function iniciarSistemaRuta() {
       marcadorVendedor.setLatLng([latActual, lngActual]);
     }
 
-    // 🔥 AHORA SÍ se actualiza cada vez
-    const snap = await getDocs(collection(db, "clientes"));
+    const snapClientes = await getDocs(collection(db, "clientes"));
+    const snapVentas = await getDocs(collection(db, "ventas"));
 
-    let clientesPendientes = [];
-    let clientesEntregados = [];
+    marcadoresClientes.forEach(m => mapa.removeLayer(m));
+    marcadoresClientes = [];
 
-    snap.forEach(docSnap => {
+    if (lineaRuta) {
+      mapa.removeLayer(lineaRuta);
+    }
+
+    const clientesParaRuta = [];
+
+    snapClientes.forEach(docSnap => {
 
       const c = docSnap.data();
       if (!c.ubicacion) return;
@@ -151,75 +170,58 @@ async function iniciarSistemaRuta() {
       const [lat, lng] = c.ubicacion.split(",").map(v => parseFloat(v.trim()));
       if (isNaN(lat) || isNaN(lng)) return;
 
-      const clienteObj = {
-        id: docSnap.id,
-        nombre: c.nombre,
-        direccion: c.direccion,
-        lat,
-        lng,
-        entregado: c.entregado || false
-      };
+      let estadoFinal = "sinVenta";
+      let ventaId = null;
 
-      if (clienteObj.entregado) {
-        clientesEntregados.push(clienteObj);
-      } else {
-        clientesPendientes.push(clienteObj);
+      snapVentas.forEach(ventaSnap => {
+
+        const venta = ventaSnap.data();
+
+        if (
+          venta.cliente?.id === docSnap.id &&
+          venta.vendedorId === vendedorId
+        ) {
+          estadoFinal = venta.estado;
+          ventaId = ventaSnap.id;
+        }
+
+      });
+
+      if (estadoFinal === "listo") {
+        clientesParaRuta.push({
+          id: docSnap.id,
+          nombre: c.nombre,
+          lat: lat,
+          lng: lng
+        });
       }
-    });
 
-    // Optimizar solo pendientes
-    const rutaOptimizada = optimizarRuta(latActual, lngActual, clientesPendientes);
-
-    // Limpiar marcadores anteriores
-    marcadoresClientes.forEach(m => mapa.removeLayer(m));
-    marcadoresClientes = [];
-
-    if (lineaRuta) mapa.removeLayer(lineaRuta);
-
-    const iconoPendiente = L.icon({
-      iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-      iconSize: [32, 32]
-    });
-
-    const iconoEntregado = L.icon({
-      iconUrl: "https://maps.google.com/mapfiles/ms/icons/grey-dot.png",
-      iconSize: [32, 32]
-    });
-
-    const puntosRuta = [[latActual, lngActual]];
-
-    // Dibujar pendientes
-    rutaOptimizada.forEach(cliente => {
-
-      const marcador = L.marker([cliente.lat, cliente.lng], { icon: iconoPendiente })
+      const marcador = L.marker([lat, lng])
         .addTo(mapa)
-        .bindPopup(`
-          <strong>${cliente.nombre}</strong><br>
-          ${cliente.direccion || ""}<br><br>
-          <button onclick="marcarEntregado('${cliente.id}')">
-            ✔ Marcar entregado
-          </button>
-        `);
+        .bindPopup(`<strong>${c.nombre}</strong><br>Estado: ${estadoFinal}`);
 
       marcadoresClientes.push(marcador);
-      puntosRuta.push([cliente.lat, cliente.lng]);
+
     });
 
-    // Dibujar entregados en gris
-    clientesEntregados.forEach(cliente => {
+    // 🔥 OPTIMIZAR RUTA
+    if (clientesParaRuta.length > 0) {
 
-      const marcador = L.marker([cliente.lat, cliente.lng], { icon: iconoEntregado })
-        .addTo(mapa)
-        .bindPopup(`
-          <strong>${cliente.nombre}</strong><br>
-          ✅ Entregado
-        `);
+      const rutaOptimizada = optimizarRuta(
+        latActual,
+        lngActual,
+        clientesParaRuta
+      );
 
-      marcadoresClientes.push(marcador);
-    });
+      const puntosLinea = [
+        [latActual, lngActual],
+        ...rutaOptimizada.map(c => [c.lat, c.lng])
+      ];
 
-    if (puntosRuta.length > 1) {
-      lineaRuta = L.polyline(puntosRuta, { color: "green" }).addTo(mapa);
+      lineaRuta = L.polyline(puntosLinea).addTo(mapa);
+
+      console.log("Orden recomendado:", rutaOptimizada);
+
     }
 
   }, (err) => {
@@ -230,22 +232,19 @@ async function iniciarSistemaRuta() {
 
 }
 
-iniciarSistemaRuta();
-
 
 
 
 // ================== MARCAR CLIENTE ENTREGADO ==================
-window.marcarEntregado = async (idCliente) => {
+window.marcarEntregado = async (ventaId) => {
 
   try {
 
-    await updateDoc(doc(db, "clientes", idCliente), {
-      entregado: true,
-      fechaEntrega: Timestamp.now()
+    await updateDoc(doc(db, "ventas", ventaId), {
+      estado: "entregado"
     });
 
-    alert("✅ Cliente marcado como entregado");
+    alert("✅ Pedido marcado como entregado");
 
   } catch (error) {
 
@@ -255,8 +254,6 @@ window.marcarEntregado = async (idCliente) => {
   }
 
 };
-
-
 
 
 
@@ -538,5 +535,6 @@ btnBuscarPedidos.onclick = async () => {
     resultadosPedidos.appendChild(card);
   });
 };
+
 
 
