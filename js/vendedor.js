@@ -203,7 +203,6 @@ function obtenerClientesDesdeCache() {
 async function iniciarSistemaRuta() {
 
   await actualizarClientesSiEsNuevoDia();
-
   const clientes = obtenerClientesDesdeCache();
 
   const mapa = L.map("mapaRuta");
@@ -220,6 +219,7 @@ async function iniciarSistemaRuta() {
 
   const panel = document.getElementById("panelRuta");
 
+  // ================= ICONOS =================
   const iconoVan = L.icon({
     iconUrl: "./imagenes/van.png",
     iconSize: [45, 45],
@@ -232,9 +232,51 @@ async function iniciarSistemaRuta() {
     iconSize: [32, 32]
   });
 
+  // ================== SEGUIMIENTO ON/OFF ==================
+  let seguimientoActivo = true;
+  let estoyMoviendoMapaConDedo = false;
+
+  // Si el usuario mueve el mapa, se desactiva el seguimiento
+  mapa.on("dragstart", () => {
+    estoyMoviendoMapaConDedo = true;
+    seguimientoActivo = false;
+  });
+  mapa.on("zoomstart", () => {
+    estoyMoviendoMapaConDedo = true;
+    seguimientoActivo = false;
+  });
+  mapa.on("dragend", () => setTimeout(() => (estoyMoviendoMapaConDedo = false), 250));
+  mapa.on("zoomend", () => setTimeout(() => (estoyMoviendoMapaConDedo = false), 250));
+
+  // Botón para centrar y volver a seguir
+  const controlSeguir = L.control({ position: "topleft" });
+  controlSeguir.onAdd = function () {
+    const div = L.DomUtil.create("div", "leaflet-bar");
+    div.style.background = "#fff";
+    div.style.borderRadius = "8px";
+    div.style.padding = "6px";
+    div.style.boxShadow = "0 2px 8px rgba(0,0,0,.25)";
+    div.style.cursor = "pointer";
+    div.title = "Centrar y seguir mi ubicación";
+    div.innerHTML = "📍 Seguir";
+
+    // Evita que al tocar el botón también se arrastre el mapa
+    L.DomEvent.disableClickPropagation(div);
+
+    div.onclick = () => {
+      seguimientoActivo = true;
+      if (miLat && miLng) {
+        mapa.setView([miLat, miLng], Math.max(mapa.getZoom(), 15), { animate: true });
+      }
+    };
+
+    return div;
+  };
+  controlSeguir.addTo(mapa);
+
+  // ================= PANEL =================
   function actualizarPanel(datos) {
     if (!panel) return;
-
     panel.innerHTML = `
       <strong>Siguiente parada:</strong><br>
       📍 ${(datos.distSiguiente / 1000).toFixed(2)} km<br>
@@ -245,8 +287,8 @@ async function iniciarSistemaRuta() {
     `;
   }
 
+  // ================= RUTA =================
   async function dibujarRuta() {
-
     if (!miLat || clientesSeleccionados.length === 0) {
       if (lineaRuta) mapa.removeLayer(lineaRuta);
       if (panel) panel.innerHTML = "Sin ruta activa";
@@ -258,30 +300,24 @@ async function iniciarSistemaRuta() {
       ...clientesSeleccionados.map(c => [c.lat, c.lng])
     ];
 
-    const coordenadas = puntos
-      .map(p => `${p[1]},${p[0]}`)
-      .join(";");
-
+    const coordenadas = puntos.map(p => `${p[1]},${p[0]}`).join(";");
     const url = `https://router.project-osrm.org/route/v1/driving/${coordenadas}?overview=full&geometries=geojson`;
 
     try {
-
       const respuesta = await fetch(url);
       const data = await respuesta.json();
-
       if (!data.routes || data.routes.length === 0) return;
 
       if (lineaRuta) mapa.removeLayer(lineaRuta);
 
       const ruta = data.routes[0];
-
       lineaRuta = L.geoJSON(ruta.geometry, {
         style: { color: "lime", weight: 6 }
       }).addTo(mapa);
 
       const distTotal = ruta.distance;
       const tiempoTotal = ruta.duration;
-      const primerLeg = ruta.legs[0];
+      const primerLeg = ruta.legs?.[0] || { distance: 0, duration: 0 };
 
       actualizarPanel({
         distTotal,
@@ -295,9 +331,8 @@ async function iniciarSistemaRuta() {
     }
   }
 
-  // ================== CARGAR CLIENTES DESDE CACHE ==================
+  // ================= CLIENTES =================
   clientes.forEach(c => {
-
     let lat, lng;
 
     if (typeof c.ubicacion === "string") {
@@ -312,26 +347,18 @@ async function iniciarSistemaRuta() {
 
     if (!lat || !lng || isNaN(lat) || isNaN(lng)) return;
 
-    const cliente = {
-      id: c.id,
-      nombre: c.nombre,
-      lat,
-      lng
-    };
+    const cliente = { id: c.id, nombre: c.nombre, lat, lng };
 
-   const marcador = L.marker([lat, lng], {
-  icon: iconoAzul
-}).addTo(mapa)
-  .bindTooltip(c.nombre, {
-    permanent: true,
-    direction: "top",
-    offset: [0, -20],
-    className: "tooltip-cliente"
-  });
-
+    const marcador = L.marker([lat, lng], { icon: iconoAzul })
+      .addTo(mapa)
+      .bindTooltip(c.nombre, {
+        permanent: true,
+        direction: "top",
+        offset: [0, -20],
+        className: "tooltip-cliente"
+      });
 
     marcador.on("click", async () => {
-
       const index = clientesSeleccionados.findIndex(cl => cl.id === cliente.id);
 
       if (index === -1) {
@@ -344,43 +371,37 @@ async function iniciarSistemaRuta() {
 
       await dibujarRuta();
     });
-
   });
 
-  // ================== GPS EN TIEMPO REAL ==================
+  // ================= GPS EN TIEMPO REAL =================
   navigator.geolocation.watchPosition(async (pos) => {
 
     miLat = pos.coords.latitude;
     miLng = pos.coords.longitude;
 
     if (!marcadorVendedor) {
+      marcadorVendedor = L.marker([miLat, miLng], { icon: iconoVan }).addTo(mapa);
 
-      marcadorVendedor = L.marker([miLat, miLng], {
-        icon: iconoVan
-      }).addTo(mapa);
-
+      // primera vez: sí centramos
       mapa.setView([miLat, miLng], 15);
 
     } else {
-
       marcadorVendedor.setLatLng([miLat, miLng]);
-      mapa.panTo([miLat, miLng]);
 
+      // ✅ SOLO centramos si el seguimiento está activo
+      // y el usuario NO está moviendo el mapa manualmente
+      if (seguimientoActivo && !estoyMoviendoMapaConDedo) {
+        mapa.panTo([miLat, miLng], { animate: true });
+      }
     }
 
     await dibujarRuta();
 
   }, () => {
     alert("Activa el GPS para usar la ruta");
-  }, {
-    enableHighAccuracy: true
-  });
+  }, { enableHighAccuracy: true });
 
 }
-
-
-;
-
 
 
 
@@ -661,6 +682,7 @@ btnBuscarPedidos.onclick = async () => {
     resultadosPedidos.appendChild(card);
   });
 };
+
 
 
 
