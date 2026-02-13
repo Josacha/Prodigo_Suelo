@@ -167,33 +167,27 @@ function optimizarRuta(miLat, miLng, clientes) {
 // =====================
 async function iniciarSistemaRuta() {
 
-  const mapa = L.map("mapaRuta").setView([9.9281, -84.0907], 8);
+  const mapa = L.map("mapaRuta").setView([9.9281, -84.0907], 13);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap contributors"
   }).addTo(mapa);
 
   let marcadorVendedor;
-  let marcadoresClientes = [];
   let lineaRuta;
   let miLat = null;
   let miLng = null;
-  let clientesListosGlobal = [];
 
-  // ================= ICONOS =================
+  let clientesSeleccionados = [];
+  let todosLosClientes = [];
 
   const iconoNormal = L.icon({
     iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
     iconSize: [32, 32]
   });
 
-  const iconoListo = L.icon({
+  const iconoSeleccionado = L.icon({
     iconUrl: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
-    iconSize: [32, 32]
-  });
-
-  const iconoMasCercano = L.icon({
-    iconUrl: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
     iconSize: [32, 32]
   });
 
@@ -203,13 +197,39 @@ async function iniciarSistemaRuta() {
     iconAnchor: [22, 45]
   });
 
-  // ================= RUTA REAL =================
+  // ====== CONTENEDOR INFO ======
+  const infoRuta = L.control({ position: "bottomleft" });
 
-  async function dibujarRutaReal(puntos) {
+  infoRuta.onAdd = function () {
+    this._div = L.DomUtil.create("div", "infoRuta");
+    this._div.style.background = "white";
+    this._div.style.padding = "8px";
+    this._div.style.borderRadius = "8px";
+    this._div.innerHTML = "Sin ruta";
+    return this._div;
+  };
 
-    if (!miLat || !miLng) return;
+  infoRuta.addTo(mapa);
 
-    if (lineaRuta) mapa.removeLayer(lineaRuta);
+  function actualizarInfo(distancia, tiempo) {
+    infoRuta._div.innerHTML =
+      `<strong>Distancia:</strong> ${(distancia / 1000).toFixed(2)} km<br>
+       <strong>Tiempo:</strong> ${(tiempo / 60).toFixed(0)} min`;
+  }
+
+  // ====== RUTA REAL OSRM ======
+  async function dibujarRuta() {
+
+    if (!miLat || clientesSeleccionados.length === 0) {
+      if (lineaRuta) mapa.removeLayer(lineaRuta);
+      infoRuta._div.innerHTML = "Sin ruta";
+      return;
+    }
+
+    const puntos = [
+      [miLat, miLng],
+      ...clientesSeleccionados.map(c => [c.lat, c.lng])
+    ];
 
     const coordenadas = puntos
       .map(p => `${p[1]},${p[0]}`)
@@ -217,144 +237,64 @@ async function iniciarSistemaRuta() {
 
     const url = `https://router.project-osrm.org/route/v1/driving/${coordenadas}?overview=full&geometries=geojson`;
 
-    try {
+    const respuesta = await fetch(url);
+    const data = await respuesta.json();
 
-      const res = await fetch(url);
-      const data = await res.json();
+    if (!data.routes || data.routes.length === 0) return;
 
-      if (!data.routes || data.routes.length === 0) return;
+    if (lineaRuta) mapa.removeLayer(lineaRuta);
 
-      const ruta = data.routes[0];
+    const ruta = data.routes[0];
 
-      lineaRuta = L.geoJSON(ruta.geometry, {
-        style: { color: "green", weight: 5 }
-      }).addTo(mapa);
+    lineaRuta = L.geoJSON(ruta.geometry, {
+      style: { color: "green", weight: 5 }
+    }).addTo(mapa);
 
-      const km = (ruta.distance / 1000).toFixed(2);
-      const minutos = (ruta.duration / 60).toFixed(0);
-
-      console.log(`🚗 ${km} km | ⏱ ${minutos} min`);
-
-      // Puedes mostrarlo en un div si quieres
-      const infoRuta = document.getElementById("infoRuta");
-      if (infoRuta) {
-        infoRuta.innerHTML = `🚗 ${km} km | ⏱ ${minutos} min`;
-      }
-
-    } catch (err) {
-      console.error("Error OSRM:", err);
-    }
+    actualizarInfo(ruta.distance, ruta.duration);
   }
 
-  // ================= RECALCULAR RUTA AUTOMÁTICA =================
+  // ====== CARGAR CLIENTES ======
+  const snapClientes = await getDocs(collection(db, "clientes"));
 
-  async function recalcularRutaOptimizada() {
+  snapClientes.forEach(docSnap => {
 
-    if (!miLat || !miLng) return;
-    if (clientesListosGlobal.length === 0) return;
+    const c = docSnap.data();
+    if (!c.ubicacion) return;
 
-    const rutaOrdenada = optimizarRuta(miLat, miLng, clientesListosGlobal);
+    const [lat, lng] = c.ubicacion.split(",").map(v => parseFloat(v.trim()));
+    if (isNaN(lat) || isNaN(lng)) return;
 
-    const masCercano = rutaOrdenada[0];
+    const cliente = {
+      id: docSnap.id,
+      nombre: c.nombre,
+      lat,
+      lng
+    };
 
-    marcadoresClientes.forEach(m => {
-      const pos = m.getLatLng();
-      if (pos.lat === masCercano.lat && pos.lng === masCercano.lng) {
-        m.setIcon(iconoMasCercano);
+    todosLosClientes.push(cliente);
+
+    const marcador = L.marker([lat, lng], { icon: iconoNormal })
+      .addTo(mapa)
+      .bindPopup(`<strong>${c.nombre}</strong>`);
+
+    marcador.on("click", async () => {
+
+      const index = clientesSeleccionados.findIndex(cl => cl.id === cliente.id);
+
+      if (index === -1) {
+        clientesSeleccionados.push(cliente);
+        marcador.setIcon(iconoSeleccionado);
+      } else {
+        clientesSeleccionados.splice(index, 1);
+        marcador.setIcon(iconoNormal);
       }
+
+      await dibujarRuta();
     });
 
-    const puntos = [
-      [miLat, miLng],
-      ...rutaOrdenada.map(c => [c.lat, c.lng])
-    ];
+  });
 
-    await dibujarRutaReal(puntos);
-  }
-
-  // ================= ESCUCHAR VENTAS =================
-
-  onSnapshot(
-    query(collection(db, "ventas"), where("vendedorId", "==", vendedorId)),
-    async (snapVentas) => {
-
-      if (!miLat || !miLng) return;
-
-      const snapClientes = await getDocs(collection(db, "clientes"));
-
-      marcadoresClientes.forEach(m => mapa.removeLayer(m));
-      marcadoresClientes = [];
-
-      const mapaUltimaVenta = {};
-      clientesListosGlobal = [];
-
-      snapVentas.forEach(docSnap => {
-
-        const venta = docSnap.data();
-        const clienteId = venta.cliente?.id;
-
-        if (!clienteId) return;
-
-        if (
-          !mapaUltimaVenta[clienteId] ||
-          venta.fecha.toDate() > mapaUltimaVenta[clienteId].fecha
-        ) {
-          mapaUltimaVenta[clienteId] = {
-            estado: venta.estado,
-            fecha: venta.fecha.toDate()
-          };
-        }
-
-      });
-
-      snapClientes.forEach(docSnap => {
-
-        const c = docSnap.data();
-
-        if (c.vendedorId !== vendedorId) return;
-        if (!c.ubicacion) return;
-
-        const [lat, lng] = c.ubicacion.split(",").map(v => parseFloat(v.trim()));
-        if (isNaN(lat) || isNaN(lng)) return;
-
-        const ventaInfo = mapaUltimaVenta[docSnap.id];
-        const estadoFinal = ventaInfo ? ventaInfo.estado : "sinVenta";
-
-        let iconoUsar = iconoNormal;
-
-        if (estadoFinal === "listo") {
-          clientesListosGlobal.push({
-            id: docSnap.id,
-            nombre: c.nombre,
-            lat,
-            lng
-          });
-          iconoUsar = iconoListo;
-        }
-
-        const marcador = L.marker([lat, lng], { icon: iconoUsar })
-          .addTo(mapa)
-          .bindPopup(`<strong>${c.nombre}</strong><br>Estado: ${estadoFinal}`);
-
-        // 🔥 SI HACES CLICK EN EL CLIENTE → RUTA DIRECTA
-        marcador.on("click", async () => {
-          await dibujarRutaReal([
-            [miLat, miLng],
-            [lat, lng]
-          ]);
-        });
-
-        marcadoresClientes.push(marcador);
-
-      });
-
-      await recalcularRutaOptimizada();
-
-    }
-  );
-
-  // ================= GPS =================
-
+  // ====== GPS Y SEGUIMIENTO ======
   navigator.geolocation.watchPosition(async (pos) => {
 
     miLat = pos.coords.latitude;
@@ -363,19 +303,21 @@ async function iniciarSistemaRuta() {
     if (!marcadorVendedor) {
 
       marcadorVendedor = L.marker([miLat, miLng], { icon: iconoVan })
-        .addTo(mapa)
-        .bindPopup("🚐 Ruta de reparto");
+        .addTo(mapa);
 
-      mapa.setView([miLat, miLng], 13);
+      mapa.setView([miLat, miLng], 15);
 
     } else {
 
       marcadorVendedor.setLatLng([miLat, miLng]);
 
+      // 👇 EL MAPA TE SIGUE AUTOMÁTICAMENTE
+      mapa.panTo([miLat, miLng]);
+
     }
 
-    // 🔥 RECALCULA CADA VEZ QUE TE MUEVES
-    await recalcularRutaOptimizada();
+    // 👇 RECALCULA RUTA AL MOVERTE
+    await dibujarRuta();
 
   }, () => {
 
@@ -386,9 +328,6 @@ async function iniciarSistemaRuta() {
   });
 
 }
-
-
-
 
 
 
@@ -692,6 +631,7 @@ btnBuscarPedidos.onclick = async () => {
     resultadosPedidos.appendChild(card);
   });
 };
+
 
 
 
