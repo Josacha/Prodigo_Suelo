@@ -178,6 +178,7 @@ async function iniciarSistemaRuta() {
   let lineaRuta;
   let miLat = null;
   let miLng = null;
+  let clientesListosGlobal = [];
 
   // ================= ICONOS =================
 
@@ -197,42 +198,78 @@ async function iniciarSistemaRuta() {
   });
 
   const iconoVan = L.icon({
-    iconUrl: "imagenes/van.png", // 👈 asegúrate que exista
+    iconUrl: "imagenes/van.png",
     iconSize: [45, 45],
     iconAnchor: [22, 45]
   });
 
-  // ================= FUNCIÓN RUTA REAL =================
+  // ================= RUTA REAL =================
 
   async function dibujarRutaReal(puntos) {
+
+    if (!miLat || !miLng) return;
 
     if (lineaRuta) mapa.removeLayer(lineaRuta);
 
     const coordenadas = puntos
-      .map(p => `${p[1]},${p[0]}`) // OSRM usa lng,lat
+      .map(p => `${p[1]},${p[0]}`)
       .join(";");
 
     const url = `https://router.project-osrm.org/route/v1/driving/${coordenadas}?overview=full&geometries=geojson`;
 
     try {
 
-      const respuesta = await fetch(url);
-      const data = await respuesta.json();
+      const res = await fetch(url);
+      const data = await res.json();
 
       if (!data.routes || data.routes.length === 0) return;
 
       const ruta = data.routes[0];
 
       lineaRuta = L.geoJSON(ruta.geometry, {
-        style: {
-          color: "green",
-          weight: 5
-        }
+        style: { color: "green", weight: 5 }
       }).addTo(mapa);
 
-    } catch (error) {
-      console.error("Error calculando ruta real:", error);
+      const km = (ruta.distance / 1000).toFixed(2);
+      const minutos = (ruta.duration / 60).toFixed(0);
+
+      console.log(`🚗 ${km} km | ⏱ ${minutos} min`);
+
+      // Puedes mostrarlo en un div si quieres
+      const infoRuta = document.getElementById("infoRuta");
+      if (infoRuta) {
+        infoRuta.innerHTML = `🚗 ${km} km | ⏱ ${minutos} min`;
+      }
+
+    } catch (err) {
+      console.error("Error OSRM:", err);
     }
+  }
+
+  // ================= RECALCULAR RUTA AUTOMÁTICA =================
+
+  async function recalcularRutaOptimizada() {
+
+    if (!miLat || !miLng) return;
+    if (clientesListosGlobal.length === 0) return;
+
+    const rutaOrdenada = optimizarRuta(miLat, miLng, clientesListosGlobal);
+
+    const masCercano = rutaOrdenada[0];
+
+    marcadoresClientes.forEach(m => {
+      const pos = m.getLatLng();
+      if (pos.lat === masCercano.lat && pos.lng === masCercano.lng) {
+        m.setIcon(iconoMasCercano);
+      }
+    });
+
+    const puntos = [
+      [miLat, miLng],
+      ...rutaOrdenada.map(c => [c.lat, c.lng])
+    ];
+
+    await dibujarRutaReal(puntos);
   }
 
   // ================= ESCUCHAR VENTAS =================
@@ -249,6 +286,7 @@ async function iniciarSistemaRuta() {
       marcadoresClientes = [];
 
       const mapaUltimaVenta = {};
+      clientesListosGlobal = [];
 
       snapVentas.forEach(docSnap => {
 
@@ -269,8 +307,6 @@ async function iniciarSistemaRuta() {
 
       });
 
-      const clientesListos = [];
-
       snapClientes.forEach(docSnap => {
 
         const c = docSnap.data();
@@ -287,7 +323,7 @@ async function iniciarSistemaRuta() {
         let iconoUsar = iconoNormal;
 
         if (estadoFinal === "listo") {
-          clientesListos.push({
+          clientesListosGlobal.push({
             id: docSnap.id,
             nombre: c.nombre,
             lat,
@@ -300,40 +336,26 @@ async function iniciarSistemaRuta() {
           .addTo(mapa)
           .bindPopup(`<strong>${c.nombre}</strong><br>Estado: ${estadoFinal}`);
 
+        // 🔥 SI HACES CLICK EN EL CLIENTE → RUTA DIRECTA
+        marcador.on("click", async () => {
+          await dibujarRutaReal([
+            [miLat, miLng],
+            [lat, lng]
+          ]);
+        });
+
         marcadoresClientes.push(marcador);
 
       });
 
-      // ================= OPTIMIZAR + RUTA REAL =================
-
-      if (clientesListos.length > 0) {
-
-        const rutaOrdenada = optimizarRuta(miLat, miLng, clientesListos);
-
-        // Marcar el más cercano azul
-        const masCercano = rutaOrdenada[0];
-
-        marcadoresClientes.forEach(m => {
-          const pos = m.getLatLng();
-          if (pos.lat === masCercano.lat && pos.lng === masCercano.lng) {
-            m.setIcon(iconoMasCercano);
-          }
-        });
-
-        const puntos = [
-          [miLat, miLng],
-          ...rutaOrdenada.map(c => [c.lat, c.lng])
-        ];
-
-        await dibujarRutaReal(puntos);
-      }
+      await recalcularRutaOptimizada();
 
     }
   );
 
   // ================= GPS =================
 
-  navigator.geolocation.watchPosition((pos) => {
+  navigator.geolocation.watchPosition(async (pos) => {
 
     miLat = pos.coords.latitude;
     miLng = pos.coords.longitude;
@@ -352,9 +374,12 @@ async function iniciarSistemaRuta() {
 
     }
 
+    // 🔥 RECALCULA CADA VEZ QUE TE MUEVES
+    await recalcularRutaOptimizada();
+
   }, () => {
 
-    alert("Activa el GPS para usar la ruta");
+    alert("Activa el GPS");
 
   }, {
     enableHighAccuracy: true
@@ -667,6 +692,7 @@ btnBuscarPedidos.onclick = async () => {
     resultadosPedidos.appendChild(card);
   });
 };
+
 
 
 
