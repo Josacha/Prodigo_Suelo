@@ -136,97 +136,108 @@ async function iniciarSistemaRuta() {
   let marcadorVendedor;
   let marcadoresClientes = [];
   let lineaRuta;
+  let miLat = null;
+  let miLng = null;
 
-  navigator.geolocation.watchPosition(async (pos) => {
+  // 🔥 Escuchar ventas en tiempo real
+  onSnapshot(
+    query(collection(db, "ventas"), where("vendedorId", "==", vendedorId)),
+    async (snapVentas) => {
 
-    const latActual = pos.coords.latitude;
-    const lngActual = pos.coords.longitude;
+      if (!miLat || !miLng) return;
 
-    if (!marcadorVendedor) {
-      marcadorVendedor = L.marker([latActual, lngActual])
-        .addTo(mapa)
-        .bindPopup("📍 Estás aquí");
-      mapa.setView([latActual, lngActual], 13);
-    } else {
-      marcadorVendedor.setLatLng([latActual, lngActual]);
-    }
+      const snapClientes = await getDocs(collection(db, "clientes"));
 
-    const snapClientes = await getDocs(collection(db, "clientes"));
-    const snapVentas = await getDocs(collection(db, "ventas"));
+      marcadoresClientes.forEach(m => mapa.removeLayer(m));
+      marcadoresClientes = [];
 
-    marcadoresClientes.forEach(m => mapa.removeLayer(m));
-    marcadoresClientes = [];
+      if (lineaRuta) mapa.removeLayer(lineaRuta);
 
-    if (lineaRuta) {
-      mapa.removeLayer(lineaRuta);
-    }
+      const mapaUltimaVentaPorCliente = {};
 
-    const clientesParaRuta = [];
+      // 🔥 Obtener última venta por cliente
+      snapVentas.forEach(docSnap => {
+        const venta = docSnap.data();
+        const clienteId = venta.cliente?.id;
 
-    snapClientes.forEach(docSnap => {
-
-      const c = docSnap.data();
-      if (!c.ubicacion) return;
-
-      const [lat, lng] = c.ubicacion.split(",").map(v => parseFloat(v.trim()));
-      if (isNaN(lat) || isNaN(lng)) return;
-
-      let estadoFinal = "sinVenta";
-      let ventaId = null;
-
-      snapVentas.forEach(ventaSnap => {
-
-        const venta = ventaSnap.data();
+        if (!clienteId) return;
 
         if (
-          venta.cliente?.id === docSnap.id &&
-          venta.vendedorId === vendedorId
+          !mapaUltimaVentaPorCliente[clienteId] ||
+          venta.fecha.toDate() > mapaUltimaVentaPorCliente[clienteId].fecha
         ) {
-          estadoFinal = venta.estado;
-          ventaId = ventaSnap.id;
+          mapaUltimaVentaPorCliente[clienteId] = {
+            estado: venta.estado,
+            fecha: venta.fecha.toDate()
+          };
         }
-
       });
 
-      if (estadoFinal === "listo") {
-        clientesParaRuta.push({
-          id: docSnap.id,
-          nombre: c.nombre,
-          lat: lat,
-          lng: lng
-        });
+      const clientesParaRuta = [];
+
+      snapClientes.forEach(docSnap => {
+
+        const c = docSnap.data();
+        if (!c.ubicacion) return;
+
+        const [lat, lng] = c.ubicacion.split(",").map(v => parseFloat(v.trim()));
+        if (isNaN(lat) || isNaN(lng)) return;
+
+        const ventaInfo = mapaUltimaVentaPorCliente[docSnap.id];
+        const estadoFinal = ventaInfo ? ventaInfo.estado : "sinVenta";
+
+        if (estadoFinal === "listo") {
+          clientesParaRuta.push({
+            id: docSnap.id,
+            nombre: c.nombre,
+            lat,
+            lng
+          });
+        }
+
+        const marcador = L.marker([lat, lng])
+          .addTo(mapa)
+          .bindPopup(`<strong>${c.nombre}</strong><br>Estado: ${estadoFinal}`);
+
+        marcadoresClientes.push(marcador);
+      });
+
+      if (clientesParaRuta.length > 0) {
+
+        const rutaOptimizada = optimizarRuta(
+          miLat,
+          miLng,
+          clientesParaRuta
+        );
+
+        const puntosLinea = [
+          [miLat, miLng],
+          ...rutaOptimizada.map(c => [c.lat, c.lng])
+        ];
+
+        lineaRuta = L.polyline(puntosLinea, { color: "green" }).addTo(mapa);
       }
+    }
+  );
 
-      const marcador = L.marker([lat, lng])
+  // 🔥 GPS
+  navigator.geolocation.watchPosition((pos) => {
+
+    miLat = pos.coords.latitude;
+    miLng = pos.coords.longitude;
+
+    if (!marcadorVendedor) {
+      marcadorVendedor = L.marker([miLat, miLng])
         .addTo(mapa)
-        .bindPopup(`<strong>${c.nombre}</strong><br>Estado: ${estadoFinal}`);
+        .bindPopup("📍 Estás aquí");
 
-      marcadoresClientes.push(marcador);
-
-    });
-
-    // 🔥 OPTIMIZAR RUTA
-    if (clientesParaRuta.length > 0) {
-
-      const rutaOptimizada = optimizarRuta(
-        latActual,
-        lngActual,
-        clientesParaRuta
-      );
-
-      const puntosLinea = [
-        [latActual, lngActual],
-        ...rutaOptimizada.map(c => [c.lat, c.lng])
-      ];
-
-      lineaRuta = L.polyline(puntosLinea).addTo(mapa);
-
-      console.log("Orden recomendado:", rutaOptimizada);
-
+      mapa.setView([miLat, miLng], 13);
+    } else {
+      marcadorVendedor.setLatLng([miLat, miLng]);
     }
 
-  }, (err) => {
-    alert("Activa el GPS para usar la ruta");
+  }, () => {
+    alert("Activa el GPS");
   }, {
     enableHighAccuracy: true
   });
@@ -536,6 +547,7 @@ btnBuscarPedidos.onclick = async () => {
     resultadosPedidos.appendChild(card);
   });
 };
+
 
 
 
