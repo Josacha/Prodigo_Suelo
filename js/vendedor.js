@@ -319,9 +319,16 @@ async function iniciarSistemaRuta() {
       lng
     };
 
-    const marcador = L.marker([lat, lng], {
-      icon: iconoAzul
-    }).addTo(mapa);
+   const marcador = L.marker([lat, lng], {
+  icon: iconoAzul
+}).addTo(mapa)
+  .bindTooltip(c.nombre, {
+    permanent: true,
+    direction: "top",
+    offset: [0, -20],
+    className: "tooltip-cliente"
+  });
+
 
     marcador.on("click", async () => {
 
@@ -654,6 +661,7 @@ btnBuscarPedidos.onclick = async () => {
     resultadosPedidos.appendChild(card);
   });
 };
+
 
 
 
