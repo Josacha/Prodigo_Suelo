@@ -167,7 +167,7 @@ function optimizarRuta(miLat, miLng, clientes) {
 // =====================
 async function iniciarSistemaRuta() {
 
-  const mapa = L.map("mapaRuta").setView([9.9281, -84.0907], 13);
+  const mapa = L.map("mapaRuta"); // ❌ ya no centramos en San José
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap contributors"
@@ -177,33 +177,29 @@ async function iniciarSistemaRuta() {
   let lineaRuta;
   let miLat = null;
   let miLng = null;
-
   let clientesSeleccionados = [];
 
   const panel = document.getElementById("panelRuta");
 
-  // ===== ICONOS POR ESTADO =====
+  // ================= ICONOS SEGÚN ESTADO REAL =================
 
   const iconosEstado = {
-    pendiente: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-    listo: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
-    entregado: "https://maps.google.com/mapfiles/ms/icons/grey-dot.png"
+    "entrante": "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+    "en proceso": "https://maps.google.com/mapfiles/ms/icons/orange-dot.png",
+    "listo": "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+    "atrasado": "https://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
+    "entregado": "https://maps.google.com/mapfiles/ms/icons/grey-dot.png"
   };
 
   const iconoVan = L.icon({
-    iconUrl: "imagenes/van.png",
+    iconUrl: "https://cdn-icons-png.flaticon.com/512/61/61231.png", // evita 404
     iconSize: [45, 45],
     iconAnchor: [22, 45]
   });
 
-  function crearIcono(url) {
-    return L.icon({
-      iconUrl: url,
-      iconSize: [32, 32]
-    });
-  }
-
   function actualizarPanel(datos) {
+    if (!panel) return;
+
     panel.innerHTML = `
       <strong>Siguiente parada:</strong><br>
       📍 ${(datos.distSiguiente / 1000).toFixed(2)} km<br>
@@ -218,7 +214,7 @@ async function iniciarSistemaRuta() {
 
     if (!miLat || clientesSeleccionados.length === 0) {
       if (lineaRuta) mapa.removeLayer(lineaRuta);
-      panel.innerHTML = "Sin ruta activa";
+      if (panel) panel.innerHTML = "Sin ruta activa";
       return;
     }
 
@@ -233,60 +229,85 @@ async function iniciarSistemaRuta() {
 
     const url = `https://router.project-osrm.org/route/v1/driving/${coordenadas}?overview=full&geometries=geojson&steps=true`;
 
-    const respuesta = await fetch(url);
-    const data = await respuesta.json();
+    try {
 
-    if (!data.routes || data.routes.length === 0) return;
+      const respuesta = await fetch(url);
+      const data = await respuesta.json();
 
-    if (lineaRuta) mapa.removeLayer(lineaRuta);
+      if (!data.routes || data.routes.length === 0) return;
 
-    const ruta = data.routes[0];
+      if (lineaRuta) mapa.removeLayer(lineaRuta);
 
-    lineaRuta = L.geoJSON(ruta.geometry, {
-      style: { color: "lime", weight: 6 }
-    }).addTo(mapa);
+      const ruta = data.routes[0];
 
-    // DISTANCIA TOTAL
-    const distTotal = ruta.distance;
-    const tiempoTotal = ruta.duration;
+      lineaRuta = L.geoJSON(ruta.geometry, {
+        style: { color: "lime", weight: 6 }
+      }).addTo(mapa);
 
-    // SIGUIENTE PUNTO (primer tramo)
-    const primerLeg = ruta.legs[0];
+      const distTotal = ruta.distance;
+      const tiempoTotal = ruta.duration;
 
-    const distSiguiente = primerLeg.distance;
-    const tiempoSiguiente = primerLeg.duration;
+      const primerLeg = ruta.legs[0];
 
-    actualizarPanel({
-      distTotal,
-      tiempoTotal,
-      distSiguiente,
-      tiempoSiguiente
-    });
+      actualizarPanel({
+        distTotal,
+        tiempoTotal,
+        distSiguiente: primerLeg.distance,
+        tiempoSiguiente: primerLeg.duration
+      });
 
+    } catch (error) {
+      console.error("Error calculando ruta:", error);
+    }
   }
 
-  // ===== CARGAR CLIENTES DESDE FIREBASE =====
+  // ================= CARGAR ESTADOS REALES =================
 
-  const snapVentas = await getDocs(collection(db, "ventas"));
+  const snapVentas = await getDocs(
+    query(collection(db, "ventas"), where("vendedorId", "==", vendedorId))
+  );
+
   const mapaEstado = {};
 
-  snapVentas.forEach(doc => {
-    const v = doc.data();
-    if (v.cliente?.id) {
-      mapaEstado[v.cliente.id] = v.estado;
+  snapVentas.forEach(docSnap => {
+
+    const v = docSnap.data();
+    if (!v.cliente?.id || !v.fecha) return;
+
+    const fechaVenta = v.fecha.seconds
+      ? new Date(v.fecha.seconds * 1000)
+      : new Date(v.fecha);
+
+    if (
+      !mapaEstado[v.cliente.id] ||
+      fechaVenta > mapaEstado[v.cliente.id].fecha
+    ) {
+      mapaEstado[v.cliente.id] = {
+        estado: v.estado,
+        fecha: fechaVenta
+      };
     }
+
   });
+
+  // ================= CARGAR CLIENTES =================
 
   const snapClientes = await getDocs(collection(db, "clientes"));
 
   snapClientes.forEach(docSnap => {
 
     const c = docSnap.data();
+    if (c.vendedorId !== vendedorId) return;
     if (!c.ubicacion) return;
 
-    const estado = mapaEstado[docSnap.id] || "pendiente";
+    const estado = mapaEstado[docSnap.id]?.estado || "entrante";
 
-    const [lat, lng] = c.ubicacion.split(",").map(v => parseFloat(v.trim()));
+    const iconoURL = iconosEstado[estado] || iconosEstado["entrante"];
+
+    const [lat, lng] = c.ubicacion
+      .split(",")
+      .map(v => parseFloat(v.trim()));
+
     if (isNaN(lat) || isNaN(lng)) return;
 
     const cliente = {
@@ -297,7 +318,10 @@ async function iniciarSistemaRuta() {
     };
 
     const marcador = L.marker([lat, lng], {
-      icon: crearIcono(iconosEstado[estado])
+      icon: L.icon({
+        iconUrl: iconoURL,
+        iconSize: [32, 32]
+      })
     }).addTo(mapa);
 
     marcador.on("click", async () => {
@@ -317,7 +341,7 @@ async function iniciarSistemaRuta() {
 
   });
 
-  // ===== GPS =====
+  // ================= GPS + SEGUIMIENTO =================
 
   navigator.geolocation.watchPosition(async (pos) => {
 
@@ -326,8 +350,9 @@ async function iniciarSistemaRuta() {
 
     if (!marcadorVendedor) {
 
-      marcadorVendedor = L.marker([miLat, miLng], { icon: iconoVan })
-        .addTo(mapa);
+      marcadorVendedor = L.marker([miLat, miLng], {
+        icon: iconoVan
+      }).addTo(mapa);
 
       mapa.setView([miLat, miLng], 15);
 
@@ -342,13 +367,14 @@ async function iniciarSistemaRuta() {
 
   }, () => {
 
-    alert("Activa el GPS");
+    alert("Activa el GPS para usar la ruta");
 
   }, {
     enableHighAccuracy: true
   });
 
 }
+
 
 
 
@@ -653,6 +679,7 @@ btnBuscarPedidos.onclick = async () => {
     resultadosPedidos.appendChild(card);
   });
 };
+
 
 
 
