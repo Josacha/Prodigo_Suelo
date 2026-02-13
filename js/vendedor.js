@@ -63,9 +63,6 @@ async function cargarProductos() {
 // =====================
 async function iniciarSistemaRuta() {
 
-  const snap = await getDocs(collection(db, "clientes"));
-  if (snap.empty) return;
-
   const mapa = L.map("mapaRuta").setView([9.9281, -84.0907], 8);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -74,6 +71,7 @@ async function iniciarSistemaRuta() {
 
   let marcadorVendedor;
   let lineaRuta;
+  let marcadoresClientes = [];
 
   function calcularDistancia(lat1, lon1, lat2, lon2) {
     const R = 6371;
@@ -90,13 +88,48 @@ async function iniciarSistemaRuta() {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
 
+  function optimizarRuta(latInicial, lngInicial, clientes) {
+
+    let rutaOrdenada = [];
+    let actualLat = latInicial;
+    let actualLng = lngInicial;
+
+    while (clientes.length > 0) {
+
+      let masCercanoIndex = 0;
+      let menorDistancia = Infinity;
+
+      clientes.forEach((cliente, index) => {
+        const distancia = calcularDistancia(
+          actualLat,
+          actualLng,
+          cliente.lat,
+          cliente.lng
+        );
+
+        if (distancia < menorDistancia) {
+          menorDistancia = distancia;
+          masCercanoIndex = index;
+        }
+      });
+
+      const siguiente = clientes.splice(masCercanoIndex, 1)[0];
+
+      rutaOrdenada.push(siguiente);
+      actualLat = siguiente.lat;
+      actualLng = siguiente.lng;
+    }
+
+    return rutaOrdenada;
+  }
+
   navigator.geolocation.watchPosition(async (pos) => {
 
     const latActual = pos.coords.latitude;
     const lngActual = pos.coords.longitude;
 
     if (!marcadorVendedor) {
-      marcadorVendedor = L.marker([latActual, lngActual], {title:"Tu ubicación"})
+      marcadorVendedor = L.marker([latActual, lngActual], { title: "Tu ubicación" })
         .addTo(mapa)
         .bindPopup("📍 Estás aquí");
       mapa.setView([latActual, lngActual], 13);
@@ -104,41 +137,90 @@ async function iniciarSistemaRuta() {
       marcadorVendedor.setLatLng([latActual, lngActual]);
     }
 
-    let clientes = [];
+    // 🔥 AHORA SÍ se actualiza cada vez
+    const snap = await getDocs(collection(db, "clientes"));
+
+    let clientesPendientes = [];
+    let clientesEntregados = [];
 
     snap.forEach(docSnap => {
+
       const c = docSnap.data();
       if (!c.ubicacion) return;
 
       const [lat, lng] = c.ubicacion.split(",").map(v => parseFloat(v.trim()));
       if (isNaN(lat) || isNaN(lng)) return;
 
-      const distancia = calcularDistancia(latActual, lngActual, lat, lng);
-
-      clientes.push({
+      const clienteObj = {
+        id: docSnap.id,
         nombre: c.nombre,
         direccion: c.direccion,
         lat,
         lng,
-        distancia
-      });
+        entregado: c.entregado || false
+      };
+
+      if (clienteObj.entregado) {
+        clientesEntregados.push(clienteObj);
+      } else {
+        clientesPendientes.push(clienteObj);
+      }
     });
 
-    clientes.sort((a,b) => a.distancia - b.distancia);
+    // Optimizar solo pendientes
+    const rutaOptimizada = optimizarRuta(latActual, lngActual, clientesPendientes);
+
+    // Limpiar marcadores anteriores
+    marcadoresClientes.forEach(m => mapa.removeLayer(m));
+    marcadoresClientes = [];
 
     if (lineaRuta) mapa.removeLayer(lineaRuta);
 
+    const iconoPendiente = L.icon({
+      iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+      iconSize: [32, 32]
+    });
+
+    const iconoEntregado = L.icon({
+      iconUrl: "https://maps.google.com/mapfiles/ms/icons/grey-dot.png",
+      iconSize: [32, 32]
+    });
+
     const puntosRuta = [[latActual, lngActual]];
 
-    clientes.forEach(cliente => {
-      L.marker([cliente.lat, cliente.lng])
-        .addTo(mapa)
-        .bindPopup(`<strong>${cliente.nombre}</strong><br>${cliente.direccion || ""}<br>Dist: ${cliente.distancia.toFixed(2)} km`);
+    // Dibujar pendientes
+    rutaOptimizada.forEach(cliente => {
 
+      const marcador = L.marker([cliente.lat, cliente.lng], { icon: iconoPendiente })
+        .addTo(mapa)
+        .bindPopup(`
+          <strong>${cliente.nombre}</strong><br>
+          ${cliente.direccion || ""}<br><br>
+          <button onclick="marcarEntregado('${cliente.id}')">
+            ✔ Marcar entregado
+          </button>
+        `);
+
+      marcadoresClientes.push(marcador);
       puntosRuta.push([cliente.lat, cliente.lng]);
     });
 
-    lineaRuta = L.polyline(puntosRuta, {color: "green"}).addTo(mapa);
+    // Dibujar entregados en gris
+    clientesEntregados.forEach(cliente => {
+
+      const marcador = L.marker([cliente.lat, cliente.lng], { icon: iconoEntregado })
+        .addTo(mapa)
+        .bindPopup(`
+          <strong>${cliente.nombre}</strong><br>
+          ✅ Entregado
+        `);
+
+      marcadoresClientes.push(marcador);
+    });
+
+    if (puntosRuta.length > 1) {
+      lineaRuta = L.polyline(puntosRuta, { color: "green" }).addTo(mapa);
+    }
 
   }, (err) => {
     alert("Activa el GPS para usar la ruta");
@@ -153,9 +235,26 @@ iniciarSistemaRuta();
 
 
 
+// ================== MARCAR CLIENTE ENTREGADO ==================
+window.marcarEntregado = async (idCliente) => {
 
+  try {
 
+    await updateDoc(doc(db, "clientes", idCliente), {
+      entregado: true,
+      fechaEntrega: Timestamp.now()
+    });
 
+    alert("✅ Cliente marcado como entregado");
+
+  } catch (error) {
+
+    console.error("Error al marcar entrega:", error);
+    alert("❌ Error al marcar entrega");
+
+  }
+
+};
 
 
 
@@ -439,4 +538,5 @@ btnBuscarPedidos.onclick = async () => {
     resultadosPedidos.appendChild(card);
   });
 };
+
 
