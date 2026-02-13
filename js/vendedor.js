@@ -179,17 +179,16 @@ async function iniciarSistemaRuta() {
   let miLng = null;
 
   let clientesSeleccionados = [];
-  let todosLosClientes = [];
 
-  const iconoNormal = L.icon({
-    iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-    iconSize: [32, 32]
-  });
+  const panel = document.getElementById("panelRuta");
 
-  const iconoSeleccionado = L.icon({
-    iconUrl: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
-    iconSize: [32, 32]
-  });
+  // ===== ICONOS POR ESTADO =====
+
+  const iconosEstado = {
+    pendiente: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+    listo: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+    entregado: "https://maps.google.com/mapfiles/ms/icons/grey-dot.png"
+  };
 
   const iconoVan = L.icon({
     iconUrl: "imagenes/van.png",
@@ -197,32 +196,29 @@ async function iniciarSistemaRuta() {
     iconAnchor: [22, 45]
   });
 
-  // ====== CONTENEDOR INFO ======
-  const infoRuta = L.control({ position: "bottomleft" });
-
-  infoRuta.onAdd = function () {
-    this._div = L.DomUtil.create("div", "infoRuta");
-    this._div.style.background = "white";
-    this._div.style.padding = "8px";
-    this._div.style.borderRadius = "8px";
-    this._div.innerHTML = "Sin ruta";
-    return this._div;
-  };
-
-  infoRuta.addTo(mapa);
-
-  function actualizarInfo(distancia, tiempo) {
-    infoRuta._div.innerHTML =
-      `<strong>Distancia:</strong> ${(distancia / 1000).toFixed(2)} km<br>
-       <strong>Tiempo:</strong> ${(tiempo / 60).toFixed(0)} min`;
+  function crearIcono(url) {
+    return L.icon({
+      iconUrl: url,
+      iconSize: [32, 32]
+    });
   }
 
-  // ====== RUTA REAL OSRM ======
+  function actualizarPanel(datos) {
+    panel.innerHTML = `
+      <strong>Siguiente parada:</strong><br>
+      📍 ${(datos.distSiguiente / 1000).toFixed(2)} km<br>
+      ⏱ ${(datos.tiempoSiguiente / 60).toFixed(0)} min<br><br>
+      <strong>Ruta total:</strong><br>
+      📏 ${(datos.distTotal / 1000).toFixed(2)} km<br>
+      🕒 ${(datos.tiempoTotal / 60).toFixed(0)} min
+    `;
+  }
+
   async function dibujarRuta() {
 
     if (!miLat || clientesSeleccionados.length === 0) {
       if (lineaRuta) mapa.removeLayer(lineaRuta);
-      infoRuta._div.innerHTML = "Sin ruta";
+      panel.innerHTML = "Sin ruta activa";
       return;
     }
 
@@ -235,7 +231,7 @@ async function iniciarSistemaRuta() {
       .map(p => `${p[1]},${p[0]}`)
       .join(";");
 
-    const url = `https://router.project-osrm.org/route/v1/driving/${coordenadas}?overview=full&geometries=geojson`;
+    const url = `https://router.project-osrm.org/route/v1/driving/${coordenadas}?overview=full&geometries=geojson&steps=true`;
 
     const respuesta = await fetch(url);
     const data = await respuesta.json();
@@ -247,19 +243,48 @@ async function iniciarSistemaRuta() {
     const ruta = data.routes[0];
 
     lineaRuta = L.geoJSON(ruta.geometry, {
-      style: { color: "green", weight: 5 }
+      style: { color: "lime", weight: 6 }
     }).addTo(mapa);
 
-    actualizarInfo(ruta.distance, ruta.duration);
+    // DISTANCIA TOTAL
+    const distTotal = ruta.distance;
+    const tiempoTotal = ruta.duration;
+
+    // SIGUIENTE PUNTO (primer tramo)
+    const primerLeg = ruta.legs[0];
+
+    const distSiguiente = primerLeg.distance;
+    const tiempoSiguiente = primerLeg.duration;
+
+    actualizarPanel({
+      distTotal,
+      tiempoTotal,
+      distSiguiente,
+      tiempoSiguiente
+    });
+
   }
 
-  // ====== CARGAR CLIENTES ======
+  // ===== CARGAR CLIENTES DESDE FIREBASE =====
+
+  const snapVentas = await getDocs(collection(db, "ventas"));
+  const mapaEstado = {};
+
+  snapVentas.forEach(doc => {
+    const v = doc.data();
+    if (v.cliente?.id) {
+      mapaEstado[v.cliente.id] = v.estado;
+    }
+  });
+
   const snapClientes = await getDocs(collection(db, "clientes"));
 
   snapClientes.forEach(docSnap => {
 
     const c = docSnap.data();
     if (!c.ubicacion) return;
+
+    const estado = mapaEstado[docSnap.id] || "pendiente";
 
     const [lat, lng] = c.ubicacion.split(",").map(v => parseFloat(v.trim()));
     if (isNaN(lat) || isNaN(lng)) return;
@@ -271,22 +296,20 @@ async function iniciarSistemaRuta() {
       lng
     };
 
-    todosLosClientes.push(cliente);
-
-    const marcador = L.marker([lat, lng], { icon: iconoNormal })
-      .addTo(mapa)
-      .bindPopup(`<strong>${c.nombre}</strong>`);
+    const marcador = L.marker([lat, lng], {
+      icon: crearIcono(iconosEstado[estado])
+    }).addTo(mapa);
 
     marcador.on("click", async () => {
 
-      const index = clientesSeleccionados.findIndex(cl => cl.id === cliente.id);
+      const index = clientesSeleccionados.findIndex(c => c.id === cliente.id);
 
       if (index === -1) {
         clientesSeleccionados.push(cliente);
-        marcador.setIcon(iconoSeleccionado);
+        marcador.setOpacity(0.6);
       } else {
         clientesSeleccionados.splice(index, 1);
-        marcador.setIcon(iconoNormal);
+        marcador.setOpacity(1);
       }
 
       await dibujarRuta();
@@ -294,7 +317,8 @@ async function iniciarSistemaRuta() {
 
   });
 
-  // ====== GPS Y SEGUIMIENTO ======
+  // ===== GPS =====
+
   navigator.geolocation.watchPosition(async (pos) => {
 
     miLat = pos.coords.latitude;
@@ -310,13 +334,10 @@ async function iniciarSistemaRuta() {
     } else {
 
       marcadorVendedor.setLatLng([miLat, miLng]);
-
-      // 👇 EL MAPA TE SIGUE AUTOMÁTICAMENTE
       mapa.panTo([miLat, miLng]);
 
     }
 
-    // 👇 RECALCULA RUTA AL MOVERTE
     await dibujarRuta();
 
   }, () => {
@@ -328,6 +349,7 @@ async function iniciarSistemaRuta() {
   });
 
 }
+
 
 
 
@@ -631,6 +653,7 @@ btnBuscarPedidos.onclick = async () => {
     resultadosPedidos.appendChild(card);
   });
 };
+
 
 
 
