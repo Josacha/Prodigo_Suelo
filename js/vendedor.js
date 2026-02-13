@@ -139,7 +139,28 @@ async function iniciarSistemaRuta() {
   let miLat = null;
   let miLng = null;
 
-  // 🔥 Escuchar ventas en tiempo real
+  // 🔥 ICONOS
+  const iconoNormal = L.icon({
+    iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+    iconSize: [32, 32]
+  });
+
+  const iconoListo = L.icon({
+    iconUrl: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+    iconSize: [32, 32]
+  });
+
+  const iconoMasCercano = L.icon({
+    iconUrl: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+    iconSize: [32, 32]
+  });
+
+  const iconoVan = L.icon({
+    iconUrl: "imagenes/van.png", // 👈 pon aquí tu imagen
+    iconSize: [45, 45],
+    iconAnchor: [22, 45]
+  });
+
   onSnapshot(
     query(collection(db, "ventas"), where("vendedorId", "==", vendedorId)),
     async (snapVentas) => {
@@ -153,9 +174,8 @@ async function iniciarSistemaRuta() {
 
       if (lineaRuta) mapa.removeLayer(lineaRuta);
 
-      const mapaUltimaVentaPorCliente = {};
+      const mapaUltimaVenta = {};
 
-      // 🔥 Obtener última venta por cliente
       snapVentas.forEach(docSnap => {
         const venta = docSnap.data();
         const clienteId = venta.cliente?.id;
@@ -163,73 +183,84 @@ async function iniciarSistemaRuta() {
         if (!clienteId) return;
 
         if (
-          !mapaUltimaVentaPorCliente[clienteId] ||
-          venta.fecha.toDate() > mapaUltimaVentaPorCliente[clienteId].fecha
+          !mapaUltimaVenta[clienteId] ||
+          venta.fecha.toDate() > mapaUltimaVenta[clienteId].fecha
         ) {
-          mapaUltimaVentaPorCliente[clienteId] = {
+          mapaUltimaVenta[clienteId] = {
             estado: venta.estado,
             fecha: venta.fecha.toDate()
           };
         }
       });
 
-      const clientesParaRuta = [];
+      const clientesListos = [];
 
       snapClientes.forEach(docSnap => {
 
         const c = docSnap.data();
+
+        if (c.vendedorId !== vendedorId) return; // 🔥 FILTRO CORRECTO
         if (!c.ubicacion) return;
 
         const [lat, lng] = c.ubicacion.split(",").map(v => parseFloat(v.trim()));
         if (isNaN(lat) || isNaN(lng)) return;
 
-        const ventaInfo = mapaUltimaVentaPorCliente[docSnap.id];
+        const ventaInfo = mapaUltimaVenta[docSnap.id];
         const estadoFinal = ventaInfo ? ventaInfo.estado : "sinVenta";
 
+        let iconoUsar = iconoNormal;
+
         if (estadoFinal === "listo") {
-          clientesParaRuta.push({
+          clientesListos.push({
             id: docSnap.id,
             nombre: c.nombre,
             lat,
             lng
           });
+          iconoUsar = iconoListo;
         }
 
-        const marcador = L.marker([lat, lng])
+        const marcador = L.marker([lat, lng], { icon: iconoUsar })
           .addTo(mapa)
           .bindPopup(`<strong>${c.nombre}</strong><br>Estado: ${estadoFinal}`);
 
         marcadoresClientes.push(marcador);
       });
 
-      if (clientesParaRuta.length > 0) {
+      // 🔥 RUTA OPTIMIZADA
+      if (clientesListos.length > 0) {
 
-        const rutaOptimizada = optimizarRuta(
-          miLat,
-          miLng,
-          clientesParaRuta
-        );
+        const ruta = optimizarRuta(miLat, miLng, clientesListos);
 
-        const puntosLinea = [
+        // Cambiar icono del más cercano
+        const masCercano = ruta[0];
+
+        marcadoresClientes.forEach(m => {
+          const pos = m.getLatLng();
+          if (pos.lat === masCercano.lat && pos.lng === masCercano.lng) {
+            m.setIcon(iconoMasCercano);
+          }
+        });
+
+        const puntos = [
           [miLat, miLng],
-          ...rutaOptimizada.map(c => [c.lat, c.lng])
+          ...ruta.map(c => [c.lat, c.lng])
         ];
 
-        lineaRuta = L.polyline(puntosLinea, { color: "green" }).addTo(mapa);
+        lineaRuta = L.polyline(puntos, { color: "green", weight: 4 }).addTo(mapa);
       }
     }
   );
 
-  // 🔥 GPS
   navigator.geolocation.watchPosition((pos) => {
 
     miLat = pos.coords.latitude;
     miLng = pos.coords.longitude;
 
     if (!marcadorVendedor) {
-      marcadorVendedor = L.marker([miLat, miLng])
+      marcadorVendedor = L.marker([miLat, miLng], { icon: iconoVan })
         .addTo(mapa)
-        .bindPopup("📍 Estás aquí");
+        .bindPopup("🚐 Ruta de reparto");
 
       mapa.setView([miLat, miLng], 13);
     } else {
@@ -243,6 +274,7 @@ async function iniciarSistemaRuta() {
   });
 
 }
+
 
 
 
@@ -547,6 +579,7 @@ btnBuscarPedidos.onclick = async () => {
     resultadosPedidos.appendChild(card);
   });
 };
+
 
 
 
