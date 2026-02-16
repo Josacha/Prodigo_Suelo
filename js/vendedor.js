@@ -607,16 +607,4 @@ function configurarBuscadorCoincidencia(inputId, selectId) {
       const coincide = texto.includes(filtro);
       opciones[i].style.display = coincide ? "block" : "none";
       if (coincide && primeraEncontrada === -1 && filtro !== "") primeraEncontrada = i;
-    }
-    if (primeraEncontrada !== -1) select.selectedIndex = primeraEncontrada;
-  });
-}
-
-// ================== IMPRIMIR TICKET REFORZADO 58MM (RESTAURADO) ==================
-window.imprimirTicket = (venta) => {
-  let fechaDoc = (venta.fecha && venta.fecha.seconds) ? new Date(venta.fecha.seconds * 1000) : new Date();
-  const statusPago = (venta.estadoPago || "PENDIENTE").toUpperCase();
-  const ticketID = (venta.id || "N/A").slice(-6).toUpperCase();
-
-  const htmlTicket = `
-    <div id="ticketImprimible" style="width: 48mm; margin: 0 auto; padding: 2mm; font-family: 'Arial Black', sans-serif; color: #000; b
+    
