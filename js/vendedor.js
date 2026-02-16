@@ -626,4 +626,108 @@ window.eliminarPedido = async (pedidoId) => {
 };
 
 // ================== BUSCADOR DINÁMICO (LA MEJORA) ==================
-function config
+function configurarBuscadorCoincidencia(inputId, selectId) {
+  const input = document.getElementById(inputId);
+  const select = document.getElementById(selectId);
+  if (!input || !select) return;
+
+  input.addEventListener("input", () => {
+    const filtro = input.value.toLowerCase();
+    const opciones = select.options;
+    let primeraEncontrada = -1;
+
+    for (let i = 0; i < opciones.length; i++) {
+      const texto = opciones[i].text.toLowerCase();
+      const coincide = texto.includes(filtro);
+      opciones[i].style.display = coincide ? "block" : "none";
+      if (coincide && primeraEncontrada === -1 && filtro !== "") primeraEncontrada = i;
+    }
+    if (primeraEncontrada !== -1) select.selectedIndex = primeraEncontrada;
+  });
+}
+
+// ================== IMPRIMIR TICKET REFORZADO 58MM (RESTAURADO) ==================
+window.imprimirTicket = (venta) => {
+  let fechaDoc = (venta.fecha && venta.fecha.seconds) ? new Date(venta.fecha.seconds * 1000) : new Date();
+  const statusPago = (venta.estadoPago || "PENDIENTE").toUpperCase();
+  const ticketID = (venta.id || "N/A").slice(-6).toUpperCase();
+
+  const htmlTicket = `
+    <div id="ticketImprimible" style="width: 48mm; margin: 0 auto; padding: 2mm; font-family: 'Arial Black', sans-serif; color: #000; background: #fff;">
+      <div style="text-align:center; border-bottom: 4px solid #000; padding-bottom: 5px; margin-bottom: 8px;">
+        <img src="imagenes/LOGO PRODIGO SUELO-01.png" style="width: 30mm; height: auto; filter: grayscale(100%) contrast(200%);">
+        <p style="margin: 4px 0 0 0; font-size: 10px; font-weight: 900; text-transform: uppercase; background: #000; color: #fff; display: inline-block; padding: 2px 6px;">CAFÉ PRÓDIGO SUELO</p>
+      </div>
+      <div style="font-size: 12px; font-weight: 900; line-height: 1.3; border-bottom: 2px dashed #000; padding-bottom: 6px;">
+        <p style="margin: 0;">FECHA: ${fechaDoc.toLocaleDateString()} ${fechaDoc.getHours()}:${String(fechaDoc.getMinutes()).padStart(2, '0')}</p>
+        <p style="margin: 0;">TICKET: #${ticketID}</p>
+        <p style="margin: 4px 0 0 0; font-size: 13px; text-transform: uppercase;">CLIENTE: ${venta.cliente.nombre}</p>
+      </div>
+      <table style="width:100%; margin-top: 8px; border-collapse: collapse;">
+        <tbody style="font-size: 12px; font-weight: 900;">
+          ${venta.lineas.map(l => `
+            <tr><td colspan="2" style="padding-top: 6px; text-transform: uppercase;">${l.nombre}</td></tr>
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="font-size: 11px;">${l.cantidad} x ₡${l.precio.toLocaleString()}</td>
+              <td style="text-align:right; font-size: 13px;">₡${l.subtotal.toLocaleString()}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div style="margin-top: 10px; border-top: 3px solid #000; padding-top: 6px; text-align: right;">
+        <p style="margin: 0; font-size: 18px; font-weight: 900;">TOTAL: ₡${venta.total.toLocaleString()}</p>
+      </div>
+      <div style="text-align:center; background: #000; color: #fff; margin-top: 15px; padding: 6px;">
+        <span style="font-size: 14px; font-weight: 900;">PAGO: ${statusPago}</span>
+      </div>
+      <div style="text-align:center; margin-top: 20px; font-size: 10px; font-weight: 900;">
+        <p>¡GRACIAS POR APOYAR LO NUESTRO!</p>
+        <p>COSTA RICA</p>
+      </div>
+      <div style="height: 40px;"></div>
+    </div>
+  `;
+
+  let contenedor = document.getElementById("ticketContainer");
+  if (!contenedor) {
+    contenedor = document.createElement("div");
+    contenedor.id = "ticketContainer";
+    document.body.appendChild(contenedor);
+  }
+  contenedor.innerHTML = htmlTicket;
+  setTimeout(() => { window.print(); }, 600);
+};
+
+// BUSCAR PEDIDOS ANTIGUOS
+btnBuscarPedidos.onclick = async () => {
+  const clienteId = filtroCliente.value;
+  const snap = await getDocs(collection(db,"ventas"));
+  resultadosPedidos.innerHTML = "";
+  snap.forEach(docSnap => {
+    const venta = docSnap.data();
+    if(clienteId && venta.cliente.id !== clienteId) return;
+    const card = document.createElement("div");
+    card.className = `card estado-${venta.estado.replace(' ','-')}`;
+    card.innerHTML = `
+      <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
+      <p><strong>Total:</strong> ₡${venta.total.toLocaleString()}</p>
+      <button onclick='imprimirTicket(${JSON.stringify({...venta, id: docSnap.id})})'>Reimprimir</button>
+    `;
+    resultadosPedidos.appendChild(card);
+  });
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
