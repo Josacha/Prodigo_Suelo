@@ -29,6 +29,7 @@ onAuthStateChanged(auth, async user => {
   cargarPedidos();
   cargarClientesFiltro();
   iniciarSistemaRuta();
+  await activarPantallaSiempreEncendida(); 
 
   // INICIALIZAR BUSCADORES
   configurarBuscadorCoincidencia("buscarClienteInput", "clienteSelect");
@@ -218,6 +219,39 @@ async function iniciarSistemaRuta() {
   let clientesSeleccionados = [];
 
   const panel = document.getElementById("panelRuta");
+
+
+  // ================= No bloquera pantalla =================
+let wakeLock = null;
+
+async function activarPantallaSiempreEncendida() {
+
+  try {
+
+    if ('wakeLock' in navigator) {
+
+      wakeLock = await navigator.wakeLock.request('screen');
+
+      console.log("Pantalla bloqueada (no se apagará)");
+
+      wakeLock.addEventListener('release', () => {
+        console.log("Wake Lock liberado");
+      });
+
+    } else {
+
+      console.log("Wake Lock no soportado en este dispositivo");
+
+    }
+
+  } catch (err) {
+
+    console.error("Error activando Wake Lock:", err);
+
+  }
+
+}
+  
 
   // ================= ICONOS =================
   const iconoVan = L.icon({
@@ -592,19 +626,4 @@ window.eliminarPedido = async (pedidoId) => {
 };
 
 // ================== BUSCADOR DINÁMICO (LA MEJORA) ==================
-function configurarBuscadorCoincidencia(inputId, selectId) {
-  const input = document.getElementById(inputId);
-  const select = document.getElementById(selectId);
-  if (!input || !select) return;
-
-  input.addEventListener("input", () => {
-    const filtro = input.value.toLowerCase();
-    const opciones = select.options;
-    let primeraEncontrada = -1;
-
-    for (let i = 0; i < opciones.length; i++) {
-      const texto = opciones[i].text.toLowerCase();
-      const coincide = texto.includes(filtro);
-      opciones[i].style.display = coincide ? "block" : "none";
-      if (coincide && primeraEncontrada === -1 && filtro !== "") primeraEncontrada = i;
-    
+function config
