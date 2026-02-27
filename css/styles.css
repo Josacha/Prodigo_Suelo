@@ -1402,5 +1402,218 @@ td {
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 
+/* =========================
+   CLIENTES: TABLA + BUSCADOR + PAGINACIÓN (RESPONSIVE CELULAR)
+   (Agregar al final de styles.css)
+   ========================= */
+
+.clientes-toolbar{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 10px 0 15px;
+}
+
+#buscadorClientes{
+  width: 100%;
+  max-width: 520px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.15);
+  outline: none;
+  transition: box-shadow .2s ease, border-color .2s ease;
+}
+
+#buscadorClientes:focus{
+  border-color: rgba(0,0,0,0.35);
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.08);
+}
+
+.tabla-responsive{
+  overflow-x: auto;
+  width: 100%;
+}
+
+.tabla-clientes{
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+}
+
+.tabla-clientes thead th{
+  background: rgba(0,0,0,0.04);
+  font-weight: 700;
+  padding: 12px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.tabla-clientes tbody td{
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  vertical-align: top;
+}
+
+.tabla-clientes tbody tr:hover{
+  background: rgba(0,0,0,0.03);
+}
+
+/* Acciones dentro de tabla */
+.tabla-clientes .btn-editar,
+.tabla-clientes .btn-eliminar{
+  border: none;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-right: 6px;
+}
+
+.tabla-clientes .btn-editar{
+  background: rgba(52, 152, 219, 0.15);
+}
+
+.tabla-clientes .btn-eliminar{
+  background: rgba(231, 76, 60, 0.15);
+}
+
+/* PAGINACIÓN */
+.paginacion{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px 0 5px;
+  flex-wrap: wrap;
+}
+
+.paginacion button{
+  border: 1px solid rgba(0,0,0,0.15);
+  background: #fff;
+  padding: 9px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .2s ease, opacity .2s ease;
+}
+
+.paginacion button:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+
+.paginacion button:disabled{
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.pags{
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.pags button{
+  min-width: 42px;
+  text-align: center;
+}
+
+.pags button.activo{
+  font-weight: 800;
+  border-color: rgba(0,0,0,0.35);
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.08);
+}
+
+/* =========================
+   RESPONSIVE CELULAR: tabla -> tarjetas
+   ========================= */
+@media (max-width: 768px){
+
+  /* buscador ocupa todo */
+  #buscadorClientes{ max-width: 100%; }
+
+  /* quitamos scroll de tabla y pasamos a "cards" */
+  .tabla-responsive{
+    overflow: visible;
+  }
+
+  .tabla-clientes{
+    min-width: 0;
+    box-shadow: none;
+    background: transparent;
+    border-radius: 0;
+  }
+
+  /* ocultar encabezado */
+  .tabla-clientes thead{
+    display: none;
+  }
+
+  /* cada fila se vuelve tarjeta */
+  .tabla-clientes,
+  .tabla-clientes tbody,
+  .tabla-clientes tr,
+  .tabla-clientes td{
+    display: block;
+    width: 100%;
+  }
+
+  .tabla-clientes tbody tr{
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  .tabla-clientes tbody td{
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    padding: 10px 12px;
+  }
+
+  /* etiqueta a la izquierda (Nombre, Teléfono, etc.) */
+  .tabla-clientes tbody td::before{
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    opacity: 0.7;
+    margin-bottom: 4px;
+  }
+
+  /* etiquetas por columna (según tu orden de columnas) */
+  .tabla-clientes tbody td:nth-child(1)::before{ content: "Nombre"; }
+  .tabla-clientes tbody td:nth-child(2)::before{ content: "Teléfono"; }
+  .tabla-clientes tbody td:nth-child(3)::before{ content: "Dirección"; }
+  .tabla-clientes tbody td:nth-child(4)::before{ content: "Ubicación"; }
+  .tabla-clientes tbody td:nth-child(5)::before{ content: "Vendedor"; }
+  .tabla-clientes tbody td:nth-child(6)::before{ content: "Acciones"; }
+
+  /* acciones alineadas mejor */
+  .tabla-clientes tbody td:nth-child(6){
+    border-bottom: none;
+  }
+  .tabla-clientes tbody td:nth-child(6) .btn-editar,
+  .tabla-clientes tbody td:nth-child(6) .btn-eliminar{
+    width: 48%;
+    margin: 0 1% 0 0;
+    padding: 10px 12px;
+  }
+}
+
+/* extra pequeño */
+@media (max-width: 420px){
+  .paginacion button{
+    padding: 8px 10px;
+  }
+  .pags button{
+    min-width: 38px;
+  }
+}
 
 
