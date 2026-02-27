@@ -76,15 +76,40 @@
 
   <section>
     <h2>Clientes</h2>
-   <button 
-  id="btnExportarClientes"
-  onclick="exportarClientesExcel()"
-  style="background-color: #27ae60; color: white; padding: 10px; margin-bottom: 15px; cursor: pointer; border: none; border-radius: 5px;">
-  
-  <i class="fas fa-file-excel"></i> Exportar Reporte Clientes
-</button>
+    <button 
+      id="btnExportarClientes"
+      onclick="exportarClientesExcel()"
+      style="background-color: #27ae60; color: white; padding: 10px; margin-bottom: 15px; cursor: pointer; border: none; border-radius: 5px;">
+      
+      <i class="fas fa-file-excel"></i> Exportar Reporte Clientes
+    </button>
 
-    <div id="clientesContainer" class="cards-container"></div>
+    <!-- ✅ SOLO CAMBIÓ ESTA PARTE: TABLA + BUSCADOR + PAGINACIÓN -->
+    <div class="clientes-toolbar">
+      <input id="buscadorClientes" placeholder="Buscar cliente (nombre, teléfono, dirección)..." />
+    </div>
+
+    <div class="tabla-responsive">
+      <table class="tabla-clientes">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Teléfono</th>
+            <th>Dirección</th>
+            <th>Ubicación</th>
+            <th>Vendedor</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="clientesTbody"></tbody>
+      </table>
+    </div>
+
+    <div class="paginacion">
+      <button id="btnPrevClientes">⬅ Anterior</button>
+      <div id="pagsClientes" class="pags"></div>
+      <button id="btnNextClientes">Siguiente ➡</button>
+    </div>
   </section>
 
   <section>
@@ -107,4 +132,3 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
 </html>
-
