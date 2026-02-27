@@ -29,7 +29,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const clienteDireccion = document.getElementById("clienteDireccion");
   const clienteUbicacion = document.getElementById("clienteUbicacion");
   const vendedorSelect = document.getElementById("vendedorSelect");
-  const clientesContainer = document.getElementById("clientesContainer");
+  const clientesContainer = document.getElementById("clientesContainer"); // (queda, pero ya no se usa)
+
+  // ✅ NUEVOS ELEMENTOS PARA TABLA + BUSCADOR + PAGINACIÓN (SOLO CLIENTES)
+  const clientesTbody = document.getElementById("clientesTbody");
+  const buscadorClientes = document.getElementById("buscadorClientes");
+  const btnPrevClientes = document.getElementById("btnPrevClientes");
+  const btnNextClientes = document.getElementById("btnNextClientes");
+  const pagsClientes = document.getElementById("pagsClientes");
+
+  // ✅ ESTADO PARA TABLA CLIENTES
+  let clientesCache = [];
+  let clientesFiltrados = [];
+  let paginaClientes = 1;
+  const tamPaginaClientes = 10;
 
   const fechaInicioInput = document.getElementById("fechaInicio");
   const fechaFinInput = document.getElementById("fechaFin");
@@ -125,47 +138,44 @@ document.addEventListener("DOMContentLoaded", () => {
     listarProductos();
   };
 
-// =====================
-// EXPORTAR CLIENTES A EXCEL
-// =====================
-async function exportarClientesExcel() {
-  const snap = await getDocs(collection(db, "clientes"));
-  if (snap.empty) return alert("No hay clientes para exportar");
+  // =====================
+  // EXPORTAR CLIENTES A EXCEL
+  // =====================
+  async function exportarClientesExcel() {
+    const snap = await getDocs(collection(db, "clientes"));
+    if (snap.empty) return alert("No hay clientes para exportar");
 
-  const datos = [];
+    const datos = [];
 
-  snap.forEach(docSnap => {
-    const c = docSnap.data();
-    datos.push({
-      "ID Cliente": docSnap.id,
-      "Nombre": c.nombre || "",
-      "Teléfono": c.telefono || "",
-      "Dirección": c.direccion || "",
-      "Ubicación": c.ubicacion || "",
-      "Vendedor ID": c.vendedorId || ""
+    snap.forEach(docSnap => {
+      const c = docSnap.data();
+      datos.push({
+        "ID Cliente": docSnap.id,
+        "Nombre": c.nombre || "",
+        "Teléfono": c.telefono || "",
+        "Dirección": c.direccion || "",
+        "Ubicación": c.ubicacion || "",
+        "Vendedor ID": c.vendedorId || ""
+      });
     });
-  });
 
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(datos);
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(datos);
 
-  ws['!cols'] = [
-    { wch: 20 },
-    { wch: 20 },
-    { wch: 15 },
-    { wch: 30 },
-    { wch: 25 },
-    { wch: 20 }
-  ];
+    ws['!cols'] = [
+      { wch: 20 },
+      { wch: 20 },
+      { wch: 15 },
+      { wch: 30 },
+      { wch: 25 },
+      { wch: 20 }
+    ];
 
-  XLSX.utils.book_append_sheet(wb, ws, "Clientes");
-  XLSX.writeFile(wb, "CLIENTES_PRODIGO_SUELO.xlsx");
-}
+    XLSX.utils.book_append_sheet(wb, ws, "Clientes");
+    XLSX.writeFile(wb, "CLIENTES_PRODIGO_SUELO.xlsx");
+  }
 
   window.exportarClientesExcel = exportarClientesExcel;
-
-
-  
 
   // =====================
   // LISTAR PRODUCTOS
@@ -258,32 +268,111 @@ async function exportarClientesExcel() {
   };
 
   // =====================
-  // LISTAR CLIENTES
+  // LISTAR CLIENTES (TABLA + BUSCADOR + PAGINACIÓN, 10 POR PÁGINA)
   // =====================
   async function cargarClientes() {
-    if(!clientesContainer) return;
+    if(!clientesTbody) return;
 
     const snap = await getDocs(collection(db, "clientes"));
-    clientesContainer.innerHTML = "";
+    clientesCache = [];
 
     snap.forEach(docSnap => {
-      const c = docSnap.data();
-      const vendedorName = vendedorSelect.querySelector(`option[value="${c.vendedorId}"]`)?.text || "N/A";
+      clientesCache.push({ id: docSnap.id, ...docSnap.data() });
+    });
 
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <p><strong>Nombre:</strong> ${c.nombre}</p>
-        <p><strong>Teléfono:</strong> ${c.telefono || "-"}</p>
-        <p><strong>Dirección:</strong> ${c.direccion || "-"}</p>
-        <p><strong>Ubicación:</strong> ${c.ubicacion || "-"}</p>
-        <p><strong>Vendedor:</strong> ${vendedorName}</p>
-        <div class="acciones">
-          <button class="btn-editar" onclick="editarCliente('${docSnap.id}')"><i class="fa fa-edit"></i></button>
-          <button class="btn-eliminar" onclick="eliminarCliente('${docSnap.id}')"><i class="fa fa-trash"></i></button>
-        </div>
+    aplicarFiltroClientes();
+  }
+
+  function aplicarFiltroClientes() {
+    const q = (buscadorClientes?.value || "").toLowerCase().trim();
+
+    if(!q) {
+      clientesFiltrados = [...clientesCache];
+    } else {
+      clientesFiltrados = clientesCache.filter(c => {
+        const vendedorName =
+          vendedorSelect?.querySelector(`option[value="${c.vendedorId}"]`)?.textContent || "";
+
+        const texto = [
+          c.nombre, c.telefono, c.direccion, c.ubicacion, vendedorName
+        ].filter(Boolean).join(" ").toLowerCase();
+
+        return texto.includes(q);
+      });
+    }
+
+    paginaClientes = 1;
+    renderClientesTabla();
+  }
+
+  function renderClientesTabla() {
+    if(!clientesTbody) return;
+
+    const total = clientesFiltrados.length;
+    const totalPaginas = Math.max(1, Math.ceil(total / tamPaginaClientes));
+
+    if(paginaClientes > totalPaginas) paginaClientes = totalPaginas;
+
+    const inicio = (paginaClientes - 1) * tamPaginaClientes;
+    const fin = inicio + tamPaginaClientes;
+    const pageItems = clientesFiltrados.slice(inicio, fin);
+
+    clientesTbody.innerHTML = "";
+
+    pageItems.forEach(c => {
+      const vendedorName =
+        vendedorSelect?.querySelector(`option[value="${c.vendedorId}"]`)?.textContent || "N/A";
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${c.nombre || "-"}</td>
+        <td>${c.telefono || "-"}</td>
+        <td>${c.direccion || "-"}</td>
+        <td>${c.ubicacion || "-"}</td>
+        <td>${vendedorName}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn-editar" onclick="editarCliente('${c.id}')"><i class="fa fa-edit"></i></button>
+          <button class="btn-eliminar" onclick="eliminarCliente('${c.id}')"><i class="fa fa-trash"></i></button>
+        </td>
       `;
-      clientesContainer.appendChild(card);
+      clientesTbody.appendChild(tr);
+    });
+
+    if(btnPrevClientes) btnPrevClientes.disabled = (paginaClientes <= 1);
+    if(btnNextClientes) btnNextClientes.disabled = (paginaClientes >= totalPaginas);
+
+    if(pagsClientes) {
+      pagsClientes.innerHTML = "";
+
+      const maxBtns = 7;
+      let start = Math.max(1, paginaClientes - Math.floor(maxBtns / 2));
+      let end = Math.min(totalPaginas, start + maxBtns - 1);
+      start = Math.max(1, end - maxBtns + 1);
+
+      for(let p = start; p <= end; p++) {
+        const b = document.createElement("button");
+        b.textContent = p;
+        if(p === paginaClientes) b.classList.add("activo");
+        b.onclick = () => { paginaClientes = p; renderClientesTabla(); };
+        pagsClientes.appendChild(b);
+      }
+    }
+  }
+
+  if(buscadorClientes) {
+    buscadorClientes.addEventListener("input", aplicarFiltroClientes);
+  }
+  if(btnPrevClientes) {
+    btnPrevClientes.addEventListener("click", () => {
+      paginaClientes = Math.max(1, paginaClientes - 1);
+      renderClientesTabla();
+    });
+  }
+  if(btnNextClientes) {
+    btnNextClientes.addEventListener("click", () => {
+      const totalPaginas = Math.max(1, Math.ceil(clientesFiltrados.length / tamPaginaClientes));
+      paginaClientes = Math.min(totalPaginas, paginaClientes + 1);
+      renderClientesTabla();
     });
   }
 
@@ -329,16 +418,15 @@ async function exportarClientesExcel() {
 
       estados[v.estado] = (estados[v.estado] || 0) + 1;
 
-     if (Array.isArray(v.lineas)) {
-  v.lineas.forEach(l => {
-    const peso = Number(l.peso);
-    const cantidad = Number(l.cantidad);
-    if (!isNaN(peso) && !isNaN(cantidad)) {
-      totalKg += (peso * cantidad) / 1000;
-    }
-  });
-}
-
+      if (Array.isArray(v.lineas)) {
+        v.lineas.forEach(l => {
+          const peso = Number(l.peso);
+          const cantidad = Number(l.cantidad);
+          if (!isNaN(peso) && !isNaN(cantidad)) {
+            totalKg += (peso * cantidad) / 1000;
+          }
+        });
+      }
     });
 
     document.getElementById("kpiVentas").textContent = `₡${totalVentas.toLocaleString()}`;
@@ -372,13 +460,12 @@ async function exportarClientesExcel() {
       ventasPorMes[mes] += Number(v.total||0);
 
       v.lineas.forEach(l => {
-  const peso = Number(l.peso);
-  const cantidad = Number(l.cantidad);
-  if (!isNaN(peso) && !isNaN(cantidad)) {
-    kgPorMes[mes] += (peso * cantidad) / 1000;
-  }
-});
-
+        const peso = Number(l.peso);
+        const cantidad = Number(l.cantidad);
+        if (!isNaN(peso) && !isNaN(cantidad)) {
+          kgPorMes[mes] += (peso * cantidad) / 1000;
+        }
+      });
     });
 
     const ctx = document.getElementById("graficaVentasMensuales")?.getContext("2d");
@@ -437,67 +524,63 @@ async function exportarClientesExcel() {
   };
 
   // =====================
-  // EXPORTAR EXCEL
+  // EXPORTAR EXCEL (CORREGIDO)
   // =====================
-// =====================
-// EXPORTAR EXCEL (CORREGIDO)
-// =====================
-if(btnExportExcel) btnExportExcel.onclick = async () => {
-  const inicio = fechaInicioInput.value;
-  const fin = fechaFinInput.value;
-  if(!inicio || !fin) return alert("Seleccione ambas fechas");
+  if(btnExportExcel) btnExportExcel.onclick = async () => {
+    const inicio = fechaInicioInput.value;
+    const fin = fechaFinInput.value;
+    if(!inicio || !fin) return alert("Seleccione ambas fechas");
 
-  const q = query(
-    collection(db, "ventas"),
-    where("fecha", ">=", Timestamp.fromDate(new Date(inicio))),
-    where("fecha", "<=", Timestamp.fromDate(new Date(new Date(fin).setHours(23,59,59))))
-  );
+    const q = query(
+      collection(db, "ventas"),
+      where("fecha", ">=", Timestamp.fromDate(new Date(inicio))),
+      where("fecha", "<=", Timestamp.fromDate(new Date(new Date(fin).setHours(23,59,59))))
+    );
 
-  const snap = await getDocs(q);
-  if(snap.empty) return alert("No hay ventas en ese rango de fechas");
+    const snap = await getDocs(q);
+    if(snap.empty) return alert("No hay ventas en ese rango de fechas");
 
-  const datos = [];
-  snap.forEach(docSnap => {
-    const v = docSnap.data();
-    const fecha = v.fecha?.toDate ? v.fecha.toDate() : new Date(v.fecha);
-    
-    // IMPORTANTE: Extraemos el nombre del cliente del objeto 'cliente'
-    const nombreCliente = v.cliente?.nombre || "Sin nombre";
-    
-    if(Array.isArray(v.lineas)) {
-      v.lineas.forEach((l, index) => {
-        datos.push({
-          "ID Pedido": docSnap.id,
-          "Fecha": fecha.toLocaleDateString(),
-          "Cliente": nombreCliente,
-          "Vendedor ID": v.vendedorId || "-",
-          "Producto": l.nombre || "-",
-          "Cantidad": l.cantidad || 0,
-          "Peso (g)": l.peso || 0,
-          "Precio Unit": l.precio || 0,
-          "Subtotal Línea": l.subtotal || 0,
-          // Solo mostramos el total general en la primera línea del pedido para no duplicar sumas
-          "TOTAL VENTA": index === 0 ? (v.total || 0) : "",
-          "Estado Pago": v.estadoPago || "-",
-          "Estado Prod": v.estado || "-"
+    const datos = [];
+    snap.forEach(docSnap => {
+      const v = docSnap.data();
+      const fecha = v.fecha?.toDate ? v.fecha.toDate() : new Date(v.fecha);
+
+      // IMPORTANTE: Extraemos el nombre del cliente del objeto 'cliente'
+      const nombreCliente = v.cliente?.nombre || "Sin nombre";
+
+      if(Array.isArray(v.lineas)) {
+        v.lineas.forEach((l, index) => {
+          datos.push({
+            "ID Pedido": docSnap.id,
+            "Fecha": fecha.toLocaleDateString(),
+            "Cliente": nombreCliente,
+            "Vendedor ID": v.vendedorId || "-",
+            "Producto": l.nombre || "-",
+            "Cantidad": l.cantidad || 0,
+            "Peso (g)": l.peso || 0,
+            "Precio Unit": l.precio || 0,
+            "Subtotal Línea": l.subtotal || 0,
+            // Solo mostramos el total general en la primera línea del pedido para no duplicar sumas
+            "TOTAL VENTA": index === 0 ? (v.total || 0) : "",
+            "Estado Pago": v.estadoPago || "-",
+            "Estado Prod": v.estado || "-"
+          });
         });
-      });
-    }
-  });
+      }
+    });
 
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(datos);
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(datos);
 
-  // Ajuste de anchos de columna para que se vea profesional
-  ws['!cols'] = [
-    {wch:20}, {wch:12}, {wch:20}, {wch:20}, {wch:25}, 
-    {wch:10}, {wch:10}, {wch:12}, {wch:12}, {wch:15}, {wch:15}, {wch:15}
-  ];
+    // Ajuste de anchos de columna para que se vea profesional
+    ws['!cols'] = [
+      {wch:20}, {wch:12}, {wch:20}, {wch:20}, {wch:25},
+      {wch:10}, {wch:10}, {wch:12}, {wch:12}, {wch:15}, {wch:15}, {wch:15}
+    ];
 
-  XLSX.utils.book_append_sheet(wb, ws, "Ventas Detalladas");
-  // Nombre del archivo con la marca predominante
-  XLSX.writeFile(wb, `CAFÉ_PRÓDIGO_SUELO_Ventas_${inicio}.xlsx`);
-};
+    XLSX.utils.book_append_sheet(wb, ws, "Ventas Detalladas");
+    // Nombre del archivo con la marca predominante
+    XLSX.writeFile(wb, `CAFÉ_PRÓDIGO_SUELO_Ventas_${inicio}.xlsx`);
+  };
 
 }); // DOMContentLoaded
-
