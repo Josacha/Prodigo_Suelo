@@ -85,7 +85,21 @@
     <label>Fecha fin:</label>
     <input type="date" id="fechaFinFiltro">
     <button id="btnBuscarPedidos">Buscar</button>
-    <div id="resultadosPedidos" class="cards-container"></div>
+    <div style="overflow:auto; margin-top:10px;">
+  <table id="tablaPedidosAntiguos" style="width:100%; border-collapse:collapse;">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Cliente</th>
+        <th>Total</th>
+        <th>Estado</th>
+        <th>Pago</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="resultadosPedidos"></tbody>
+  </table>
+</div>
   </section>
 
   <div id="ticketContainer" style="display:none;"></div>
@@ -93,6 +107,7 @@
   <script type="module" src="js/vendedor.js"></script>
 </body>
 </html>
+
 
 
 
