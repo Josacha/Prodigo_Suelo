@@ -669,23 +669,86 @@ window.imprimirTicket = (venta) => {
 };
 
 // BUSCAR PEDIDOS ANTIGUOS
+// BUSCAR PEDIDOS ANTIGUOS (TABLA)
 btnBuscarPedidos.onclick = async () => {
   const clienteId = filtroCliente.value;
-  const snap = await getDocs(collection(db,"ventas"));
-  resultadosPedidos.innerHTML = "";
-  snap.forEach(docSnap => {
-    const venta = docSnap.data();
-    if(clienteId && venta.cliente.id !== clienteId) return;
-    const card = document.createElement("div");
-    card.className = `card estado-${venta.estado.replace(' ','-')}`;
-    card.innerHTML = `
-      <p><strong>Cliente:</strong> ${venta.cliente.nombre}</p>
-      <p><strong>Total:</strong> ₡${venta.total.toLocaleString()}</p>
-      <button onclick='imprimirTicket(${JSON.stringify({...venta, id: docSnap.id})})'>Reimprimir</button>
+
+  const fechaInicio = document.getElementById("fechaInicioFiltro").value;
+  const fechaFin = document.getElementById("fechaFinFiltro").value;
+
+  const condiciones = [];
+  condiciones.push(where("vendedorId", "==", vendedorId));
+
+  if (clienteId) condiciones.push(where("cliente.id", "==", clienteId));
+
+  if (fechaInicio) {
+    const inicio = new Date(`${fechaInicio}T00:00:00`);
+    condiciones.push(where("fecha", ">=", Timestamp.fromDate(inicio)));
+  }
+
+  if (fechaFin) {
+    const fin = new Date(`${fechaFin}T23:59:59`);
+    condiciones.push(where("fecha", "<=", Timestamp.fromDate(fin)));
+  }
+
+  const q = query(collection(db, "ventas"), ...condiciones);
+
+  resultadosPedidos.innerHTML = `
+    <tr><td colspan="6">Cargando...</td></tr>
+  `;
+
+  try {
+    const snap = await getDocs(q);
+
+    const docsOrdenados = snap.docs.sort((a, b) => {
+      const fa = a.data().fecha?.seconds ? a.data().fecha.seconds : 0;
+      const fb = b.data().fecha?.seconds ? b.data().fecha.seconds : 0;
+      return fb - fa;
+    });
+
+    if (docsOrdenados.length === 0) {
+      resultadosPedidos.innerHTML = `
+        <tr><td colspan="6">No hay pedidos con ese filtro.</td></tr>
+      `;
+      return;
+    }
+
+    resultadosPedidos.innerHTML = "";
+
+    docsOrdenados.forEach(docSnap => {
+      const venta = docSnap.data();
+      const pedidoId = docSnap.id;
+
+      const fechaDoc = venta.fecha?.seconds
+        ? new Date(venta.fecha.seconds * 1000)
+        : new Date();
+
+      const estado = venta.estado || "-";
+      const pago = venta.estadoPago || "-";
+
+      resultadosPedidos.innerHTML += `
+        <tr>
+          <td>${fechaDoc.toLocaleDateString()} ${String(fechaDoc.getHours()).padStart(2,"0")}:${String(fechaDoc.getMinutes()).padStart(2,"0")}</td>
+          <td>${venta.cliente?.nombre || "-"}</td>
+          <td>₡${(venta.total || 0).toLocaleString()}</td>
+          <td>${estado}</td>
+          <td>${pago}</td>
+          <td style="white-space:nowrap;">
+            <button onclick='imprimirTicket(${JSON.stringify({ ...venta, id: pedidoId })})'>Reimprimir</button>
+          </td>
+        </tr>
+      `;
+    });
+
+  } catch (e) {
+    console.error(e);
+    resultadosPedidos.innerHTML = `
+      <tr><td colspan="6">Error al buscar pedidos.</td></tr>
     `;
-    resultadosPedidos.appendChild(card);
-  });
+    alert("Si Firestore te pide crear un índice, abrí el link que te muestra en consola y créalo.");
+  }
 };
+
 
 
 
