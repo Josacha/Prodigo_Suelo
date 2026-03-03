@@ -27,7 +27,11 @@ onAuthStateChanged(auth, async user => {
   await cargarProductos();
   await cargarClientes();
   cargarPedidos();
-  cargarClientesFiltro();
+
+  // ✅ CAMBIO: esperar a que cargue y luego activar buscador del historial
+  await cargarClientesFiltro();
+  configurarBuscadorCoincidencia("buscarClienteHistorial", "filtroCliente");
+
   iniciarSistemaRuta();
 
 
@@ -259,7 +263,7 @@ async function iniciarSistemaRuta() {
     div.style.background = "#fff";
     div.style.borderRadius = "8px";
     div.style.padding = "6px";
-    div.style.boxShadow = "0 2px 8px rgba(0,0,0,.25)";
+    div.style.boxShadow = "0 2px 8px rgba(0,0,0,.25)");
     div.style.cursor = "pointer";
     div.title = "Centrar y seguir mi ubicación";
     div.innerHTML = "📍 Seguir";
@@ -728,12 +732,12 @@ btnBuscarPedidos.onclick = async () => {
 
       resultadosPedidos.innerHTML += `
         <tr>
-          <td>${fechaDoc.toLocaleDateString()} ${String(fechaDoc.getHours()).padStart(2,"0")}:${String(fechaDoc.getMinutes()).padStart(2,"0")}</td>
-          <td>${venta.cliente?.nombre || "-"}</td>
-          <td>₡${(venta.total || 0).toLocaleString()}</td>
-          <td>${estado}</td>
-          <td>${pago}</td>
-          <td style="white-space:nowrap;">
+          <td data-label="Fecha">${fechaDoc.toLocaleDateString()} ${String(fechaDoc.getHours()).padStart(2,"0")}:${String(fechaDoc.getMinutes()).padStart(2,"0")}</td>
+          <td data-label="Cliente">${venta.cliente?.nombre || "-"}</td>
+          <td data-label="Total">₡${(venta.total || 0).toLocaleString()}</td>
+          <td data-label="Estado">${estado}</td>
+          <td data-label="Pago">${pago}</td>
+          <td data-label="Acciones" style="white-space:nowrap;">
             <button onclick='imprimirTicket(${JSON.stringify({ ...venta, id: pedidoId })})'>Reimprimir</button>
           </td>
         </tr>
@@ -748,20 +752,3 @@ btnBuscarPedidos.onclick = async () => {
     alert("Si Firestore te pide crear un índice, abrí el link que te muestra en consola y créalo.");
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
